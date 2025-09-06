@@ -185,7 +185,6 @@ Ready for code samples or a deeper dive into any section? Let me know!
 
 Another view from Readme, this is the complete Readme file.
 
-
 # Enterprise Payments Platform with Multi-Tenancy & Beyonic API Integration
 
 A Ruby on Rails application for global organizations, PSPs, and MTOs, enabling:
