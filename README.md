@@ -474,5 +474,3 @@ Gemfile
 
 You now have a blueprint for a full-featured, multi-tenant enterprise payments platform in Rails, with Beyonic API integration for payouts, remittances, and collections. Each organization is fully isolated, and the system supports banks, cash-pickup, mobile money, and agents.
 
-**For full code, see generated models, controllers, and service above.**  
-**Customize as needed for your organization and workflow.**
