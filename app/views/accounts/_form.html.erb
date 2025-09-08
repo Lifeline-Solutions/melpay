@@ -1,14 +1,14 @@
 <%= form_with model: [@client, account], local: true, class: "space-y-4" do |f| %>
   <div>
-    <%= f.label :account_type, class: "block font-semibold" %>
+    <%= f.label :account_type, class: "block font-semibold text-gray-700 dark:text-gray-300" %>
     <%= f.select :account_type, ["Savings", "Checking", "Fixed Deposit"],
-                 {}, class: "border rounded w-full p-2" %>
+                 {}, class: "border rounded w-full p-2 text-gray-700 dark:text-gray-300" %>
   </div>
 
   <div>
-    <%= f.label :balance, "Initial Balance", class: "block font-semibold" %>
+    <%= f.label :balance, "Initial Balance", class: "block font-semibold text-gray-700 dark:text-gray-300" %>
     <%= f.number_field :balance, step: 0.01,
-                       class: "border rounded w-full p-2" %>
+                       class: "border rounded w-full p-2 text-gray-700 dark:text-gray-300" %>
   </div>
 
   <div>
