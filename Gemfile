@@ -65,9 +65,9 @@ group :test do
 end
 
 gem 'devise', '~> 4.9'
-gem 'rolify'
-
+gem 'devise_invitable', '~> 2.0.0'
 gem 'omniauth', '>= 1.0.0'
+gem 'rolify'
 gem 'roo'
 gem 'sentry-rails'
 gem 'sentry-ruby'

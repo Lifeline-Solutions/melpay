@@ -109,6 +109,9 @@ GEM
       railties (>= 4.1.0)
       responders
       warden (~> 1.2.3)
+    devise_invitable (2.0.11)
+      actionmailer (>= 5.0)
+      devise (>= 4.6)
     dotenv (3.1.8)
     drb (2.2.3)
     ed25519 (1.4.0)
@@ -382,6 +385,7 @@ DEPENDENCIES
   capybara
   debug
   devise (~> 4.9)
+  devise_invitable (~> 2.0.0)
   importmap-rails
   jbuilder
   kamal
@@ -407,4 +411,4 @@ DEPENDENCIES
   web-console
 
 BUNDLED WITH
-   2.6.6
+   2.7.1
