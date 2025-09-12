@@ -1,5 +1,6 @@
 class Client < ApplicationRecord
   has_many :accounts, dependent: :destroy
+  has_many :users, dependent: :nullify
 
   STATUSES = %w[pending approved rejected].freeze
 
