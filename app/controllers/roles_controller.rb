@@ -6,10 +6,12 @@ class RolesController < ApplicationController
 
   def create
     @role = Role.new(role_params)
-    if @role.save
-      redirect_to home_index_path, notice: 'Role was successfully created.'
-    else
-      render :new
+    respond_to do |format|
+      if @role.save
+        format.html { redirect_to home_index_path, notice: 'Role was successfully created.' }
+      else
+        format.html { render :new, status: :unprocessable_content }
+      end
     end
   end
 
