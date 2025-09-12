@@ -26,4 +26,6 @@ Rails.application.routes.draw do
     end
     resources :accounts, only: [:index, :new, :create]
   end
+  resources :roles, only: [:new, :create, :index]
+
 end
