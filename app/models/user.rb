@@ -6,6 +6,7 @@ class User < ApplicationRecord
          :validatable, :confirmable, :lockable, :timeoutable, :trackable, :invitable
 
   has_many :homes, dependent: :destroy
+  has_many :clients, dependent: :destroy
 
   def generate_otp!
     self.otp_code = rand(100_000..999_999).to_s
