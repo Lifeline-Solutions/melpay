@@ -38,7 +38,7 @@ class InvitationsController < Devise::InvitationsController
       end
 
       # Check if invitation was successful
-      if invited_user&.errors&.blank?
+      if invited_user.present? && invited_user.errors.blank?
         redirect_to users_path, notice: 'User has been invited successfully.' # Success redirect
       else
         flash[:alert] = 'There was an error inviting the user.' # Show error
