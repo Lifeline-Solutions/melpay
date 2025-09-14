@@ -1,9 +1,28 @@
-<%= form_with(model: @role, local: true) do |form| %>
-  <div>
-    <%= form.label :name %>
-    <%= form.text_field :name %>
-  </div>
-  <div>
-    <%= form.submit 'Create Role' %>
-  </div>
-<% end %>
+<div class="max-w-lg mx-auto px-4 py-6 bg-white dark:bg-gray-800 rounded-lg shadow">
+  <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">New Role</h2>
+
+  <%= form_with(model: @role, local: true, class: "space-y-4") do |form| %>
+    <div>
+      <%= form.label :name, class: "block text-sm font-medium text-gray-700 dark:text-gray-200" %>
+      <%= form.text_field :name,
+            class: "mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %>
+    </div>
+
+    <div>
+      <%= form.label :resource_type, class: "block text-sm font-medium text-gray-700 dark:text-gray-200" %>
+      <%= form.text_field :resource_type,
+            class: "mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %>
+    </div>
+
+    <div>
+      <%= form.label :resource_id, class: "block text-sm font-medium text-gray-700 dark:text-gray-200" %>
+      <%= form.text_field :resource_id,
+            class: "mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %>
+    </div>
+
+    <div>
+      <%= form.submit "Create Role",
+            class: "w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none" %>
+    </div>
+  <% end %>
+</div>
