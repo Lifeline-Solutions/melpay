@@ -1,6 +1,6 @@
 Rails.application.routes.draw do
   # config/routes.rb
-  devise_for :users
+  devise_for :users, controllers: { invitations: 'invitations' }
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
@@ -15,6 +15,7 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   # root "posts#index"
   root "home#index"
+
   get 'two_factor/send_otp', to: 'two_factor#send_otp', as: :send_otp_two_factor
   get 'two_factor/verify', to: 'two_factor#verify', as: :verify_otp
   post 'two_factor/check', to: 'two_factor#check', as: :check_otp
