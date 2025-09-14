@@ -7,6 +7,3 @@
 #   ["Action", "Comedy", "Drama", "Horror"].each do |genre_name|
 #     MovieGenre.find_or_create_by!(name: genre_name)
 #   end
-Role.find_or_create_by!(name: 'admin')
-a = User.create!(email: 'admin@craftsilicon.com', password: 'password', confirmed_at: DateTime.now , confirmation_sent_at: DateTime.now, first_name: 'Jay', last_name: 'Admin')
-a.add_role(:admin)
