@@ -11,7 +11,7 @@ class ClientsController < ApplicationController
     @total_count = @clients.count
     @total_pages = (@total_count / @per_page.to_f).ceil
     @start_count = ((@page - 1) * @per_page) + 1
-    @end_count   = [@page * @per_page, @total_count].min
+    @end_count = [@page * @per_page, @total_count].min
 
     # Paginate
     @clients = @clients.offset((@page - 1) * @per_page).limit(@per_page)

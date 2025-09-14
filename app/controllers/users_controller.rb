@@ -1,6 +1,6 @@
 class UsersController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_user, only: [:edit, :update]
+  before_action :set_user, only: %i[edit update]
   def index
     @users = User.all
 
@@ -11,7 +11,7 @@ class UsersController < ApplicationController
     @total_count = @users.count
     @total_pages = (@total_count / @per_page.to_f).ceil
     @start_count = ((@page - 1) * @per_page) + 1
-    @end_count   = [@page * @per_page, @total_count].min
+    @end_count = [@page * @per_page, @total_count].min
 
     # Paginate
     @users = @users.offset((@page - 1) * @per_page).limit(@per_page)
@@ -21,12 +21,11 @@ class UsersController < ApplicationController
     @user = User.find(params[:id])
   end
 
-  def edit
-  end
+  def edit; end
 
   def update
     if @user.update(user_params)
-      redirect_to @user, notice: "Profile updated successfully."
+      redirect_to @user, notice: 'Profile updated successfully.'
     else
       render :edit, status: :unprocessable_entity
     end
