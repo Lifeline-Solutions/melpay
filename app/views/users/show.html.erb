@@ -1,0 +1,26 @@
+<div class="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg shadow">
+  <h1 class="text-2xl font-bold mb-4">My Profile</h1>
+
+  <div class="space-y-2">
+    <p><strong>First Name:</strong> <%= @user.first_name %></p>
+    <p><strong>Last Name:</strong> <%= @user.last_name %></p>
+    <p><strong>Email:</strong> <%= @user.email %></p>
+    <p><strong>Phone Number:</strong> <%= @user.phone_number %></p>
+    <p><strong>Role(s):</strong> <%= @user.roles.distinct.pluck(:name).join(', ') %></p>
+    <p><strong>Sign in Count:</strong> <%= @user.sign_in_count %></p>
+    <p><strong>Current Sign in IP:</strong> <%= @user.current_sign_in_ip %></p>
+    <p><strong>Last Sign in IP:</strong> <%= @user.last_sign_in_ip %></p>
+    <p><strong>Last Sign in At:</strong> <%= @user.last_sign_in_at %></p>
+    <p><strong>Confirmed At:</strong> <%= @user.confirmed_at %></p>
+    <p><strong>Created At:</strong> <%= @user.created_at.strftime("%B %d, %Y %H:%M") %></p>
+    <p><strong>Updated At:</strong> <%= @user.updated_at.strftime("%B %d, %Y %H:%M") %></p>
+  </div>
+
+  <div class="mt-6 flex gap-3">
+    <%= link_to "Edit Profile", edit_user_path(@user),
+                class: "px-4 py-2 bg-blue-600 text-white rounded" %>
+
+    <%= link_to "Back to Users", users_path,
+                class: "px-4 py-2 bg-gray-600 text-white rounded" %>
+  </div>
+</div>

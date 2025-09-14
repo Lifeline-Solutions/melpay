@@ -101,7 +101,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_12_142218) do
     t.datetime "locked_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "role", default: 0, null: false
     t.string "otp_code"
     t.datetime "otp_sent_at"
     t.string "phone_number"

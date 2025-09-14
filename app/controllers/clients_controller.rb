@@ -4,6 +4,17 @@ class ClientsController < ApplicationController
 
   def index
     @clients = Client.all
+    # Pagination setup
+    @per_page = 20
+    @page = (params[:page] || 1).to_i
+
+    @total_count = @clients.count
+    @total_pages = (@total_count / @per_page.to_f).ceil
+    @start_count = ((@page - 1) * @per_page) + 1
+    @end_count = [@page * @per_page, @total_count].min
+
+    # Paginate
+    @clients = @clients.offset((@page - 1) * @per_page).limit(@per_page)
   end
 
   def show

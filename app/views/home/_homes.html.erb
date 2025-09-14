@@ -1,0 +1,76 @@
+<div class="p-6">
+  <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">Uploaded Spreadsheets</h1>
+
+  <%= render "home/home_index_topbar" %>
+
+  <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+      <thead class="bg-gray-50 dark:bg-gray-700">
+        <tr>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-200">Spreadsheet Name</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-200">Total Deposits</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-200">Total Credits</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-200">Total Returns</th>
+          <th class="px-6 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+        <% @homes.each do |home| %>
+          <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+            <td class="px-6 py-4 text-gray-800 dark:text-gray-100">
+              <%= home.name.presence || home.document.filename.to_s %>
+            </td>
+            <td class="px-6 py-4 text-gray-600 dark:text-gray-300">
+              <%= number_to_currency(@totals_deposits[home.id] || 0) %>
+            </td>
+            <td class="px-6 py-4 text-gray-600 dark:text-gray-300">
+              <%= number_to_currency(@totals_credits[home.id] || 0) %>
+            </td>
+            <td class="px-6 py-4 text-gray-600 dark:text-gray-300">
+              <%= number_to_currency(@totals_returns[home.id] || 0) %>
+            </td>
+            <td class="px-6 py-4 text-right">
+              <%= link_to "View", home_path(home), class: "text-blue-600 dark:text-blue-400 hover:underline" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+
+      <!-- Totals row -->
+      <tfoot class="bg-gray-100 dark:bg-gray-700">
+        <tr>
+          <td class="px-6 py-3 font-semibold text-gray-800 dark:text-gray-200">Grand Totals</td>
+          <td class="px-6 py-3 font-semibold text-gray-600 dark:text-gray-300">
+            <%= number_to_currency(@total_deposits_sum || 0) %>
+          </td>
+          <td class="px-6 py-3 font-semibold text-gray-600 dark:text-gray-300">
+            <%= number_to_currency(@total_credits_sum || 0) %>
+          </td>
+          <td class="px-6 py-3 font-semibold text-gray-600 dark:text-gray-300">
+            <%= number_to_currency(@total_returns_sum || 0) %>
+          </td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="flex gap-10 mt-5">
+    <!-- Pagination Controls -->
+    <div class="pagination">
+      <% if @page > 1 %>
+        <%= link_to 'Previous',
+                    home_index_path(page: @page - 1, query: params[:query], status: params[:status]),
+                    class: 'mb-4 h-12 bg-[#3F8CFF] hover:bg-[#3A81EB] p-3 rounded font-bold rounded-lg text-slate-100' %>
+      <% end %>
+
+      <span>Page <%= @page %> of <%= @total_pages %></span>
+
+      <% if @page < @total_pages %>
+        <%= link_to 'Next',
+                    home_index_path(page: @page + 1, query: params[:query], status: params[:status]),
+                    class: 'mb-4 h-12 bg-[#3F8CFF] hover:bg-[#3A81EB] p-3 rounded font-bold rounded-lg text-slate-100' %>
+      <% end %>
+    </div>
+  </div>
+</div>
