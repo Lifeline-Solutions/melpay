@@ -1,7 +1,7 @@
 <div class="p-6">
   <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">Uploaded Spreadsheets</h1>
 
-<%= render "home/home_index_topbar" %>
+  <%= render "home/home_index_topbar" %>
 
   <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -53,5 +53,24 @@
         </tr>
       </tfoot>
     </table>
+  </div>
+
+  <div class="flex gap-10 mt-5">
+    <!-- Pagination Controls -->
+    <div class="pagination">
+      <% if @page > 1 %>
+        <%= link_to 'Previous',
+                    home_index_path(page: @page - 1, query: params[:query], status: params[:status]),
+                    class: 'mb-4 h-12 bg-[#3F8CFF] hover:bg-[#3A81EB] p-3 rounded font-bold rounded-lg text-slate-100' %>
+      <% end %>
+
+      <span>Page <%= @page %> of <%= @total_pages %></span>
+
+      <% if @page < @total_pages %>
+        <%= link_to 'Next',
+                    home_index_path(page: @page + 1, query: params[:query], status: params[:status]),
+                    class: 'mb-4 h-12 bg-[#3F8CFF] hover:bg-[#3A81EB] p-3 rounded font-bold rounded-lg text-slate-100' %>
+      <% end %>
+    </div>
   </div>
 </div>
