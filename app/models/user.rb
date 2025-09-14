@@ -12,7 +12,7 @@ class User < ApplicationRecord
   def default_role
     return if invited_by_id.present?
 
-    add_role :client if role.blank?
+    add_role(:client) if role.blank?
   end
 
   def generate_otp!
