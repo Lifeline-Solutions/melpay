@@ -12,11 +12,37 @@
     </div>
   </div>
   <div class="col-span-4">
-    <div class="flex items-center justify-center rounded-sm bg-gray-50 h-full dark:bg-gray-800">
-      <p>Statistics</p>
-      <p>
-        Line graphs and charts
-      </p>
-    </div>
+    <div class="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+  <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100">Statistics Overview</h2>
+  <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
+    This chart shows Deposits, Credits, and Returns over time (per upload date).
+  </p>
+
+  <div class="w-full h-96">
+    <%= line_chart @chart_series,
+      library: {
+        title: { text: "Totals Over Time" },
+        xAxis: {
+          type: 'datetime',
+          title: { text: "Upload Date" }
+        },
+        yAxis: { title: { text: "Amount (USD)" } },
+        legend: { enabled: true },
+        tooltip: {
+          valuePrefix: "$"
+        },
+        plotOptions: {
+          series: {
+            marker: { enabled: true, radius: 3 },
+            lineWidth: 2,
+            states: { hover: { lineWidth: 3 } }
+          }
+        }
+      },
+      points: true,
+      discrete: false
+    %>
+  </div>
+</div>
   </div>
 </div>
