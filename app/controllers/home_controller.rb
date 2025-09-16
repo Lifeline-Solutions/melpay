@@ -5,6 +5,8 @@ class HomeController < ApplicationController
   def index
     @homes = Home.all.order('created_at DESC')
 
+    @accounts_count = Account.all.count
+
     # Pagination setup
     @per_page = 20
     @page = (params[:page] || 1).to_i
