@@ -25,7 +25,7 @@ class HomeController < ApplicationController
     totals_returns_over_time = Hash.new(0)
     # parse_amount helper: strip currency chars and convert to float
     parse_amount = lambda do |value|
-      value.to_s.gsub(/[^\d\.\-]/, '').to_f
+      value.to_s.gsub(/[^\d.-]/, '').to_f
     end
 
     # Compute per-home totals (for table) and per-date totals (for chart)
