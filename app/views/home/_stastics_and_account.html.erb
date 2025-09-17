@@ -22,15 +22,28 @@
     This chart shows Deposits, Credits, and Returns over time (per upload date).
   </p>
 
-  <div class="w-full h-96">
+  <div class="w-full h-full">
     <%= line_chart @chart_series,
       library: {
-        title: { text: "Totals Over Time" },
-        xAxis: {
-          type: 'datetime',
-          title: { text: "Upload Date" }
+        title: {
+          text: "Totals Over Time",
+          style: { fontSize: "16px", fontWeight: "bold" }
         },
-        yAxis: { title: { text: "Amount (USD)" } },
+        xAxis: {
+          type: "datetime",
+          title: {
+            text: "Upload Date",
+            style: { fontSize: "14px", fontWeight: "bold", color: "#333" }
+          },
+          labels: { format: "{value:%Y-%m-%d}" } # formats tick labels as dates
+        },
+        yAxis: {
+          title: {
+            text: "Amount (USD)",
+            style: { fontSize: "14px", fontWeight: "bold", color: "#333" }
+          },
+          labels: { format: "${value}" } # formats tick labels with a dollar sign
+        },
         legend: { enabled: true },
         tooltip: {
           valuePrefix: "$"
