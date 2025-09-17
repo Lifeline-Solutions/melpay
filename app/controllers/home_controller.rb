@@ -8,7 +8,7 @@ class HomeController < ApplicationController
     @account_types = Account.distinct.pluck(:account_type)
 
     @per_page = 20
-    @page     = (params[:page] || 1).to_i
+    @page = (params[:page] || 1).to_i
     @total_count = homes_for_list.count
     @total_pages = (@total_count / @per_page.to_f).ceil
     @start_count = ((@page - 1) * @per_page) + 1
@@ -17,14 +17,14 @@ class HomeController < ApplicationController
     @homes = homes_for_list.offset((@page - 1) * @per_page).limit(@per_page)
     # Ensure per-home totals are always present for the view table
     @totals_deposits = Hash.new(0)
-    @totals_credits  = Hash.new(0)
-    @totals_returns  = Hash.new(0)
+    @totals_credits = Hash.new(0)
+    @totals_returns = Hash.new(0)
     # Prepare time-series totals (for the chart)
     totals_deposits_over_time = Hash.new(0) # local until we build final @hash
-    totals_credits_over_time  = Hash.new(0)
-    totals_returns_over_time  = Hash.new(0)
+    totals_credits_over_time = Hash.new(0)
+    totals_returns_over_time = Hash.new(0)
     # parse_amount helper: strip currency chars and convert to float
-    parse_amount = ->(value) do
+    parse_amount = lambda do |value|
       value.to_s.gsub(/[^\d\.\-]/, '').to_f
     end
 
@@ -42,18 +42,20 @@ class HomeController < ApplicationController
           tempfile.rewind
 
           spreadsheet = case home.document.filename.extension&.downcase
-                        when 'csv'  then Roo::CSV.new(tempfile.path)
-                        when 'xls'  then Roo::Excel.new(tempfile.path)
+                        when 'csv' then Roo::CSV.new(tempfile.path)
+                        when 'xls' then Roo::Excel.new(tempfile.path)
                         when 'xlsx' then Roo::Excelx.new(tempfile.path)
-                        else
-                          nil
                         end
           next unless spreadsheet
 
-          header = spreadsheet.row(1).map { |h| h.to_s.strip } rescue []
+          header = begin
+            spreadsheet.row(1).map { |h| h.to_s.strip }
+          rescue StandardError
+            []
+          end
           deposits = []
-          credits  = []
-          returns  = []
+          credits = []
+          returns = []
 
           # protect against files with fewer rows
           last_row = [spreadsheet.last_row || 1, 1].max
@@ -64,7 +66,7 @@ class HomeController < ApplicationController
 
             # build a hash mapping header -> value
             row = [header, raw_row].transpose.to_h.transform_keys(&:to_s)
-            type   = row['type']   || row['Type']   || row[:type]
+            type = row['type'] || row['Type'] || row[:type]
             amount = row['amount'] || row['Amount'] || row[:amount]
             next unless type && amount
 
@@ -80,25 +82,25 @@ class HomeController < ApplicationController
 
           # per-home totals (used in the table)
           deposit_sum = deposits.sum.to_f
-          credit_sum  = credits.sum.to_f
-          return_sum  = returns.sum.to_f
+          credit_sum = credits.sum.to_f
+          return_sum = returns.sum.to_f
 
           @totals_deposits[home.id] = deposit_sum
-          @totals_credits[home.id]  = credit_sum
-          @totals_returns[home.id]  = return_sum
+          @totals_credits[home.id] = credit_sum
+          @totals_returns[home.id] = return_sum
 
           # accumulate per-date totals (chart)
           date = home.created_at.to_date
           totals_deposits_over_time[date] += deposit_sum
-          totals_credits_over_time[date]  += credit_sum
-          totals_returns_over_time[date]  += return_sum
+          totals_credits_over_time[date] += credit_sum
+          totals_returns_over_time[date] += return_sum
         end
       rescue StandardError => e
         Rails.logger.warn("Failed to parse Home##{home.id} spreadsheet: #{e.message}")
         # Ensure the per-home keys exist so view won't blow up
         @totals_deposits[home.id] ||= 0
-        @totals_credits[home.id]  ||= 0
-        @totals_returns[home.id]  ||= 0
+        @totals_credits[home.id] ||= 0
+        @totals_returns[home.id] ||= 0
         next
       end
     end
@@ -107,8 +109,8 @@ class HomeController < ApplicationController
     # Final totals for quick summary (optional)
     # ------------------------------------------------------------------
     @total_deposits_sum = @totals_deposits.values.sum.to_f
-    @total_credits_sum  = @totals_credits.values.sum.to_f
-    @total_returns_sum  = @totals_returns.values.sum.to_f
+    @total_credits_sum = @totals_credits.values.sum.to_f
+    @total_returns_sum = @totals_returns.values.sum.to_f
 
     # ------------------------------------------------------------------
     # Build final, ordered time-series and fill missing dates with zeros
@@ -117,24 +119,24 @@ class HomeController < ApplicationController
 
     if all_dates.empty?
       @totals_deposits_over_time = {}
-      @totals_credits_over_time  = {}
-      @totals_returns_over_time  = {}
+      @totals_credits_over_time = {}
+      @totals_returns_over_time = {}
     else
       min_date = all_dates.first
       max_date = all_dates.last
       date_range = (min_date..max_date).to_a
 
       # Chartkick works with date strings (ISO) or actual Date objects; we use ISO strings
-      @totals_deposits_over_time = date_range.map { |d| [d.strftime('%Y-%m-%d'), totals_deposits_over_time[d].to_f] }.to_h
-      @totals_credits_over_time  = date_range.map { |d| [d.strftime('%Y-%m-%d'), totals_credits_over_time[d].to_f]  }.to_h
-      @totals_returns_over_time  = date_range.map { |d| [d.strftime('%Y-%m-%d'), totals_returns_over_time[d].to_f]  }.to_h
+      @totals_deposits_over_time = date_range.to_h { |d| [d.strftime('%Y-%m-%d'), totals_deposits_over_time[d].to_f] }
+      @totals_credits_over_time = date_range.to_h { |d| [d.strftime('%Y-%m-%d'), totals_credits_over_time[d].to_f] }
+      @totals_returns_over_time = date_range.to_h { |d| [d.strftime('%Y-%m-%d'), totals_returns_over_time[d].to_f] }
     end
 
     # series ready for Chartkick
     @chart_series = [
       { name: 'Deposits', data: @totals_deposits_over_time },
-      { name: 'Credits',  data: @totals_credits_over_time },
-      { name: 'Returns',  data: @totals_returns_over_time }
+      { name: 'Credits', data: @totals_credits_over_time },
+      { name: 'Returns', data: @totals_returns_over_time }
     ]
   end
 
