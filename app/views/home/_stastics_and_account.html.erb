@@ -5,9 +5,13 @@
         Quicklinks
       </p>
     </div>
-    <div class="flex items-center justify-center rounded-sm bg-gray-50 h-28 dark:bg-gray-800">
+    <div class="flex flex-col items-center justify-center rounded-sm bg-gray-50 h-28 dark:bg-gray-800">
       <p class="text-2xl text-gray-400 dark:text-gray-500">
-        Accounts: <%= @accounts_count || 0%>
+        Accounts: <%= @accounts_count || 0 %>
+      </p>
+
+      <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+        Types: <%= @account_types.present? ? @account_types.join(", ") : "None" %>
       </p>
     </div>
   </div>
