@@ -65,6 +65,7 @@ group :test do
 end
 
 gem 'chartkick'
+gem 'csv'
 gem 'devise', '~> 4.9'
 gem 'devise_invitable', '~> 2.0.0'
 gem 'groupdate'
