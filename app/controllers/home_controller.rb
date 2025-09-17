@@ -137,6 +137,7 @@ class HomeController < ApplicationController
 
     Home.order(created_at: :desc).limit(20).each do |home| # check recent homes first
       next unless home.document.attached?
+
       begin
         Tempfile.create(['uploaded_file', ".#{home.document.filename.extension}"]) do |tempfile|
           content = home.document.download.force_encoding('UTF-8')
@@ -155,22 +156,26 @@ class HomeController < ApplicationController
             row = [header, spreadsheet.row(i)].transpose.to_h
             next unless row['type'] && row['amount']
 
-            if row['type'].to_s.strip.downcase == 'deposit'
-              @recent_deposits << {
-                date: row['date'] || home.created_at,
-                description: row['description'] || "",
-                amount: row['amount']
-              }
-            end
+            next unless row['type'].to_s.strip.downcase == 'deposit'
+
+            @recent_deposits << {
+              date: row['date'] || home.created_at,
+              description: row['description'] || '',
+              amount: row['amount']
+            }
           end
         end
-      rescue
+      rescue StandardError
         next
       end
     end
 
     # Sort deposits by date (most recent first) and limit to 5
-    @recent_deposits = @recent_deposits.sort_by { |d| d[:date].to_time rescue Time.zone.now }.reverse.first(5)
+    @recent_deposits = @recent_deposits.sort_by do |d|
+      d[:date].to_time
+    rescue StandardError
+      Time.zone.now
+    end.reverse.first(5)
 
     # series ready for Chartkick
     @chart_series = [

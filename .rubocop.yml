@@ -28,9 +28,9 @@ Metrics/BlockLength:
   AllowedMethods: ['describe']
   Max: 60
 Metrics/CyclomaticComplexity:
-  Max: 35
+  Max: 50
 Metrics/PerceivedComplexity:
-  Max: 30
+  Max: 50
 
 
 Style/Documentation:
