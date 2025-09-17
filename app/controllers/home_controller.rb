@@ -132,6 +132,46 @@ class HomeController < ApplicationController
       @totals_returns_over_time = date_range.to_h { |d| [d.strftime('%Y-%m-%d'), totals_returns_over_time[d].to_f] }
     end
 
+    # Collect all deposits across homes for recent list
+    @recent_deposits = []
+
+    Home.order(created_at: :desc).limit(20).each do |home| # check recent homes first
+      next unless home.document.attached?
+      begin
+        Tempfile.create(['uploaded_file', ".#{home.document.filename.extension}"]) do |tempfile|
+          content = home.document.download.force_encoding('UTF-8')
+          tempfile.write(content)
+          tempfile.rewind
+
+          spreadsheet = case home.document.filename.extension
+                        when 'csv' then Roo::CSV.new(tempfile.path)
+                        when 'xls' then Roo::Excel.new(tempfile.path)
+                        when 'xlsx' then Roo::Excelx.new(tempfile.path)
+                        end
+          next unless spreadsheet
+
+          header = spreadsheet.row(1).map(&:to_s)
+          (2..spreadsheet.last_row).each do |i|
+            row = [header, spreadsheet.row(i)].transpose.to_h
+            next unless row['type'] && row['amount']
+
+            if row['type'].to_s.strip.downcase == 'deposit'
+              @recent_deposits << {
+                date: row['date'] || home.created_at,
+                description: row['description'] || "",
+                amount: row['amount']
+              }
+            end
+          end
+        end
+      rescue
+        next
+      end
+    end
+
+    # Sort deposits by date (most recent first) and limit to 5
+    @recent_deposits = @recent_deposits.sort_by { |d| d[:date].to_time rescue Time.zone.now }.reverse.first(5)
+
     # series ready for Chartkick
     @chart_series = [
       { name: 'Deposits', data: @totals_deposits_over_time },
