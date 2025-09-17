@@ -7,12 +7,12 @@ class User < ApplicationRecord
 
   has_many :homes, dependent: :destroy
   has_many :clients, dependent: :destroy
-  before_create :default_role
+  after_create :default_role
 
   def default_role
     return if invited_by_id.present?
 
-    add_role(:client) if role.blank?
+    add_role(:client) if roles.blank?
   end
 
   def generate_otp!

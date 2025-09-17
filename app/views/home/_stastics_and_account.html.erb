@@ -1,22 +1,105 @@
 <div class="grid grid-cols-7 gap-4 mb-4">
-  <div class="col-span-3">
-    <div class="flex items-center justify-center rounded-sm bg-gray-50 h-28 dark:bg-gray-800 mb-4">
-      <p class="text-2xl text-gray-400 dark:text-gray-500">
-        Quicklinks
-      </p>
-    </div>
-    <div class="flex items-center justify-center rounded-sm bg-gray-50 h-28 dark:bg-gray-800">
-      <p class="text-2xl text-gray-400 dark:text-gray-500">
-        Accounts
-      </p>
+  <!-- Left side -->
+  <div class="col-span-3 flex flex-col h-full">
+    <!-- Wrap both cards inside a flex column that fills height -->
+    <div class="flex flex-col flex-1 space-y-4">
+      <!-- Quicklinks -->
+      <div class="flex flex-col items-center justify-center rounded-sm bg-gray-50 dark:bg-gray-800 p-4 flex-1">
+        <p class="text-2xl text-gray-400 dark:text-gray-500 mb-2">
+          Quicklinks
+        </p>
+        <div class="flex space-x-4">
+          <!-- Transfer -->
+          <%= link_to "#", class: "flex items-center space-x-2 px-4 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition relative group" do %>
+            <!-- Transfer Icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M17 10a1 1 0 01-1 1H7.41l3.3 3.29a1 1 0 01-1.42 1.42l-5-5a1 1 0 010-1.42l5-5a1 1 0 011.42 1.42L7.41 9H16a1 1 0 011 1z"/>
+            </svg>
+            <span class="absolute bottom-full mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+              Move funds between accounts
+            </span>
+          <% end %>
+
+          <!-- TopUp -->
+          <%= link_to "#", class: "flex items-center space-x-2 px-4 py-2 rounded-md bg-green-500 text-white hover:bg-green-600 transition relative group" do %>
+            <!-- TopUp Icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 9h3a1 1 0 010 2h-3v3a1 1 0 01-2 0v-3H6a1 1 0 010-2h3V6a1 1 0 012 0v3z"/>
+            </svg>
+            <span class="absolute bottom-full mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+              Add money to your account
+            </span>
+          <% end %>
+
+          <!-- Bulk -->
+          <%= link_to "#", class: "flex items-center space-x-2 px-4 py-2 rounded-md bg-purple-500 text-white hover:bg-purple-600 transition relative group" do %>
+            <!-- Bulk Icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M4 3h12a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1zm0 6h12a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3a1 1 0 011-1zm0 6h12a1 1 0 011 1v1a1 1 0 01-1 1H4a1 1 0 01-1-1v-1a1 1 0 011-1z"/>
+            </svg>
+            <span class="absolute bottom-full mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+              Perform multiple transactions at once
+            </span>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Accounts -->
+      <div class="flex flex-col items-center justify-center rounded-sm bg-gray-50 dark:bg-gray-800 p-4 flex-1">
+        <p class="text-2xl text-gray-400 dark:text-gray-500">
+          Accounts: <%= @accounts_count || 0 %>
+        </p>
+        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+          Types: <%= @account_types.present? ? @account_types.join(", ") : "None" %>
+        </p>
+      </div>
     </div>
   </div>
+
+  <!-- Right side -->
   <div class="col-span-4">
-    <div class="flex items-center justify-center rounded-sm bg-gray-50 h-full dark:bg-gray-800">
-      <p>Statistics</p>
-      <p>
-        Line graphs and charts
+    <div class="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md h-full">
+      <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100">Statistics Overview</h2>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
+        This chart shows Deposits, Credits, and Returns over time (per upload date).
       </p>
+
+      <div class="w-full h-full">
+        <%= line_chart @chart_series,
+          library: {
+            title: {
+              text: "Totals Over Time",
+              style: { fontSize: "16px", fontWeight: "bold" }
+            },
+            xAxis: {
+              type: "datetime",
+              title: {
+                text: "Upload Date",
+                style: { fontSize: "14px", fontWeight: "bold", color: "#333" }
+              },
+              labels: { format: "{value:%Y-%m-%d}" }
+            },
+            yAxis: {
+              title: {
+                text: "Amount (USD)",
+                style: { fontSize: "14px", fontWeight: "bold", color: "#333" }
+              },
+              labels: { format: "${value}" }
+            },
+            legend: { enabled: true },
+            tooltip: { valuePrefix: "$" },
+            plotOptions: {
+              series: {
+                marker: { enabled: true, radius: 3 },
+                lineWidth: 2,
+                states: { hover: { lineWidth: 3 } }
+              }
+            }
+          },
+          points: true,
+          discrete: false
+        %>
+      </div>
     </div>
   </div>
 </div>

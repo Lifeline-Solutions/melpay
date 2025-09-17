@@ -64,9 +64,11 @@ group :test do
   gem 'selenium-webdriver'
 end
 
+gem 'chartkick'
 gem 'csv'
 gem 'devise', '~> 4.9'
 gem 'devise_invitable', '~> 2.0.0'
+gem 'groupdate'
 gem 'omniauth', '>= 1.0.0'
 gem 'rolify'
 gem 'roo'
