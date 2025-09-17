@@ -1,71 +1,76 @@
 <div class="grid grid-cols-7 gap-4 mb-4">
-  <div class="col-span-3">
-    <div class="flex flex-col items-center justify-center rounded-sm bg-gray-50 dark:bg-gray-800 mb-4 p-4">
-      <p class="text-2xl text-gray-400 dark:text-gray-500 mb-2">
-        Quicklinks
-      </p>
+  <!-- Left side -->
+  <div class="col-span-3 flex flex-col h-full">
+    <!-- Wrap both cards inside a flex column that fills height -->
+    <div class="flex flex-col flex-1 space-y-4">
+      <!-- Quicklinks -->
+      <div class="flex flex-col items-center justify-center rounded-sm bg-gray-50 dark:bg-gray-800 p-4 flex-1">
+        <p class="text-2xl text-gray-400 dark:text-gray-500 mb-2">
+          Quicklinks
+        </p>
+        <div class="flex space-x-4">
+          <%= link_to "Transfer", "#", class: "px-4 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition" %>
+          <%= link_to "TopUp", "#", class: "px-4 py-2 rounded-md bg-green-500 text-white hover:bg-green-600 transition" %>
+          <%= link_to "Bulk", "#", class: "px-4 py-2 rounded-md bg-purple-500 text-white hover:bg-purple-600 transition" %>
+        </div>
+      </div>
 
-      <div class="flex space-x-4">
-        <%= link_to "Transfer", "#", class: "px-4 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition" %>
-        <%= link_to "TopUp", "#", class: "px-4 py-2 rounded-md bg-green-500 text-white hover:bg-green-600 transition" %>
-        <%= link_to "Bulk", "#", class: "px-4 py-2 rounded-md bg-purple-500 text-white hover:bg-purple-600 transition" %>
+      <!-- Accounts -->
+      <div class="flex flex-col items-center justify-center rounded-sm bg-gray-50 dark:bg-gray-800 p-4 flex-1">
+        <p class="text-2xl text-gray-400 dark:text-gray-500">
+          Accounts: <%= @accounts_count || 0 %>
+        </p>
+        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+          Types: <%= @account_types.present? ? @account_types.join(", ") : "None" %>
+        </p>
       </div>
     </div>
-    <div class="flex flex-col items-center justify-center rounded-sm bg-gray-50 h-28 dark:bg-gray-800">
-      <p class="text-2xl text-gray-400 dark:text-gray-500">
-        Accounts: <%= @accounts_count || 0 %>
-      </p>
-
-      <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
-        Types: <%= @account_types.present? ? @account_types.join(", ") : "None" %>
-      </p>
-    </div>
   </div>
+
+  <!-- Right side -->
   <div class="col-span-4">
-    <div class="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-  <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100">Statistics Overview</h2>
-  <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
-    This chart shows Deposits, Credits, and Returns over time (per upload date).
-  </p>
+    <div class="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md h-full">
+      <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100">Statistics Overview</h2>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
+        This chart shows Deposits, Credits, and Returns over time (per upload date).
+      </p>
 
-  <div class="w-full h-full">
-    <%= line_chart @chart_series,
-      library: {
-        title: {
-          text: "Totals Over Time",
-          style: { fontSize: "16px", fontWeight: "bold" }
-        },
-        xAxis: {
-          type: "datetime",
-          title: {
-            text: "Upload Date",
-            style: { fontSize: "14px", fontWeight: "bold", color: "#333" }
+      <div class="w-full h-full">
+        <%= line_chart @chart_series,
+          library: {
+            title: {
+              text: "Totals Over Time",
+              style: { fontSize: "16px", fontWeight: "bold" }
+            },
+            xAxis: {
+              type: "datetime",
+              title: {
+                text: "Upload Date",
+                style: { fontSize: "14px", fontWeight: "bold", color: "#333" }
+              },
+              labels: { format: "{value:%Y-%m-%d}" }
+            },
+            yAxis: {
+              title: {
+                text: "Amount (USD)",
+                style: { fontSize: "14px", fontWeight: "bold", color: "#333" }
+              },
+              labels: { format: "${value}" }
+            },
+            legend: { enabled: true },
+            tooltip: { valuePrefix: "$" },
+            plotOptions: {
+              series: {
+                marker: { enabled: true, radius: 3 },
+                lineWidth: 2,
+                states: { hover: { lineWidth: 3 } }
+              }
+            }
           },
-          labels: { format: "{value:%Y-%m-%d}" } # formats tick labels as dates
-        },
-        yAxis: {
-          title: {
-            text: "Amount (USD)",
-            style: { fontSize: "14px", fontWeight: "bold", color: "#333" }
-          },
-          labels: { format: "${value}" } # formats tick labels with a dollar sign
-        },
-        legend: { enabled: true },
-        tooltip: {
-          valuePrefix: "$"
-        },
-        plotOptions: {
-          series: {
-            marker: { enabled: true, radius: 3 },
-            lineWidth: 2,
-            states: { hover: { lineWidth: 3 } }
-          }
-        }
-      },
-      points: true,
-      discrete: false
-    %>
-  </div>
-</div>
+          points: true,
+          discrete: false
+        %>
+      </div>
+    </div>
   </div>
 </div>
