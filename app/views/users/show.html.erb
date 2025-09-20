@@ -2,9 +2,9 @@
   <h1 class="text-2xl font-bold mb-4">My Profile</h1>
 
   <div class="space-y-2">
-    <p><strong>First Name:</strong> <%= @user.first_name %></p>
-    <p><strong>Last Name:</strong> <%= @user.last_name %></p>
-    <p><strong>Email:</strong> <%= @user.email %></p>
+    <p><strong>First Name:</strong> <%= @user&.first_name.presence || 'Not Present' %></p>
+    <p><strong>Last Name:</strong> <%= @user&.last_name.presence || 'Not Present' %></p>
+    <p><strong>Email:</strong> <%= @user&.email.presence || 'Not Present' %></p>
     <p><strong>Phone Number:</strong> <%= @user.phone_number %></p>
     <p><strong>Role(s):</strong> <%= @user.roles.distinct.pluck(:name).join(', ') %></p>
     <p><strong>Sign in Count:</strong> <%= @user.sign_in_count %></p>

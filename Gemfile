@@ -74,3 +74,5 @@ gem 'rolify'
 gem 'roo'
 gem 'sentry-rails'
 gem 'sentry-ruby'
+
+gem "acts_as_tenant", "~> 1.0"
