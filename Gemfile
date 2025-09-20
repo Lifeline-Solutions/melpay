@@ -64,6 +64,7 @@ group :test do
   gem 'selenium-webdriver'
 end
 
+gem 'acts_as_tenant', '~> 1.0'
 gem 'chartkick'
 gem 'csv'
 gem 'devise', '~> 4.9'
@@ -74,5 +75,3 @@ gem 'rolify'
 gem 'roo'
 gem 'sentry-rails'
 gem 'sentry-ruby'
-
-gem "acts_as_tenant", "~> 1.0"

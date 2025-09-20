@@ -1,4 +1,5 @@
 class Client < ApplicationRecord
+  acts_as_tenant(:client)
   has_many :accounts, dependent: :destroy
   has_many :users, dependent: :nullify
 

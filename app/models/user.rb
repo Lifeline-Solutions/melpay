@@ -1,4 +1,6 @@
 class User < ApplicationRecord
+  acts_as_tenant(:client)
+
   rolify
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
@@ -6,7 +8,7 @@ class User < ApplicationRecord
          :validatable, :confirmable, :lockable, :timeoutable, :trackable, :invitable
 
   has_many :homes, dependent: :destroy
-  has_many :clients, dependent: :destroy
+  belongs_to :clients, dependent: :destroy
   after_create :default_role
 
   def default_role
