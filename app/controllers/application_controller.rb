@@ -6,6 +6,10 @@ class ApplicationController < ActionController::Base
   set_current_tenant_through_filter
   before_action :set_tenant
 
+  before_action do
+    binding.irb
+  end
+
   def update_allowed_parameters
     devise_parameter_sanitizer.permit(:sign_up) { |u| u.permit(:first_name, :last_name, :email, :password) }
     devise_parameter_sanitizer.permit(:account_update) { |u| u.permit(:first_name, :last_name, :email, :password, :current_password) }
@@ -23,6 +27,13 @@ class ApplicationController < ActionController::Base
   private
 
   def set_tenant
-    ActsAsTenant.current_tenant = Client.find_by(name: request.subdomain)
+    # ActsAsTenant.current_tenant = Client.find_by(name: request.domain)
+    client = Client.find_by(name: request.domain)
+    if client
+      ActsAsTenant.current_tenant = client
+    else
+      # You can customize this behavior as needed (e.g., render 404, redirect, etc.)
+      redirect_to root_path, alert: "Tenant not found for subdomain '#{request.subdomain}'." and return
+    end
   end
 end

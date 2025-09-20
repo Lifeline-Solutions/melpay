@@ -8,7 +8,6 @@ class User < ApplicationRecord
          :validatable, :confirmable, :lockable, :timeoutable, :trackable, :invitable
 
   has_many :homes, dependent: :destroy
-  belongs_to :clients, dependent: :destroy
   after_create :default_role
 
   def default_role
