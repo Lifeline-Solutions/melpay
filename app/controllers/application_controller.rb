@@ -29,7 +29,7 @@ class ApplicationController < ActionController::Base
       ActsAsTenant.current_tenant = client
     else
       # You can customize this behavior as needed (e.g., render 404, redirect, etc.)
-      redirect_to root_path, alert: "Tenant not found for subdomain '#{request.subdomain}'." and return
+      redirect_to root_path, alert: "Tenant not found for domain '#{request.domain}'." and return
     end
   end
 end
