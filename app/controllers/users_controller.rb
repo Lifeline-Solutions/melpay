@@ -16,6 +16,10 @@ class UsersController < ApplicationController
     @users = @users.offset((@page - 1) * @per_page).limit(@per_page)
   end
 
+  def show
+    @user = User.find(params[:id])
+  end
+
   private
 
   def set_user
