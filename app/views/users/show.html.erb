@@ -5,7 +5,7 @@
     <p><strong>First Name:</strong> <%= @user&.first_name.presence || 'Not Present' %></p>
     <p><strong>Last Name:</strong> <%= @user&.last_name.presence || 'Not Present' %></p>
     <p><strong>Email:</strong> <%= @user&.email.presence || 'Not Present' %></p>
-    <p><strong>Phone Number:</strong> <%= @user.phone_number %></p>
+    <p><strong>Phone Number:</strong> <%= @user&.phone_number.presence || 'Not Present' %></p>
     <p><strong>Role(s):</strong> <%= @user.roles.distinct.pluck(:name).join(', ') %></p>
     <p><strong>Sign in Count:</strong> <%= @user.sign_in_count %></p>
     <p><strong>Current Sign in IP:</strong> <%= @user.current_sign_in_ip %></p>
