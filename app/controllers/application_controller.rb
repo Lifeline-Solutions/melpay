@@ -6,10 +6,6 @@ class ApplicationController < ActionController::Base
   set_current_tenant_through_filter
   before_action :set_tenant
 
-  before_action do
-    binding.irb
-  end
-
   def update_allowed_parameters
     devise_parameter_sanitizer.permit(:sign_up) { |u| u.permit(:first_name, :last_name, :email, :password) }
     devise_parameter_sanitizer.permit(:account_update) { |u| u.permit(:first_name, :last_name, :email, :password, :current_password) }
