@@ -7,3 +7,16 @@
 #   ["Action", "Comedy", "Drama", "Horror"].each do |genre_name|
 #     MovieGenre.find_or_create_by!(name: genre_name)
 #   end
+
+client = Client.find_or_create_by!(name: 'howel')
+Role.find_or_create_by!(name: 'admin')
+
+user = User.find_or_initialize_by(email: 'admin@craftsilicon.com')
+user.password = 'password'
+user.confirmed_at = DateTime.now
+user.confirmation_sent_at = DateTime.now
+user.first_name = 'Jay'
+user.last_name = 'Admin'
+user.client = client
+user.save!
+user.add_role(:admin)
