@@ -22,14 +22,33 @@ class ApplicationController < ActionController::Base
 
   private
 
+  # ruby
   def set_tenant
-    # ActsAsTenant.current_tenant = Client.find_by(name: request.domain)
-    client = Client.find_by(name: request.domain)
-    if client
-      ActsAsTenant.current_tenant = client
+    subdomain = request.subdomains.first
+    if subdomain.present?
+      client = Client.find_by(name: subdomain)
+      if client
+        ActsAsTenant.current_tenant = client
+      else
+        fallback_client = Client.find_by(name: 'localhost') || Client.first
+        if fallback_client
+          ActsAsTenant.current_tenant = fallback_client
+          Rails.logger.warn "Tenant not found for subdomain '#{subdomain}', using fallback client '#{fallback_client.name}'."
+        else
+          Rails.logger.error "No suitable tenant found for subdomain '#{subdomain}' or fallback."
+          redirect_to root_path, alert: "Tenant not found for subdomain '#{subdomain}'." and return
+        end
+      end
     else
-      # You can customize this behavior as needed (e.g., render 404, redirect, etc.)
-      redirect_to root_path, alert: "Tenant not found for domain '#{request.domain}'." and return
+      # No subdomain, fallback to default client
+      fallback_client = Client.find_by(name: 'localhost') || Client.first
+      if fallback_client
+        ActsAsTenant.current_tenant = fallback_client
+        Rails.logger.warn "No subdomain present, using fallback client '#{fallback_client.name}'."
+      else
+        Rails.logger.error 'No suitable tenant found for request with no subdomain.'
+        redirect_to root_path, alert: 'Tenant not found for request with no subdomain.' and return
+      end
     end
   end
 end
