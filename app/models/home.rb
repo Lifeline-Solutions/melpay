@@ -1,5 +1,4 @@
 class Home < ApplicationRecord
-  acts_as_tenant(:client)
   belongs_to :client, optional: true
   belongs_to :user
   has_one_attached :document
