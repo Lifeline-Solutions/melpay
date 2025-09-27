@@ -8,15 +8,11 @@
 #     MovieGenre.find_or_create_by!(name: genre_name)
 #   end
 
-client = Client.find_or_create_by!(name: 'howel')
+# ruby
+
+# ruby
+
 Role.find_or_create_by!(name: 'admin')
 
-user = User.find_or_initialize_by(email: 'admin@craftsilicon.com')
-user.password = 'password'
-user.confirmed_at = DateTime.now
-user.confirmation_sent_at = DateTime.now
-user.first_name = 'Jay'
-user.last_name = 'Admin'
-user.client = client
-user.save!
+user = User.create!(email: 'abolger254@gmail.com', password: 'password', confirmed_at: DateTime.now, confirmation_sent_at: DateTime.now, first_name: 'Jay', last_name: 'Admin')
 user.add_role(:admin)

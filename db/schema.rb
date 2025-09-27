@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_25_112131) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_27_092557) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -68,8 +68,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_25_112131) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "user_id", null: false
-    t.uuid "client_id"
-    t.index ["client_id"], name: "index_homes_on_client_id"
     t.index ["user_id"], name: "index_homes_on_user_id"
   end
 
@@ -79,8 +77,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_25_112131) do
     t.uuid "resource_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.uuid "client_id"
-    t.index ["client_id"], name: "index_roles_on_client_id"
     t.index ["name", "resource_type", "resource_id"], name: "index_roles_on_name_and_resource_type_and_resource_id"
     t.index ["resource_type", "resource_id"], name: "index_roles_on_resource"
   end
@@ -116,9 +112,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_25_112131) do
     t.string "invited_by_type"
     t.bigint "invited_by_id"
     t.integer "invitations_count", default: 0
-    t.uuid "client_id"
     t.string "first_name"
     t.string "last_name"
+    t.uuid "client_id"
     t.index ["client_id"], name: "index_users_on_client_id"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
@@ -140,8 +136,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_25_112131) do
   add_foreign_key "accounts", "clients"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
-  add_foreign_key "homes", "clients"
   add_foreign_key "homes", "users"
-  add_foreign_key "roles", "clients"
   add_foreign_key "users", "clients"
 end
