@@ -13,6 +13,10 @@
 # ruby
 
 Role.find_or_create_by!(name: 'super_admin')
+Role.find_or_create_by!(name: 'admin')
+Role.find_or_create_by!(name: 'auditor')
+Role.find_or_create_by!(name: 'account_manager')
+
 client = Client.find_or_create_by!(name: 'Solidus', email: 'admin@solidus.com')
 
 user = User.create!(
