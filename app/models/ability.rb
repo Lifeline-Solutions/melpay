@@ -12,8 +12,8 @@ class Ability
       can :manage, Home, client_id: user.client_id
       can :manage, Account, client_id: user.client_id
     elsif user.has_role? :account_manager
-      can :read, User, client_id: user.client_id, user_id: user.id
-      can :manage, Home, client_id: user.client_id, user_id: user.id
+      can :read, User, client_id: user.client_id
+      can :manage, Home, client_id: user.client_id
     elsif user.has_role? :auditor
       can :read, User, client_id: user.client_id
       can :read, Home, client_id: user.client_id
