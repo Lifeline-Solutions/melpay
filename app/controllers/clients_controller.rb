@@ -1,7 +1,7 @@
 class ClientsController < ApplicationController
   before_action :authenticate_user!
   before_action :set_client, only: %i[show edit update approve_kyc reject_kyc]
-
+  load_and_authorize_resource
   def index
     @clients = Client.all
     # Pagination setup

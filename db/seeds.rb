@@ -12,7 +12,20 @@
 
 # ruby
 
+Role.find_or_create_by!(name: 'super_admin')
 Role.find_or_create_by!(name: 'admin')
+Role.find_or_create_by!(name: 'auditor')
+Role.find_or_create_by!(name: 'account_manager')
 
-user = User.create!(email: 'abolger254@gmail.com', password: 'password', confirmed_at: DateTime.now, confirmation_sent_at: DateTime.now, first_name: 'Jay', last_name: 'Admin')
-user.add_role(:admin)
+client = Client.find_or_create_by!(name: 'Solidus', email: 'admin@solidus.com')
+
+user = User.create!(
+  email: 'abolger254@gmail.com',
+  password: 'password',
+  confirmed_at: DateTime.now,
+  confirmation_sent_at: DateTime.now,
+  first_name: 'Jay',
+  last_name: 'Admin',
+  client: client
+)
+user.add_role(:super_admin)
