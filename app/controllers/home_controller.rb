@@ -1,6 +1,7 @@
 class HomeController < ApplicationController
   before_action :authenticate_user!
   before_action :set_home, only: %i[show edit update destroy]
+  load_and_authorize_resource
 
   def index
     homes_for_list = Home.all.order(created_at: :desc)

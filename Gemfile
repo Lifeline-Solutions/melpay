@@ -65,6 +65,7 @@ group :test do
 end
 
 gem 'acts_as_tenant', '~> 1.0'
+gem 'cancancan'
 gem 'chartkick'
 gem 'csv'
 gem 'devise', '~> 4.9'

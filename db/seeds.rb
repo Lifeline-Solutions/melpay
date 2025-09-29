@@ -12,7 +12,7 @@
 
 # ruby
 
-Role.find_or_create_by!(name: 'admin')
+Role.find_or_create_by!(name: 'super_admin')
 client = Client.find_or_create_by!(name: 'Solidus', email: 'admin@solidus.com')
 
 user = User.create!(
@@ -24,4 +24,4 @@ user = User.create!(
   last_name: 'Admin',
   client: client
 )
-user.add_role(:admin)
+user.add_role(:super_admin)

@@ -1,5 +1,6 @@
 class UsersController < ApplicationController
   before_action :authenticate_user!
+  load_and_authorize_resource
   def index
     @per_page = 10
     @page = (params[:page] || 1).to_i
