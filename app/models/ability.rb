@@ -4,29 +4,24 @@ class Ability
   include CanCan::Ability
 
   def initialize(user)
-    # Define abilities for the user here. For example:
-    #
-    #   return unless user.present?
-    #   can :read, :all
-    #   return unless user.admin?
-    #   can :manage, :all
-    #
-    # The first argument to `can` is the action you are giving the user
-    # permission to do.
-    # If you pass :manage it will apply to every action. Other common actions
-    # here are :read, :create, :update and :destroy.
-    #
-    # The second argument is the resource the user can perform the action on.
-    # If you pass :all it will apply to every resource. Otherwise pass a Ruby
-    # class of the resource.
-    #
-    # The third argument is an optional hash of conditions to further filter the
-    # objects.
-    # For example, here the user can only update published articles.
-    #
-    #   can :update, Article, published: true
-    #
-    # See the wiki for details:
-    # https://github.com/CanCanCommunity/cancancan/blob/develop/docs/define_check_abilities.md
+    user ||= User.new # guest user (not logged in)
+
+    if user.has_role? :super_admin
+      can :manage, :all
+    elsif user.has_role? :admin
+      # Admin can only manage resources within their own client
+      can :manage, User, client_id: user.client_id
+      can :manage, Home, client_id: user.client_id
+      can :manage, Account, client_id: user.client_id
+    elsif user.has_role? :account_manager
+      can :read, User, client_id: user.client_id, user_id: user.id
+      can :manage, Home, client_id: user.client_id, user_id: user.id
+    elsif user.has_role? :auditor
+      can :read, User, client_id: user.client_id
+      can :read, Home, client_id: user.client_id
+      can :read, Account, client_id: user.client_id
+    else
+      cannot :manage, :all
+    end
   end
 end
