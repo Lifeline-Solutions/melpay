@@ -13,6 +13,15 @@
 # ruby
 
 Role.find_or_create_by!(name: 'admin')
+client = Client.find_or_create_by!(name: 'Solidus', email: 'admin@solidus.com')
 
-user = User.create!(email: 'abolger254@gmail.com', password: 'password', confirmed_at: DateTime.now, confirmation_sent_at: DateTime.now, first_name: 'Jay', last_name: 'Admin')
+user = User.create!(
+  email: 'abolger254@gmail.com',
+  password: 'password',
+  confirmed_at: DateTime.now,
+  confirmation_sent_at: DateTime.now,
+  first_name: 'Jay',
+  last_name: 'Admin',
+  client: client
+)
 user.add_role(:admin)
