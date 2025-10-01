@@ -13,6 +13,10 @@ class Client < ApplicationRecord
     kyc_status == 'approved'
   end
 
+  def interest_rate
+    custom_interest_rate.present || SystemSetting.instance.global_interest_rate
+  end
+
   private
 
   def set_default_kyc_status
