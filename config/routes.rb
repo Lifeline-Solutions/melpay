@@ -20,6 +20,7 @@ Rails.application.routes.draw do
   get 'two_factor/verify', to: 'two_factor#verify', as: :verify_otp
   post 'two_factor/check', to: 'two_factor#check', as: :check_otp
   resources :users, only: [:index, :show, :edit, :update]
+  resource :interest_rates, only: [:edit, :update]
   resources :home
   resources :clients do
     member do

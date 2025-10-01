@@ -14,7 +14,7 @@ class Client < ApplicationRecord
   end
 
   def interest_rate
-    custom_interest_rate.present || SystemSetting.instance.global_interest_rate
+    custom_interest_rate.presence || SystemSetting.instance.global_interest_rate
   end
 
   private
