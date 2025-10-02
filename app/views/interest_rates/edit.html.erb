@@ -1,52 +1,56 @@
-<h1>Interest Rate Management</h1>
+<div class="max-w-4xl mx-auto p-6">
+  <% if flash[:notice] %>
+    <div class="mb-4 p-3 rounded bg-green-50 border border-green-200 text-green-800">
+      <%= flash[:notice] %>
+    </div>
+  <% elsif flash[:alert] %>
+    <div class="mb-4 p-3 rounded bg-red-50 border border-red-200 text-red-800">
+      <%= flash[:alert] %>
+    </div>
+  <% end %>
 
-<hr>
-<h2>Global Interest Rate</h2>
-<%= form_with model: @system_setting, url: interest_rates_path, method: :put, local: true do |f| %>
-  <div>
-    <%= f.label :global_interest_rate, "Set Global Interest Rate (%)" %>
-    <%= f.number_field :global_interest_rate, step: 0.01, value: @system_setting.global_interest_rate %>
-  </div>
-  <div>
-    <%= f.submit "Save Global Rate" %>
-  </div>
-<% end %>
+  <h1 class="text-2xl font-semibold mb-4">Interest Rate Management</h1>
 
-<hr>
-<h2>Set Custom Interest Rate for a Client</h2>
-<%= form_with url: interest_rates_path, method: :put, local: true do |f| %>
-  <div>
-    <%= label_tag "client_id", "Select Client" %>
-    <%= select_tag "client[id]", options_from_collection_for_select(@clients, :id, :name), prompt: "Choose a client" %>
-  </div>
-  <div>
-    <%= label_tag "custom_interest_rate", "Custom Interest Rate (%)" %>
-    <%= number_field_tag "client[custom_interest_rate]", nil, step: 0.01 %>
-  </div>
-  <div>
-    <%= f.submit "Save Custom Rate" %>
-  </div>
-<% end %>
+  <div class="grid grid-cols-1 gap-6">
+    <div class="bg-white p-6 rounded-lg shadow">
+      <h2 class="text-lg font-medium mb-3">Global Interest Rate</h2>
+      <%= form_with model: @system_setting, url: interest_rate_path(@system_setting), method: :put, local: true do |f| %>
+        <div class="space-y-3">
+          <div>
+            <%= f.label :global_interest_rate, class: "block text-sm font-medium text-gray-700" %>
+            <div class="mt-1">
+              <%= f.number_field :global_interest_rate, step: 0.01, class: "w-40 block border rounded p-2" %>
+              <span class="text-xs text-gray-500 ml-2">%</span>
+            </div>
+          </div>
 
-<hr>
-<h2>Current Clients and Their Rates</h2>
-<table border="1" cellpadding="5">
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Email</th>
-      <th>Custom Rate</th>
-      <th>Effective Rate</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @clients.each do |client| %>
-      <tr>
-        <td><%= client.name %></td>
-        <td><%= client.email %></td>
-        <td><%= client.custom_interest_rate || "—" %></td>
-        <td><%= client.interest_rate %></td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
+          <div>
+            <%= f.submit "Save Global Rate", class: "px-4 py-2 bg-indigo-600 text-white rounded" %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow">
+      <h2 class="text-lg font-medium mb-3">Set Custom Interest Rate for a Client</h2>
+
+      <%= form_with url: interest_rates_path, method: :put, local: true do |f| %>
+        <div class="grid grid-cols-1 gap-3">
+          <div>
+            <%= label_tag :client_id, "Select Client", class: "block text-sm font-medium text-gray-700" %>
+            <%= select_tag "client[id]", options_from_collection_for_select(@clients, :id, :name), include_blank: "Choose a client", class: "mt-1 block w-full border rounded p-2" %>
+          </div>
+
+          <div>
+            <%= label_tag :custom_interest_rate, "Custom Interest Rate (%)", class: "block text-sm font-medium text-gray-700" %>
+            <%= number_field_tag "client[custom_interest_rate]", nil, step: 0.01, class: "w-40 block border rounded p-2" %>
+          </div>
+
+          <div>
+            <%= f.submit "Save Custom Rate", class: "px-4 py-2 bg-green-600 text-white rounded" %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
