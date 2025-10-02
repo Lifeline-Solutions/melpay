@@ -38,7 +38,12 @@ class ClientsController < ApplicationController
 
   def update
     if @client.update(client_params)
-      redirect_to @client, notice: 'Client updated.'
+      # Check if the request came from interest rates page
+      if request.referer&.include?(interest_rates_path)
+        redirect_to interest_rates_path, notice: " #{@client.name}'s interest rate was updated."
+      else
+        redirect_to @client, notice: 'Client updated.'
+      end
     else
       render :edit
     end
