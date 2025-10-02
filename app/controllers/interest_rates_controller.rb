@@ -1,6 +1,6 @@
 class InterestRatesController < ApplicationController
   before_action :set_system_setting
-  before_action :set_clients, only: [:edit, :manage]
+  before_action :set_clients, only: %i[edit manage]
 
   def index
     @clients = Client.order(:name)
@@ -21,16 +21,16 @@ class InterestRatesController < ApplicationController
     elsif updating_client_rate?
       update_client_rate
     else
-      redirect_to interest_rates_path, alert: "Nothing to update."
+      redirect_to interest_rates_path, alert: 'Nothing to update.'
     end
   end
 
   # Handle global rate updates
   def update_global
     if @system_setting.update(system_setting_params)
-      redirect_to interest_rates_path, notice: "Global interest rate updated."
+      redirect_to interest_rates_path, notice: 'Global interest rate updated.'
     else
-      flash.now[:alert] = "Failed to update global interest rate."
+      flash.now[:alert] = 'Failed to update global interest rate.'
       @clients = Client.order(:name)
       render :manage
     end
@@ -46,7 +46,7 @@ class InterestRatesController < ApplicationController
         redirect_to manage_interest_rates_path, alert: "Failed to update custom interest rate for #{client.name}."
       end
     else
-      redirect_to manage_interest_rates_path, alert: "Please select a client."
+      redirect_to manage_interest_rates_path, alert: 'Please select a client.'
     end
   end
 
@@ -70,9 +70,9 @@ class InterestRatesController < ApplicationController
 
   def update_global_rate
     if @system_setting.update(system_setting_params)
-      redirect_to interest_rates_path, notice: "Global interest rate updated."
+      redirect_to interest_rates_path, notice: 'Global interest rate updated.'
     else
-      flash.now[:alert] = "Failed to update global interest rate."
+      flash.now[:alert] = 'Failed to update global interest rate.'
       @clients = Client.order(:name)
       render :manage
     end

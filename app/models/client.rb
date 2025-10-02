@@ -22,7 +22,7 @@ class Client < ApplicationRecord
   end
 
   def rate_type
-    custom_interest_rate.present? ? "Custom" : "Global"
+    custom_interest_rate.present? ? 'Custom' : 'Global'
   end
 
   private
