@@ -13,8 +13,16 @@ class Client < ApplicationRecord
     kyc_status == 'approved'
   end
 
-  def interest_rate
-    custom_interest_rate.presence || SystemSetting.instance.global_interest_rate
+  def name_with_current_rate
+    "#{name} (Current: #{applied_interest_rate}%)"
+  end
+
+  def applied_interest_rate
+    custom_interest_rate || SystemSetting.instance.global_interest_rate
+  end
+
+  def rate_type
+    custom_interest_rate.present? ? "Custom" : "Global"
   end
 
   private
