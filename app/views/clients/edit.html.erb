@@ -1,0 +1,50 @@
+<div class="max-w-3xl mx-auto p-6">
+  <% if flash[:notice] %>
+    <div class="mb-4 p-3 rounded bg-green-50 border border-green-200 text-green-800">
+      <%= flash[:notice] %>
+    </div>
+  <% elsif flash[:alert] %>
+    <div class="mb-4 p-3 rounded bg-red-50 border border-red-200 text-red-800">
+      <%= flash[:alert] %>
+    </div>
+  <% end %>
+
+  <h1 class="text-2xl font-semibold mb-4">Edit Client — <%= @client.name %></h1>
+
+  <div class="bg-white p-6 rounded-lg shadow">
+    <%= form_with model: @client, local: true do |f| %>
+      <div class="grid grid-cols-1 gap-4">
+        <div>
+          <%= f.label :name, class: "block text-sm font-medium text-gray-700" %>
+          <%= f.text_field :name, class: "mt-1 block w-full border rounded p-2" %>
+        </div>
+
+        <div>
+          <%= f.label :email, class: "block text-sm font-medium text-gray-700" %>
+          <%= f.email_field :email, class: "mt-1 block w-full border rounded p-2" %>
+        </div>
+
+        <div>
+          <%= f.label :phone, class: "block text-sm font-medium text-gray-700" %>
+          <%= f.text_field :phone, class: "mt-1 block w-full border rounded p-2" %>
+        </div>
+
+        <div>
+          <%= f.label :custom_interest_rate, "Custom Interest Rate (%)", class: "block text-sm font-medium text-gray-700" %>
+          <%= f.number_field :custom_interest_rate, step: 0.01, class: "mt-1 block w-40 border rounded p-2" %>
+          <p class="text-xs text-gray-500 mt-1">Leave empty to use the global default rate (<%= SystemSetting.instance.global_interest_rate %>%).</p>
+        </div>
+
+        <div class="flex items-center gap-3 mt-4">
+          <%= f.submit "Save Client", class: "px-4 py-2 bg-indigo-600 text-white rounded" %>
+
+          <% if @client.custom_interest_rate.present? %>
+            <%= button_to "Reset to Global", client_path(@client, client: { custom_interest_rate: nil }), method: :patch, form_class: "inline-block", class: "px-3 py-2 bg-gray-100 rounded" %>
+          <% end %>
+
+          <%= link_to "Back to Rates", interest_rates_path, class: "ml-auto text-sm text-gray-600 hover:underline" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
