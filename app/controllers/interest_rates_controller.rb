@@ -82,9 +82,9 @@ class InterestRatesController < ApplicationController
   end
 
   def authorize_super_admin!
-    unless current_user.has_role?(:super_admin)
-      redirect_to root_path, alert: "Access Denied"
-    end
+    return if current_user.has_role?(:super_admin)
+
+    redirect_to root_path, alert: 'Access Denied'
   end
 
   def system_setting_params
