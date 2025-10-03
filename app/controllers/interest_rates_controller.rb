@@ -4,7 +4,10 @@ class InterestRatesController < ApplicationController
   before_action :authorize_super_admin!
 
   def index
-    @clients = Client.order(:name)
+    @clients = Client.all.order(:name)
+    @nil_interest_rate_count = @clients.where(custom_interest_rate: nil).count
+    @custom_count = @clients.where.not(custom_interest_rate: nil).count
+    @global_count = @clients.where(custom_interest_rate: nil).count
     @global_rate = @system_setting.global_interest_rate
   end
 

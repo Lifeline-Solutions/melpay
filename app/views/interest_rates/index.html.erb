@@ -25,7 +25,7 @@
           <span class="ml-2 text-lg font-semibold"><%= number_to_percentage(@global_rate, precision: 2) %></span>
         </p>
         <p class="text-sm text-blue-700 mt-1">
-          Used by <%= @clients.where(custom_interest_rate: nil).count %> clients
+          Used by <%= @global_count %> clients
         </p>
       </div>
       <div class="text-sm text-blue-600">
@@ -107,8 +107,8 @@
   <div class="mt-4 text-sm text-gray-600">
     <p>
       Showing <%= @clients.count %> clients • 
-      <strong><%= @clients.where.not(custom_interest_rate: nil).count %></strong> with custom rates • 
-      <strong><%= @clients.where(custom_interest_rate: nil).count %></strong> using global rate
+      <strong><%= @custom_count %></strong> with custom rates • 
+      <strong><%= @nil_interest_rate_count %></strong> using global rate
     </p>
   </div>
 </div>
