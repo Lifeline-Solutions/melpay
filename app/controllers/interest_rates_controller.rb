@@ -1,6 +1,7 @@
 class InterestRatesController < ApplicationController
   before_action :set_system_setting
   before_action :set_clients, only: %i[edit manage]
+  before_action :authorize_super_admin
 
   def index
     @clients = Client.order(:name)
@@ -84,6 +85,12 @@ class InterestRatesController < ApplicationController
       redirect_to interest_rates_path, notice: "Custom interest rate updated for #{client.name}."
     else
       redirect_to interest_rates_path, alert: "Failed to update custom interest rate for #{client.name}."
+    end
+  end
+
+  def authorize_super_admin
+    unless current_user&.super_admin?
+      redirect_to root_path, alert: "Access Denied"
     end
   end
 
