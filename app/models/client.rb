@@ -6,6 +6,13 @@ class Client < ApplicationRecord
 
   validates :name, :email, presence: true
   validates :kyc_status, inclusion: { in: STATUSES }
+  # Validation to ensure percentage is numeric and within 0–100
+  validates :custom_interest_rate,
+            numericality: {
+              greater_than_or_equal_to: 0,
+              less_than_or_equal_to: 100
+            },
+            allow_nil: true
 
   before_validation :set_default_kyc_status, on: :create
 

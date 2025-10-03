@@ -57,7 +57,7 @@
 
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="text-sm font-semibold text-gray-900">
-                <%= number_to_percentage(client.applied_interest_rate, precision: 2) %>
+                <%= number_to_percentage(client.custom_interest_rate || @global_rate, precision: 2) %>
               </div>
             </td>
 
