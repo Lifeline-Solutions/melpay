@@ -1,7 +1,7 @@
 class InterestRatesController < ApplicationController
   before_action :set_system_setting
   before_action :set_clients, only: %i[edit manage]
-  before_action :authorize_super_admin
+  before_action :authorize_super_admin!
 
   def index
     @clients = Client.order(:name)
@@ -14,16 +14,6 @@ class InterestRatesController < ApplicationController
 
   def edit
     render :manage
-  end
-
-  def update
-    if updating_global_rate?
-      update_global_rate
-    elsif updating_client_rate?
-      update_client_rate
-    else
-      redirect_to interest_rates_path, alert: 'Nothing to update.'
-    end
   end
 
   # Handle global rate updates
@@ -88,8 +78,8 @@ class InterestRatesController < ApplicationController
     end
   end
 
-  def authorize_super_admin
-    unless current_user&.super_admin?
+  def authorize_super_admin!
+    unless current_user.has_role?(:super_admin)
       redirect_to root_path, alert: "Access Denied"
     end
   end
