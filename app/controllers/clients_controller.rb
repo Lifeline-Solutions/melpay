@@ -34,7 +34,9 @@ class ClientsController < ApplicationController
     end
   end
 
-  def edit; end
+  def edit
+    @global_interest_rate = SystemSetting.instance.global_interest_rate
+  end
 
   def update
     if @client.update(client_params)
