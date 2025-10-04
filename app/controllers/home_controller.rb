@@ -1,6 +1,6 @@
 class HomeController < ApplicationController
   before_action :authenticate_user!
-  load_and_authorize_resource
+  load_and_authorize_resource except: %i[index new create]
   before_action :set_home, only: %i[show edit update destroy]
 
   def index

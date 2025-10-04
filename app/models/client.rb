@@ -6,11 +6,30 @@ class Client < ApplicationRecord
 
   validates :name, :email, presence: true
   validates :kyc_status, inclusion: { in: STATUSES }
+  # Validation to ensure percentage is numeric and within 0–100
+  validates :custom_interest_rate,
+            numericality: {
+              greater_than_or_equal_to: 0,
+              less_than_or_equal_to: 100
+            },
+            allow_nil: true
 
   before_validation :set_default_kyc_status, on: :create
 
   def kyc_approved?
     kyc_status == 'approved'
+  end
+
+  def name_with_current_rate
+    "#{name} (Current: #{applied_interest_rate}%)"
+  end
+
+  def applied_interest_rate
+    custom_interest_rate || SystemSetting.instance.global_interest_rate
+  end
+
+  def rate_type
+    custom_interest_rate.present? ? 'Custom' : 'Global'
   end
 
   private

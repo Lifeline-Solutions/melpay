@@ -34,11 +34,18 @@ class ClientsController < ApplicationController
     end
   end
 
-  def edit; end
+  def edit
+    @global_interest_rate = SystemSetting.instance.global_interest_rate
+  end
 
   def update
     if @client.update(client_params)
-      redirect_to @client, notice: 'Client updated.'
+      # Check if the request came from interest rates page
+      if request.referer&.include?(interest_rates_path)
+        redirect_to interest_rates_path, notice: " #{@client.name}'s interest rate was updated."
+      else
+        redirect_to @client, notice: 'Client updated.'
+      end
     else
       render :edit
     end
@@ -61,6 +68,6 @@ class ClientsController < ApplicationController
   end
 
   def client_params
-    params.require(:client).permit(:name, :email, :phone)
+    params.require(:client).permit(:name, :email, :phone, :custom_interest_rate)
   end
 end
