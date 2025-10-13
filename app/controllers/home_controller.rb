@@ -192,6 +192,8 @@ class HomeController < ApplicationController
 
   def create
     @home = current_user.homes.build(home_params)
+    @home.user_id = current_user.id
+    @home.client_id = current_user.client_id # Ensure client_id is set from user
 
     respond_to do |format|
       if @home.save
@@ -287,6 +289,6 @@ class HomeController < ApplicationController
   end
 
   def home_params
-    params.require(:home).permit(:name, :document)
+    params.require(:home).permit(:name, :document, :client_id, :user_id)
   end
 end
