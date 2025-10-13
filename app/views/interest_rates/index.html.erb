@@ -10,7 +10,7 @@
   <% end %>
 
   <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-semibold text-gray-900">Interest Rates</h1>
+    <h1 class="text-2xl font-semibold text-gray-900">Commission Rates</h1>
     <div>
       <%= link_to "Manage Rates", manage_interest_rates_path, class: "inline-block px-4 py-2 bg-indigo-600 text-white rounded shadow hover:bg-indigo-700" %>
     </div>
@@ -21,7 +21,7 @@
     <div class="flex items-center justify-between">
       <div>
         <p class="text-sm font-medium text-blue-900">
-          <strong>Global Default Rate:</strong>
+          <strong>Global Default Commission</strong>
           <span class="ml-2 text-lg font-semibold"><%= number_to_percentage(@global_rate, precision: 2) %></span>
         </p>
         <p class="text-sm text-blue-700 mt-1">
