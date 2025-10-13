@@ -7,11 +7,12 @@
     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
       <thead class="bg-gray-50 dark:bg-gray-700">
         <tr>
-          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-200">Spreadsheet Name</th>
-          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-200">Total Deposits</th>
-          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-200">Total Credits</th>
-          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-200">Total Returns</th>
-          <th class="px-6 py-3"></th>
+          <th class="px-6 py-3 text-center text-sm font-semibold text-gray-600 dark:text-gray-200">Document Name</th>
+          <th class="px-6 py-3 text-center text-sm font-semibold text-gray-600 dark:text-gray-200">Total Deposits</th>
+          <th class="px-6 py-3 text-center text-sm font-semibold text-gray-600 dark:text-gray-200">Total Payments Count</th>
+          <th class="px-6 py-3 text-center text-sm font-semibold text-gray-600 dark:text-gray-200">Cost Of Transaction</th>
+
+          <th class="px-6 py-3">VIEW</th>
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -20,16 +21,16 @@
             <td class="px-6 py-4 text-gray-800 dark:text-gray-100">
               <%= home.name.presence || home.document.filename.to_s %>
             </td>
-            <td class="px-6 py-4 text-gray-600 dark:text-gray-300">
+            <td class="px-6 py-4 text-center">
               <%= number_to_currency(@totals_deposits[home.id] || 0) %>
             </td>
-            <td class="px-6 py-4 text-gray-600 dark:text-gray-300">
-              <%= number_to_currency(@totals_credits[home.id] || 0) %>
+            <td class="px-6 py-4 text-center">
+              <%= @total_deposit_count[home.id] || 0 %>
             </td>
-            <td class="px-6 py-4 text-gray-600 dark:text-gray-300">
-              <%= number_to_currency(@totals_returns[home.id] || 0) %>
+            <td class="px-6 py-4 text-center">
+              <%= number_to_currency(@deposit_interest[home.id] || 0) %>
             </td>
-            <td class="px-6 py-4 text-right">
+            <td class="px-6 py-4 text-center">
               <%= link_to "View", home_path(home), class: "text-blue-600 dark:text-blue-400 hover:underline" %>
             </td>
           </tr>
@@ -40,16 +41,15 @@
       <tfoot class="bg-gray-100 dark:bg-gray-700">
         <tr>
           <td class="px-6 py-3 font-semibold text-gray-800 dark:text-gray-200">Grand Totals</td>
-          <td class="px-6 py-3 font-semibold text-gray-600 dark:text-gray-300">
+          <td class="px-6 py-3 font-semibold text-center">
             <%= number_to_currency(@total_deposits_sum || 0) %>
           </td>
-          <td class="px-6 py-3 font-semibold text-gray-600 dark:text-gray-300">
-            <%= number_to_currency(@total_credits_sum || 0) %>
+          <td class="px-6 py-3 font-semibold text-center">
+            <%= @total_deposit_count.values.sum || 0 %>
           </td>
-          <td class="px-6 py-3 font-semibold text-gray-600 dark:text-gray-300">
-            <%= number_to_currency(@total_returns_sum || 0) %>
+          <td class="px-6 py-3 font-semibold text-center">
+            <%= number_to_currency(@deposit_interest.values.sum || 0) %>
           </td>
-          <td></td>
         </tr>
       </tfoot>
     </table>

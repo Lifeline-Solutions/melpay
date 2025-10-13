@@ -59,9 +59,12 @@ Lint/StructNewOverride:
   Enabled: false
 Lint/RequireParentheses:
   Enabled: false
+Lint/NestedMethodDefinition:
+  Enabled: false
 Style/HashEachMethods:
   Enabled: false
 Style/HashTransformKeys:
   Enabled: false
 Style/HashTransformValues:
   Enabled: false
+

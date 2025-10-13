@@ -16,173 +16,94 @@ class HomeController < ApplicationController
     @end_count = [@page * @per_page, @total_count].min
 
     @homes = homes_for_list.offset((@page - 1) * @per_page).limit(@per_page)
-    # Ensure per-home totals are always present for the view table
+
+    # Prepare hashes for per-home data
     @totals_deposits = Hash.new(0)
-    @totals_credits = Hash.new(0)
-    @totals_returns = Hash.new(0)
-    # Prepare time-series totals (for the chart)
-    totals_deposits_over_time = Hash.new(0) # local until we build final @hash
-    totals_credits_over_time = Hash.new(0)
-    totals_returns_over_time = Hash.new(0)
-    # parse_amount helper: strip currency chars and convert to float
-    parse_amount = lambda do |value|
-      value.to_s.gsub(/[^\d.-]/, '').to_f
-    end
+    @total_deposit_count = Hash.new(0)
+    @deposit_interest = Hash.new(0)
+    totals_deposits_over_time = Hash.new(0)
+    # Helper for spreadsheet parsing
+    def parse_spreadsheet(home)
+      return { deposits: [], deposit_sum: 0, deposit_count: 0, interest: 0 } unless home.document.attached?
 
-    # Compute per-home totals (for table) and per-date totals (for chart)
-    Home.order(created_at: :asc).find_each do |home|
-      # skip homes with no attached spreadsheet
-      next unless home.document.attached?
+      Tempfile.create(['uploaded_file', ".#{home.document.filename.extension}"]) do |tempfile|
+        content = home.document.download.force_encoding('UTF-8')
+        tempfile.write(content)
+        tempfile.rewind
+        spreadsheet = case home.document.filename.extension
+                      when 'csv' then Roo::CSV.new(tempfile.path)
+                      when 'xls' then Roo::Excel.new(tempfile.path)
+                      when 'xlsx' then Roo::Excelx.new(tempfile.path)
+                      end
+        return { deposits: [], deposit_sum: 0, deposit_count: 0, interest: 0 } unless spreadsheet
 
-      begin
-        Tempfile.create(['uploaded_file', ".#{home.document.filename.extension}"]) do |tempfile|
-          content = home.document.download
-          content = content.force_encoding('UTF-8') if content.respond_to?(:force_encoding)
-          tempfile.binmode
-          tempfile.write(content)
-          tempfile.rewind
+        header = spreadsheet.row(1).map(&:to_s)
+        deposits = []
+        count_key = header.find { |h| h.to_s.strip.downcase == 'count' }
+        (2..spreadsheet.last_row).each do |i|
+          row = [header, spreadsheet.row(i)].transpose.to_h
+          next unless row['type'] && row['amount']
 
-          spreadsheet = case home.document.filename.extension&.downcase
-                        when 'csv' then Roo::CSV.new(tempfile.path)
-                        when 'xls' then Roo::Excel.new(tempfile.path)
-                        when 'xlsx' then Roo::Excelx.new(tempfile.path)
-                        end
-          next unless spreadsheet
-
-          header = begin
-            spreadsheet.row(1).map { |h| h.to_s.strip }
-          rescue StandardError
-            []
-          end
-          deposits = []
-          credits = []
-          returns = []
-
-          # protect against files with fewer rows
-          last_row = [spreadsheet.last_row || 1, 1].max
-
-          (2..last_row).each do |i|
-            raw_row = spreadsheet.row(i)
-            next if raw_row.nil?
-
-            # build a hash mapping header -> value
-            row = [header, raw_row].transpose.to_h.transform_keys(&:to_s)
-            type = row['type'] || row['Type'] || row[:type]
-            amount = row['amount'] || row['Amount'] || row[:amount]
-            next unless type && amount
-
-            case type.to_s.strip.downcase
-            when 'deposit'
-              deposits << parse_amount.call(amount)
-            when 'credit'
-              credits << parse_amount.call(amount)
-            when 'return'
-              returns << parse_amount.call(amount)
-            end
-          end
-
-          # per-home totals (used in the table)
-          deposit_sum = deposits.sum.to_f
-          credit_sum = credits.sum.to_f
-          return_sum = returns.sum.to_f
-
-          @totals_deposits[home.id] = deposit_sum
-          @totals_credits[home.id] = credit_sum
-          @totals_returns[home.id] = return_sum
-
-          # accumulate per-date totals (chart)
-          date = home.created_at.to_date
-          totals_deposits_over_time[date] += deposit_sum
-          totals_credits_over_time[date] += credit_sum
-          totals_returns_over_time[date] += return_sum
+          deposits << row if row['type'].to_s.strip.downcase == 'deposit'
         end
-      rescue StandardError => e
-        Rails.logger.warn("Failed to parse Home##{home.id} spreadsheet: #{e.message}")
-        # Ensure the per-home keys exist so view won't blow up
-        @totals_deposits[home.id] ||= 0
-        @totals_credits[home.id] ||= 0
-        @totals_returns[home.id] ||= 0
-        next
+        deposit_sum = deposits.sum { |d| d['amount'].to_f }
+        deposit_count = if count_key
+                          deposits.map { |d| d[count_key].to_i }.uniq.sum
+                        else
+                          deposits.size
+                        end
+        client = home.client
+        interest_rate = client&.applied_interest_rate.to_f
+        interest = deposit_sum * (interest_rate / 100.0)
+        { deposits: deposits, deposit_sum: deposit_sum, deposit_count: deposit_count, interest: interest }
       end
+    rescue StandardError
+      { deposits: [], deposit_sum: 0, deposit_count: 0, interest: 0 }
     end
 
-    # ------------------------------------------------------------------
-    # Final totals for quick summary (optional)
-    # ------------------------------------------------------------------
+    # Compute per-home and per-date totals
+    @homes.each do |home|
+      result = parse_spreadsheet(home)
+      @totals_deposits[home.id] = result[:deposit_sum]
+      @total_deposit_count[home.id] = result[:deposit_count]
+      @deposit_interest[home.id] = result[:interest]
+      date = home.created_at.to_date
+      totals_deposits_over_time[date] += result[:deposit_sum]
+    end
+
     @total_deposits_sum = @totals_deposits.values.sum.to_f
-    @total_credits_sum = @totals_credits.values.sum.to_f
-    @total_returns_sum = @totals_returns.values.sum.to_f
 
-    # ------------------------------------------------------------------
-    # Build final, ordered time-series and fill missing dates with zeros
-    # ------------------------------------------------------------------
-    all_dates = (totals_deposits_over_time.keys + totals_credits_over_time.keys + totals_returns_over_time.keys).uniq.sort
-
+    # Build time-series for chart
+    all_dates = totals_deposits_over_time.keys.uniq.sort
     if all_dates.empty?
       @totals_deposits_over_time = {}
-      @totals_credits_over_time = {}
-      @totals_returns_over_time = {}
     else
       min_date = all_dates.first
       max_date = all_dates.last
       date_range = (min_date..max_date).to_a
-
-      # Chartkick works with date strings (ISO) or actual Date objects; we use ISO strings
       @totals_deposits_over_time = date_range.to_h { |d| [d.strftime('%Y-%m-%d'), totals_deposits_over_time[d].to_f] }
-      @totals_credits_over_time = date_range.to_h { |d| [d.strftime('%Y-%m-%d'), totals_credits_over_time[d].to_f] }
-      @totals_returns_over_time = date_range.to_h { |d| [d.strftime('%Y-%m-%d'), totals_returns_over_time[d].to_f] }
     end
 
-    # Collect all deposits across homes for recent list
+    # Collect recent deposits (limit 5)
     @recent_deposits = []
-
-    Home.order(created_at: :desc).limit(20).each do |home| # check recent homes first
-      next unless home.document.attached?
-
-      begin
-        Tempfile.create(['uploaded_file', ".#{home.document.filename.extension}"]) do |tempfile|
-          content = home.document.download.force_encoding('UTF-8')
-          tempfile.write(content)
-          tempfile.rewind
-
-          spreadsheet = case home.document.filename.extension
-                        when 'csv' then Roo::CSV.new(tempfile.path)
-                        when 'xls' then Roo::Excel.new(tempfile.path)
-                        when 'xlsx' then Roo::Excelx.new(tempfile.path)
-                        end
-          next unless spreadsheet
-
-          header = spreadsheet.row(1).map(&:to_s)
-          (2..spreadsheet.last_row).each do |i|
-            row = [header, spreadsheet.row(i)].transpose.to_h
-            next unless row['type'] && row['amount']
-
-            next unless row['type'].to_s.strip.downcase == 'deposit'
-
-            @recent_deposits << {
-              date: row['date'] || home.created_at,
-              description: row['description'] || '',
-              amount: row['amount']
-            }
-          end
-        end
-      rescue StandardError
-        next
+    Home.order(created_at: :desc).limit(20).each do |home|
+      result = parse_spreadsheet(home)
+      result[:deposits].each do |row|
+        @recent_deposits << {
+          date: row['date'] || home.created_at,
+          description: row['description'] || '',
+          amount: row['amount']
+        }
       end
     end
-
-    # Sort deposits by date (most recent first) and limit to 5
     @recent_deposits = @recent_deposits.sort_by do |d|
       d[:date].to_time
     rescue StandardError
       Time.zone.now
     end.reverse.first(5)
 
-    # series ready for Chartkick
     @chart_series = [
-      { name: 'Deposits', data: @totals_deposits_over_time },
-      { name: 'Credits', data: @totals_credits_over_time },
-      { name: 'Returns', data: @totals_returns_over_time }
+      { name: 'Deposits', data: @totals_deposits_over_time }
     ]
   end
 
@@ -221,8 +142,6 @@ class HomeController < ApplicationController
 
       header = spreadsheet.row(1)
       @deposits = []
-      @credits = []
-      @returns = []
 
       (2..spreadsheet.last_row).each do |i|
         row = [header, spreadsheet.row(i)].transpose.to_h
@@ -231,31 +150,34 @@ class HomeController < ApplicationController
         case row['type']&.strip&.downcase
         when 'deposit'
           @deposits << row
-        when 'credit'
-          @credits << row
-        when 'return'
-          @returns << row
         end
       end
       # Number/count the deposits
       @deposits.each do |deposit|
         deposit['count'] = @deposits.count(deposit)
       end
-      # Total number of deposits in counts
-      @total_deposit_count = @deposits.sum { |deposit| deposit['count'] }
+      # Total number of deposits in distinct counts, only for type 'deposit'
+      @total_deposit_count = @deposits.select { |d| d['type'].to_s.strip.downcase == 'deposit' }
+        .map { |d| d['count'].to_i }
+        .count
 
+      # Calculate total deposits
       @total_deposits = @deposits.sum { |d| d['amount'].to_f }
-      @total_credits = @credits.sum { |c| c['amount'].to_f }
-      @total_returns = @returns.sum { |r| r['amount'].to_f }
+
+      # Get interest rate for client and calculate interest on total deposits
+      client = @home.client || current_user.client
+      interest_rate = client&.applied_interest_rate.to_f
+      @deposit_interest = @total_deposits * (interest_rate / 100.0)
+
+      # Total cost of the transaction will be the totals deposits + interest
+      @total_cost = @total_deposits + @deposit_interest
+
+      # Total credits and returns
     end
   rescue StandardError => e
     flash.now[:alert] = "Error processing file: #{e.message}"
     @deposits = []
-    @credits = []
-    @returns = []
     @total_deposits = 0
-    @total_credits = 0
-    @total_returns = 0
   end
 
   def edit; end
