@@ -241,8 +241,10 @@ class HomeController < ApplicationController
       @deposits.each do |deposit|
         deposit['count'] = @deposits.count(deposit)
       end
-      # Total number of deposits in counts
-      @total_deposit_count = @deposits.sum { |deposit| deposit['count'] }
+      # Total number of deposits in distinct counts, only for type 'deposit'
+      @total_deposit_count = @deposits.select { |d| d['type'].to_s.strip.downcase == 'deposit' }
+        .map { |d| d['count'].to_i }
+        .count
 
       @total_deposits = @deposits.sum { |d| d['amount'].to_f }
       @total_credits = @credits.sum { |c| c['amount'].to_f }
