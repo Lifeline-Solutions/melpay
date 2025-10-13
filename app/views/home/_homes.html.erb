@@ -45,10 +45,10 @@
             <%= number_to_currency(@total_deposits_sum || 0) %>
           </td>
           <td class="px-6 py-3 font-semibold text-center">
-            <%= number_to_currency(@total_deposits_sum || 0) %>
+            <%= @total_deposit_count.values.sum || 0 %>
           </td>
           <td class="px-6 py-3 font-semibold text-center">
-            <%= number_to_currency(@total_deposits_sum || 0) %>
+            <%= number_to_currency(@deposit_interest.values.sum || 0) %>
           </td>
         </tr>
       </tfoot>

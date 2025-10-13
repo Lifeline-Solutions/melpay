@@ -22,7 +22,6 @@ class HomeController < ApplicationController
     @total_deposit_count = Hash.new(0)
     @deposit_interest = Hash.new(0)
     totals_deposits_over_time = Hash.new(0)
-
     # Helper for spreadsheet parsing
     def parse_spreadsheet(home)
       return { deposits: [], deposit_sum: 0, deposit_count: 0, interest: 0 } unless home.document.attached?
