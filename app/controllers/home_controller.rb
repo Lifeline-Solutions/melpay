@@ -235,13 +235,12 @@ class HomeController < ApplicationController
           @returns << row
         end
       end
-      #Number/count the deposits
+      # Number/count the deposits
       @deposits.each do |deposit|
         deposit['count'] = @deposits.count(deposit)
       end
       # Total number of deposits in counts
       @total_deposit_count = @deposits.sum { |deposit| deposit['count'] }
-
 
       @total_deposits = @deposits.sum { |d| d['amount'].to_f }
       @total_credits = @credits.sum { |c| c['amount'].to_f }
