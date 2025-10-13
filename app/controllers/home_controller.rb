@@ -221,8 +221,6 @@ class HomeController < ApplicationController
 
       header = spreadsheet.row(1)
       @deposits = []
-      @credits = []
-      @returns = []
 
       (2..spreadsheet.last_row).each do |i|
         row = [header, spreadsheet.row(i)].transpose.to_h
@@ -231,10 +229,6 @@ class HomeController < ApplicationController
         case row['type']&.strip&.downcase
         when 'deposit'
           @deposits << row
-        when 'credit'
-          @credits << row
-        when 'return'
-          @returns << row
         end
       end
       # Number/count the deposits
@@ -246,18 +240,23 @@ class HomeController < ApplicationController
         .map { |d| d['count'].to_i }
         .count
 
+      # Calculate total deposits
       @total_deposits = @deposits.sum { |d| d['amount'].to_f }
-      @total_credits = @credits.sum { |c| c['amount'].to_f }
-      @total_returns = @returns.sum { |r| r['amount'].to_f }
+
+      # Get interest rate for client and calculate interest on total deposits
+      client = @home.client || current_user.client
+      interest_rate = client&.applied_interest_rate.to_f
+      @deposit_interest = @total_deposits * (interest_rate / 100.0)
+
+      # Total cost of the transaction will be the totals deposits + interest
+      @total_cost = @total_deposits + @deposit_interest
+
+      # Total credits and returns
     end
   rescue StandardError => e
     flash.now[:alert] = "Error processing file: #{e.message}"
     @deposits = []
-    @credits = []
-    @returns = []
     @total_deposits = 0
-    @total_credits = 0
-    @total_returns = 0
   end
 
   def edit; end
