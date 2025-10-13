@@ -172,7 +172,6 @@ class HomeController < ApplicationController
       # Total cost of the transaction will be the totals deposits + interest
       @total_cost = @total_deposits + @deposit_interest
 
-      # Total credits and returns
     end
   rescue StandardError => e
     flash.now[:alert] = "Error processing file: #{e.message}"
