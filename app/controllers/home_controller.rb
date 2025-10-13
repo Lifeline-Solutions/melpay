@@ -147,7 +147,7 @@ class HomeController < ApplicationController
         row = [header, spreadsheet.row(i)].transpose.to_h
         next unless row['type'] && row['amount']
 
-        case row['type']&.strip & _downcase
+        case row['type']&.strip&.downcase
         when 'deposit'
           @deposits << row
         end
