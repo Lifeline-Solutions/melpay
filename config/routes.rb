@@ -27,4 +27,5 @@ Rails.application.routes.draw do
     resources :accounts, only: [:index, :new, :create]
   end
   resources :roles, only: [:new, :create, :index]
+  resources :transactions, only: [:new, :create, :index]
 end
