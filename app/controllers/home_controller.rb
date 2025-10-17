@@ -191,6 +191,17 @@ class HomeController < ApplicationController
     end
   end
 
+  def transact
+    transaction = Transaction.find(params[:transaction_id])
+    @home = transaction.home
+    @client = @home.client
+    @transaction = Transaction.new(transaction_params)
+    @transaction.home_id = @home.id
+    @transaction.client_id = @client.id
+    @transaction.user_id = current_user.id
+    @transaction.status = 'pending'
+  end
+
   def destroy
     @home.destroy
     respond_to do |format|
