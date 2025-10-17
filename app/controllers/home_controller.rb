@@ -22,6 +22,11 @@ class HomeController < ApplicationController
     @total_deposit_count = Hash.new(0)
     @deposit_interest = Hash.new(0)
     totals_deposits_over_time = Hash.new(0)
+
+    # Initialize success and failed transaction counts
+    @success_count = Transaction.where(status: 'success').count
+    @failed_count = Transaction.where(status: 'failed').count
+
     # Helper for spreadsheet parsing
     def parse_spreadsheet(home)
       return { deposits: [], deposit_sum: 0, deposit_count: 0, interest: 0 } unless home.document.attached?
@@ -85,22 +90,15 @@ class HomeController < ApplicationController
     end
 
     # Collect recent deposits (limit 5)
-    @recent_deposits = []
-    Home.order(created_at: :desc).limit(20).each do |home|
-      result = parse_spreadsheet(home)
-      result[:deposits].each do |row|
-        @recent_deposits << {
-          date: row['date'] || home.created_at,
-          description: row['description'] || '',
-          amount: row['amount']
-        }
-      end
+    @recent_deposits = Transaction.order(created_at: :desc).limit(5).map do |transaction|
+      {
+        date: transaction.created_at,
+        amount: transaction.amount,
+        transaction_id: transaction.transaction_id,
+        total_cost: transaction.total_cost,
+        status: transaction.status
+      }
     end
-    @recent_deposits = @recent_deposits.sort_by do |d|
-      d[:date].to_time
-    rescue StandardError
-      Time.zone.now
-    end.reverse.first(5)
 
     @chart_series = [
       { name: 'Deposits', data: @totals_deposits_over_time }
@@ -256,23 +254,27 @@ class HomeController < ApplicationController
     existing_transaction = Transaction.find_by(
       home_id: @home.id,
       transaction_id: deposit_transaction_id,
-      status: 'success'
+      status: 'success',
+      is_latest: true
     )
 
     redirect_to home_path(@home), alert: 'This transaction has already been completed successfully.' and return if existing_transaction
 
-    # Create or update transaction
-    transaction = Transaction.find_or_initialize_by(
+    # Find the latest version of this transaction (if any)
+    latest_transaction = Transaction.where(
       home_id: @home.id,
-      transaction_id: deposit_transaction_id
-    )
+      transaction_id: deposit_transaction_id,
+      is_latest: true
+    ).first
 
     client = @home.client || current_user.client
     interest_rate = client&.applied_interest_rate.to_f
     deposit_amount = deposit['amount'].to_f
     transaction_cost = deposit_amount * (interest_rate / 100.0)
 
-    transaction.assign_attributes(
+    new_attributes = {
+      home_id: @home.id,
+      transaction_id: deposit_transaction_id,
       client_id: client&.id,
       user_id: current_user.id,
       amount: deposit_amount,
@@ -280,8 +282,20 @@ class HomeController < ApplicationController
       total_cost: deposit_amount + transaction_cost,
       deposit_data: deposit,
       status: params[:status] || 'success'
-    )
+    }
 
+    # If a transaction exists, create a new revision. Otherwise, create a new transaction.
+    if latest_transaction
+      # Create new revision (records change in audit trail)
+      transaction = latest_transaction.create_revision(new_attributes)
+      Rails.logger.info "Creating revision for transaction #{deposit_transaction_id}. Previous version ID: #{latest_transaction.id}"
+    else
+      # Create brand new transaction
+      transaction = Transaction.new(new_attributes)
+      Rails.logger.info "Creating new transaction #{deposit_transaction_id}"
+    end
+
+    # Always save the transaction record
     if transaction.save
       # Update the deposit status in processed_deposits
       @home.processed_deposits.each do |d|
@@ -289,9 +303,27 @@ class HomeController < ApplicationController
       end
       @home.save
 
-      redirect_to home_path(@home), notice: "Payment #{transaction.status}!"
+      if latest_transaction
+        # This was a revision
+        if transaction.status == 'success'
+          redirect_to home_path(@home), notice: "Payment updated to successful! Transaction ID: #{deposit_transaction_id} (Revision recorded)"
+        elsif transaction.status == 'failed'
+          redirect_to home_path(@home), alert: "Payment updated to failed and has been recorded. Transaction ID: #{deposit_transaction_id} (Revision recorded)"
+        else
+          redirect_to home_path(@home), notice: "Payment status updated: #{transaction.status}. Transaction ID: #{deposit_transaction_id} (Revision recorded)"
+        end
+      elsif transaction.status == 'success'
+        # This was a new transaction
+        redirect_to home_path(@home), notice: "Payment completed successfully! Transaction ID: #{deposit_transaction_id}"
+      elsif transaction.status == 'failed'
+        redirect_to home_path(@home), alert: "Payment failed and has been recorded. Transaction ID: #{deposit_transaction_id}"
+      else
+        redirect_to home_path(@home), notice: "Payment status: #{transaction.status}. Transaction ID: #{deposit_transaction_id}"
+      end
     else
-      redirect_to home_path(@home), alert: "Payment failed: #{transaction.errors.full_messages.join(', ')}"
+      # Even if save fails, log the error
+      Rails.logger.error "Failed to save transaction #{deposit_transaction_id}: #{transaction.errors.full_messages.join(', ')}"
+      redirect_to home_path(@home), alert: "Unable to record transaction: #{transaction.errors.full_messages.join(', ')}"
     end
   end
 
@@ -300,28 +332,39 @@ class HomeController < ApplicationController
     status = params[:status] || 'success'
     success_count = 0
     failed_count = 0
+    recorded_count = 0
+    revised_count = 0
 
     client = @home.client || current_user.client
     interest_rate = client&.applied_interest_rate.to_f
 
     @home.processed_deposits.each do |deposit|
-      # Skip if already successful
+      # Skip if already successful (completed transactions cannot be changed)
       existing_transaction = Transaction.find_by(
         home_id: @home.id,
         transaction_id: deposit['transaction_id'],
-        status: 'success'
+        status: 'success',
+        is_latest: true
       )
-      next if existing_transaction
 
-      transaction = Transaction.find_or_initialize_by(
+      if existing_transaction
+        Rails.logger.info "Skipping already successful transaction: #{deposit['transaction_id']}"
+        next
+      end
+
+      # Find the latest version of this transaction (if any)
+      latest_transaction = Transaction.where(
         home_id: @home.id,
-        transaction_id: deposit['transaction_id']
-      )
+        transaction_id: deposit['transaction_id'],
+        is_latest: true
+      ).first
 
       deposit_amount = deposit['amount'].to_f
       transaction_cost = deposit_amount * (interest_rate / 100.0)
 
-      transaction.assign_attributes(
+      new_attributes = {
+        home_id: @home.id,
+        transaction_id: deposit['transaction_id'],
         client_id: client&.id,
         user_id: current_user.id,
         amount: deposit_amount,
@@ -329,36 +372,44 @@ class HomeController < ApplicationController
         total_cost: deposit_amount + transaction_cost,
         deposit_data: deposit,
         status: status
-      )
+      }
 
+      # If a transaction exists, create a new revision. Otherwise, create new transaction.
+      if latest_transaction
+        transaction = latest_transaction.create_revision(new_attributes)
+        is_revision = true
+      else
+        transaction = Transaction.new(new_attributes)
+        is_revision = false
+      end
+
+      # Save every transaction regardless of status
       if transaction.save
         deposit['status'] = transaction.status
-        success_count += 1
+        recorded_count += 1
+        revised_count += 1 if is_revision
+
+        if transaction.status == 'success'
+          success_count += 1
+        elsif transaction.status == 'failed'
+          failed_count += 1
+        end
+
+        Rails.logger.info "#{is_revision ? 'Revised' : 'Recorded'} transaction #{deposit['transaction_id']} with status: #{transaction.status}"
       else
-        failed_count += 1
+        Rails.logger.error "Failed to record transaction #{deposit['transaction_id']}: #{transaction.errors.full_messages.join(', ')}"
       end
     end
 
-    @home.save if success_count.positive?
+    @home.save if recorded_count.positive?
 
-    redirect_to home_path(@home), notice: "Processed #{success_count} payments successfully. #{failed_count} failed."
+    message = "Processed #{recorded_count} transactions"
+    message += " (#{revised_count} revisions)" if revised_count.positive?
+    message += ": #{success_count} successful" if success_count.positive?
+    message += ", #{failed_count} failed" if failed_count.positive?
+
+    redirect_to home_path(@home), notice: message
   end
-
-  # This Payment status is created from Pending which is default to Success when and failed when it has failed.
-  # Once successfull it cant be redone
-  # There will be individual request for each and there should be global change
-  def single_transaction
-    transaction = Transaction.find(params[:transaction_id])
-    @home = transaction.home
-    @client = @home.client
-    @transaction = Transaction.new(transaction_params)
-    @transaction.home_id = @home.id
-    @transaction.client_id = @client.id
-    @transaction.user_id = current_user.id
-    @transaction.status = 'pending'
-  end
-
-  def global_transaction; end
 
   def destroy
     @home.destroy

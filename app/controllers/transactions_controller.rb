@@ -1,6 +1,5 @@
 class TransactionsController < ApplicationController
   before_action :authenticate_user!
-  def index; end
 
   def new
     @transaction = Transaction.new
@@ -25,5 +24,9 @@ class TransactionsController < ApplicationController
 
   def transactions_params
     params.require(:transaction).permit(:status)
+  end
+
+  def transactions_list
+    @transactions = Transaction.order(created_at: :desc)
   end
 end
