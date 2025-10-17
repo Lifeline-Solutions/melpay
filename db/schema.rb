@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_15_180111) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_17_123302) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -70,6 +70,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_15_180111) do
     t.datetime "updated_at", null: false
     t.uuid "user_id", null: false
     t.uuid "client_id", null: false
+    t.jsonb "processed_deposits", default: []
+    t.string "unique_id"
     t.index ["client_id"], name: "index_homes_on_client_id"
     t.index ["user_id"], name: "index_homes_on_user_id"
   end
@@ -105,6 +107,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_15_180111) do
     t.string "status"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "home_id"
+    t.uuid "client_id"
+    t.uuid "user_id"
+    t.string "transaction_id"
+    t.decimal "amount", precision: 10, scale: 2
+    t.decimal "transaction_cost", precision: 10, scale: 2
+    t.decimal "total_cost", precision: 10, scale: 2
+    t.jsonb "deposit_data", default: {}
+    t.index ["client_id"], name: "index_transactions_on_client_id"
+    t.index ["home_id"], name: "index_transactions_on_home_id"
+    t.index ["transaction_id"], name: "index_transactions_on_transaction_id"
+    t.index ["user_id"], name: "index_transactions_on_user_id"
   end
 
   create_table "users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
