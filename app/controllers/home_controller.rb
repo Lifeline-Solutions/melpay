@@ -184,7 +184,7 @@ class HomeController < ApplicationController
       client_initials = if client&.name.present?
                           client.name.split.map { |word| word[0] }.join.upcase
                         else
-                          'XX'
+                          'MALPAY'
                         end
 
       # Find the highest existing transaction ID number for this client
