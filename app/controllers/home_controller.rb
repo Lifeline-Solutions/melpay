@@ -243,7 +243,117 @@ class HomeController < ApplicationController
     end
   end
 
-  def transact
+  # Pay a single deposit transaction
+  def pay_single_deposit
+    deposit_transaction_id = params[:deposit_transaction_id]
+
+    # Find the deposit in the processed_deposits
+    deposit = @home.processed_deposits.find { |d| d['transaction_id'] == deposit_transaction_id }
+
+    if deposit.nil?
+      redirect_to home_path(@home), alert: 'Deposit not found.' and return
+    end
+
+    # Check if transaction already exists and is successful
+    existing_transaction = Transaction.find_by(
+      home_id: @home.id,
+      transaction_id: deposit_transaction_id,
+      status: 'success'
+    )
+
+    if existing_transaction
+      redirect_to home_path(@home), alert: 'This transaction has already been completed successfully.' and return
+    end
+
+    # Create or update transaction
+    transaction = Transaction.find_or_initialize_by(
+      home_id: @home.id,
+      transaction_id: deposit_transaction_id
+    )
+
+    client = @home.client || current_user.client
+    interest_rate = client&.applied_interest_rate.to_f
+    deposit_amount = deposit['amount'].to_f
+    transaction_cost = deposit_amount * (interest_rate / 100.0)
+
+    transaction.assign_attributes(
+      client_id: client&.id,
+      user_id: current_user.id,
+      amount: deposit_amount,
+      transaction_cost: transaction_cost,
+      total_cost: deposit_amount + transaction_cost,
+      deposit_data: deposit,
+      status: params[:status] || 'success'
+    )
+
+    if transaction.save
+      # Update the deposit status in processed_deposits
+      @home.processed_deposits.each do |d|
+        if d['transaction_id'] == deposit_transaction_id
+          d['status'] = transaction.status
+        end
+      end
+      @home.save
+
+      redirect_to home_path(@home), notice: "Payment #{transaction.status}!"
+    else
+      redirect_to home_path(@home), alert: 'Payment failed: ' + transaction.errors.full_messages.join(', ')
+    end
+  end
+
+  # Pay all pending deposits at once
+  def pay_all_deposits
+    status = params[:status] || 'success'
+    success_count = 0
+    failed_count = 0
+
+    client = @home.client || current_user.client
+    interest_rate = client&.applied_interest_rate.to_f
+
+    @home.processed_deposits.each do |deposit|
+      # Skip if already successful
+      existing_transaction = Transaction.find_by(
+        home_id: @home.id,
+        transaction_id: deposit['transaction_id'],
+        status: 'success'
+      )
+      next if existing_transaction
+
+      transaction = Transaction.find_or_initialize_by(
+        home_id: @home.id,
+        transaction_id: deposit['transaction_id']
+      )
+
+      deposit_amount = deposit['amount'].to_f
+      transaction_cost = deposit_amount * (interest_rate / 100.0)
+
+      transaction.assign_attributes(
+        client_id: client&.id,
+        user_id: current_user.id,
+        amount: deposit_amount,
+        transaction_cost: transaction_cost,
+        total_cost: deposit_amount + transaction_cost,
+        deposit_data: deposit,
+        status: status
+      )
+
+      if transaction.save
+        deposit['status'] = transaction.status
+        success_count += 1
+      else
+        failed_count += 1
+      end
+    end
+
+    @home.save if success_count > 0
+
+    redirect_to home_path(@home), notice: "Processed #{success_count} payments successfully. #{failed_count} failed."
+  end
+
+  # This Payment status is created from Pending which is default to Success when and failed when it has failed.
+  # Once successfull it cant be redone
+  # There will be individual request for each and there should be global change
+  def single_transaction
     transaction = Transaction.find(params[:transaction_id])
     @home = transaction.home
     @client = @home.client
@@ -252,6 +362,10 @@ class HomeController < ApplicationController
     @transaction.client_id = @client.id
     @transaction.user_id = current_user.id
     @transaction.status = 'pending'
+  end
+
+  def global_transaction
+
   end
 
   def destroy

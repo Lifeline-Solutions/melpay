@@ -10,7 +10,12 @@ Rails.application.routes.draw do
   post 'two_factor/check', to: 'two_factor#check', as: :check_otp
   
   resources :users, only: [:index, :show, :edit, :update]
-  resources :home
+  resources :home do
+    member do
+      post :pay_single_deposit
+      post :pay_all_deposits
+    end
+  end
   resources :interest_rates, only: [:index, :edit, :update] do
     collection do
       get :manage
@@ -27,5 +32,9 @@ Rails.application.routes.draw do
     resources :accounts, only: [:index, :new, :create]
   end
   resources :roles, only: [:new, :create, :index]
-  resources :transactions, only: [:new, :create, :index]
+  resources :transactions, only: [:new, :create, :index, :show] do
+    member do
+      patch :update_status
+    end
+  end
 end
