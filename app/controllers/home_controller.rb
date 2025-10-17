@@ -272,6 +272,6 @@ class HomeController < ApplicationController
   end
 
   def home_params
-    params.require(:home).permit(:name, :document, :client_id, :user_id)
+    params.require(:home).permit(:name, :document, :client_id, :user_id, :unique_id)
   end
 end
