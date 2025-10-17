@@ -291,7 +291,7 @@ class HomeController < ApplicationController
 
       redirect_to home_path(@home), notice: "Payment #{transaction.status}!"
     else
-      redirect_to home_path(@home), alert: 'Payment failed: ' + transaction.errors.full_messages.join(', ')
+      redirect_to home_path(@home), alert: "Payment failed: #{transaction.errors.full_messages.join(', ')}"
     end
   end
 
@@ -339,7 +339,7 @@ class HomeController < ApplicationController
       end
     end
 
-    @home.save if success_count > 0
+    @home.save if success_count.positive?
 
     redirect_to home_path(@home), notice: "Processed #{success_count} payments successfully. #{failed_count} failed."
   end
