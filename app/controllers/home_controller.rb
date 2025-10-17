@@ -403,12 +403,12 @@ class HomeController < ApplicationController
       end
     end
 
-    @home.save if recorded_count > 0
+    @home.save if recorded_count.positive?
 
     message = "Processed #{recorded_count} transactions"
-    message += " (#{revised_count} revisions)" if revised_count > 0
-    message += ": #{success_count} successful" if success_count > 0
-    message += ", #{failed_count} failed" if failed_count > 0
+    message += " (#{revised_count} revisions)" if revised_count.positive?
+    message += ": #{success_count} successful" if success_count.positive?
+    message += ", #{failed_count} failed" if failed_count.positive?
 
     redirect_to home_path(@home), notice: message
   end
