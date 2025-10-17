@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_17_123302) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_17_141034) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -115,8 +115,12 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_17_123302) do
     t.decimal "transaction_cost", precision: 10, scale: 2
     t.decimal "total_cost", precision: 10, scale: 2
     t.jsonb "deposit_data", default: {}
+    t.uuid "previous_transaction_id"
+    t.boolean "is_latest", default: true
     t.index ["client_id"], name: "index_transactions_on_client_id"
     t.index ["home_id"], name: "index_transactions_on_home_id"
+    t.index ["previous_transaction_id"], name: "index_transactions_on_previous_transaction_id"
+    t.index ["transaction_id", "is_latest"], name: "index_transactions_on_transaction_id_and_is_latest"
     t.index ["transaction_id"], name: "index_transactions_on_transaction_id"
     t.index ["user_id"], name: "index_transactions_on_user_id"
   end
