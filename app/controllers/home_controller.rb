@@ -129,6 +129,24 @@ class HomeController < ApplicationController
     @file = @home
     return unless @file.document.attached?
 
+    # Check if this file has already been processed
+    if @home.processed_deposits.present? && @home.processed_deposits.is_a?(Array) && @home.processed_deposits.any?
+      # Use existing processed deposits with their unique IDs
+      @deposits = @home.processed_deposits
+
+      # Calculate totals from stored data
+      @total_deposits = @deposits.sum { |d| d['amount'].to_f }
+      @total_deposit_count = @deposits.count
+
+      client = @home.client || current_user.client
+      interest_rate = client&.applied_interest_rate.to_f
+      @deposit_interest = @total_deposits * (interest_rate / 100.0)
+      @total_cost = @total_deposits + @deposit_interest
+
+      return
+    end
+
+    # Process the file for the first time
     Tempfile.create(['uploaded_file', ".#{@file.document.filename.extension}"]) do |tempfile|
       content = @file.document.download.force_encoding('UTF-8')
       tempfile.write(content)
@@ -143,6 +161,9 @@ class HomeController < ApplicationController
       header = spreadsheet.row(1)
       @deposits = []
 
+      # Get client and generate prefix for transaction IDs
+      client = @home.client || current_user.client
+
       (2..spreadsheet.last_row).each do |i|
         row = [header, spreadsheet.row(i)].transpose.to_h
         next unless row['type'] && row['amount']
@@ -152,10 +173,42 @@ class HomeController < ApplicationController
           @deposits << row
         end
       end
+
       # Number/count the deposits
       @deposits.each do |deposit|
         deposit['count'] = @deposits.count(deposit)
       end
+
+      # Assign unique transaction IDs to each deposit (progressive across all forms)
+      # Get the starting ID number for this batch
+      client_initials = if client&.name.present?
+                          client.name.split.map { |word| word[0] }.join.upcase
+                        else
+                          'XX'
+                        end
+
+      # Find the highest existing transaction ID number for this client
+      max_number = 0
+      Home.where(client_id: client&.id).find_each do |home|
+        next unless home.processed_deposits.is_a?(Array)
+
+        home.processed_deposits.each do |deposit|
+          if deposit['transaction_id'] =~ /^#{client_initials}-(\d+)$/
+            number = Regexp.last_match(1).to_i
+            max_number = number if number > max_number
+          end
+        end
+      end
+
+      # Assign sequential IDs to each deposit in this batch
+      @deposits.each_with_index do |deposit, index|
+        next_number = max_number + index + 1
+        deposit['transaction_id'] = "#{client_initials}-#{next_number.to_s.rjust(4, '0')}"
+      end
+
+      # Save the processed deposits with their unique IDs to prevent re-processing
+      @home.update(processed_deposits: @deposits)
+
       # Total number of deposits in distinct counts, only for type 'deposit'
       @total_deposit_count = @deposits.select { |d| d['type'].to_s.strip.downcase == 'deposit' }
         .map { |d| d['count'].to_i }
@@ -165,7 +218,6 @@ class HomeController < ApplicationController
       @total_deposits = @deposits.sum { |d| d['amount'].to_f }
 
       # Get interest rate for client and calculate interest on total deposits
-      client = @home.client || current_user.client
       interest_rate = client&.applied_interest_rate.to_f
       @deposit_interest = @total_deposits * (interest_rate / 100.0)
 
