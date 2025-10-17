@@ -28,10 +28,18 @@
     <h2 class="text-xl font-bold mb-4">Deposits</h2>
 
     <!-- Global Payment Buttons -->
-    <div class="mb-4 flex gap-2">
-      <%= button_to "Pay All Deposits (Success)", pay_all_deposits_home_path(@home, status: 'success'), method: :post, class: "bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded", data: { confirm: 'Are you sure you want to mark all deposits as successful?' } %>
-      <%= button_to "Mark All as Failed", pay_all_deposits_home_path(@home, status: 'failed'), method: :post, class: "bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded", data: { confirm: 'Are you sure you want to mark all deposits as failed?' } %>
-    </div>
+    <% has_pending_deposits = @deposits.any? { |d| d['status'].to_s.strip.downcase != 'success' } %>
+    <% if has_pending_deposits %>
+      <div class="mb-4 flex gap-2">
+        <%= button_to "Pay All Deposits (Success)", pay_all_deposits_home_path(@home, status: 'success'), method: :post, class: "bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded", data: { confirm: 'Are you sure you want to mark all deposits as successful?' } %>
+      </div>
+    <% else %>
+      <div class="mb-4">
+        <span class="inline-block bg-green-100 text-green-800 text-sm font-semibold px-4 py-2 rounded">
+          ✓ All deposits have been processed successfully
+        </span>
+      </div>
+    <% end %>
 
     <div class="overflow-x-auto">
       <% client = @home.client || current_user.client %>
@@ -109,4 +117,3 @@
     </div>
   </div>
 </div>
-

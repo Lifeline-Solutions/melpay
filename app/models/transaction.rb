@@ -23,8 +23,8 @@ class Transaction < ApplicationRecord
   end
 
   def cannot_change_successful_transaction
-    if status_was == 'success' && status_changed?
-      errors.add(:status, 'cannot be changed once transaction is successful')
-    end
+    return unless status_was == 'success' && status_changed?
+
+    errors.add(:status, 'cannot be changed once transaction is successful')
   end
 end

@@ -250,9 +250,7 @@ class HomeController < ApplicationController
     # Find the deposit in the processed_deposits
     deposit = @home.processed_deposits.find { |d| d['transaction_id'] == deposit_transaction_id }
 
-    if deposit.nil?
-      redirect_to home_path(@home), alert: 'Deposit not found.' and return
-    end
+    redirect_to home_path(@home), alert: 'Deposit not found.' and return if deposit.nil?
 
     # Check if transaction already exists and is successful
     existing_transaction = Transaction.find_by(
@@ -261,9 +259,7 @@ class HomeController < ApplicationController
       status: 'success'
     )
 
-    if existing_transaction
-      redirect_to home_path(@home), alert: 'This transaction has already been completed successfully.' and return
-    end
+    redirect_to home_path(@home), alert: 'This transaction has already been completed successfully.' and return if existing_transaction
 
     # Create or update transaction
     transaction = Transaction.find_or_initialize_by(
@@ -289,9 +285,7 @@ class HomeController < ApplicationController
     if transaction.save
       # Update the deposit status in processed_deposits
       @home.processed_deposits.each do |d|
-        if d['transaction_id'] == deposit_transaction_id
-          d['status'] = transaction.status
-        end
+        d['status'] = transaction.status if d['transaction_id'] == deposit_transaction_id
       end
       @home.save
 
@@ -364,9 +358,7 @@ class HomeController < ApplicationController
     @transaction.status = 'pending'
   end
 
-  def global_transaction
-
-  end
+  def global_transaction; end
 
   def destroy
     @home.destroy
