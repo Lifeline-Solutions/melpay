@@ -1,0 +1,64 @@
+<div class="rounded-sm bg-gray-50 dark:bg-gray-800 p-4 shadow h-full flex flex-col">
+  <h2 class="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-100">
+    Recent Transactions
+  </h2>
+
+  <div class="overflow-x-auto flex-grow">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-200 dark:bg-gray-700">
+      <tr>
+        <th class="px-4 py-2 text-left font-medium">Date</th>
+        <th class="px-4 py-2 text-left font-medium">Transaction ID</th>
+        <th class="px-4 py-2 text-right font-medium">Amount</th>
+        <th class="px-4 py-2 text-right font-medium">Total Cost</th>
+        <th class="px-4 py-2 text-right font-medium">Success</th>
+      </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+      <% @recent_deposits.each do |deposit| %>
+        <tr>
+          <td class="px-4 py-2 whitespace-nowrap text-gray-600 dark:text-gray-300">
+            <% date_val =
+                 if deposit[:date].is_a?(String)
+                   begin
+                     DateTime.parse(deposit[:date])
+                   rescue
+                     Time.zone.now
+                   end
+                 else
+                   deposit[:date]
+                 end
+            %>
+            <%= date_val.strftime("%B %d, %Y") %>
+          </td>
+          <td class="px-4 py-2 whitespace-nowrap text-gray-600 dark:text-gray-300">
+            <%= deposit[:transaction_id].presence || 'N/A' %>
+          </td>
+          <td class="px-4 py-2 text-gray-600 dark:text-gray-300 truncate max-w-[120px]">
+            <%= truncate(deposit[:description], length: 25) %>
+          </td>
+          <td class="px-4 py-2 text-right text-green-600 font-semibold">
+            <%= number_to_currency(deposit[:amount].to_f) %>
+          </td>
+          <td class="px-6 py-3">
+            <% current_status = deposit[:status].to_s.strip %>
+            <% if current_status.present? %>
+                <span class="px-2 py-1 text-xs font-semibold rounded-full <%= current_status.downcase == 'success' ? 'bg-green-100 text-green-800' : current_status.downcase == 'pending' ? 'bg-yellow-100 text-yellow-800' : current_status.downcase == 'failed' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800' %>">
+                  <%= current_status.capitalize %>
+                </span>
+            <% else %>
+              <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Pending</span>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Button -->
+  <div class="mt-4 flex justify-end">
+    <%= link_to "View All Transactions", "#",
+                class: "px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition" %>
+  </div>
+</div>

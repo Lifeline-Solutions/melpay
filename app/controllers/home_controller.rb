@@ -22,6 +22,11 @@ class HomeController < ApplicationController
     @total_deposit_count = Hash.new(0)
     @deposit_interest = Hash.new(0)
     totals_deposits_over_time = Hash.new(0)
+
+    # Initialize success and failed transaction counts
+    @success_count = Transaction.where(status: 'success').count
+    @failed_count = Transaction.where(status: 'failed').count
+
     # Helper for spreadsheet parsing
     def parse_spreadsheet(home)
       return { deposits: [], deposit_sum: 0, deposit_count: 0, interest: 0 } unless home.document.attached?
@@ -85,22 +90,15 @@ class HomeController < ApplicationController
     end
 
     # Collect recent deposits (limit 5)
-    @recent_deposits = []
-    Home.order(created_at: :desc).limit(20).each do |home|
-      result = parse_spreadsheet(home)
-      result[:deposits].each do |row|
-        @recent_deposits << {
-          date: row['date'] || home.created_at,
-          description: row['description'] || '',
-          amount: row['amount']
-        }
-      end
+    @recent_deposits = Transaction.order(created_at: :desc).limit(5).map do |transaction|
+      {
+        date: transaction.created_at,
+        amount: transaction.amount,
+        transaction_id: transaction.transaction_id,
+        total_cost: transaction.total_cost,
+        status: transaction.status
+      }
     end
-    @recent_deposits = @recent_deposits.sort_by do |d|
-      d[:date].to_time
-    rescue StandardError
-      Time.zone.now
-    end.reverse.first(5)
 
     @chart_series = [
       { name: 'Deposits', data: @totals_deposits_over_time }
