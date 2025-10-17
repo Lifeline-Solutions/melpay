@@ -9,15 +9,15 @@
       <tr>
         <th class="px-4 py-2 text-left font-medium">Date</th>
         <th class="px-4 py-2 text-left font-medium">Transaction ID</th>
-        <th class="px-4 py-2 text-right font-medium">Amount</th>
-        <th class="px-4 py-2 text-right font-medium">Total Cost</th>
-        <th class="px-4 py-2 text-right font-medium">Success</th>
+        <th class="px-4 py-2 text-left font-medium">Amount</th>
+        <th class="px-4 py-2 text-left font-medium">Total Cost</th>
+        <th class="px-4 py-2 text-left font-medium">Success</th>
       </tr>
       </thead>
       <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
       <% @recent_deposits.each do |deposit| %>
         <tr>
-          <td class="px-4 py-2 whitespace-nowrap text-gray-600 dark:text-gray-300">
+          <td class="px-4 py-2 text-left whitespace-nowrap text-gray-600 dark:text-gray-300">
             <% date_val =
                  if deposit[:date].is_a?(String)
                    begin
@@ -31,16 +31,16 @@
             %>
             <%= date_val.strftime("%B %d, %Y") %>
           </td>
-          <td class="px-4 py-2 whitespace-nowrap text-gray-600 dark:text-gray-300">
+          <td class="px-4 py-2 whitespace-nowrap text-left text-gray-600 dark:text-gray-300">
             <%= deposit[:transaction_id].presence || 'N/A' %>
           </td>
-          <td class="px-4 py-2 text-gray-600 dark:text-gray-300 truncate max-w-[120px]">
-            <%= truncate(deposit[:description], length: 25) %>
-          </td>
-          <td class="px-4 py-2 text-right text-green-600 font-semibold">
+          <td class="px-4 py-2 text-left text-green-600 font-semibold">
             <%= number_to_currency(deposit[:amount].to_f) %>
           </td>
-          <td class="px-6 py-3">
+          <td class="px-4 py-2  text-left text-gray-600 dark:text-gray-300">
+            <%= number_to_currency(deposit[:total_cost].to_f) %>
+          </td>
+          <td class="px-6 py-3 text-left">
             <% current_status = deposit[:status].to_s.strip %>
             <% if current_status.present? %>
                 <span class="px-2 py-1 text-xs font-semibold rounded-full <%= current_status.downcase == 'success' ? 'bg-green-100 text-green-800' : current_status.downcase == 'pending' ? 'bg-yellow-100 text-yellow-800' : current_status.downcase == 'failed' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800' %>">
