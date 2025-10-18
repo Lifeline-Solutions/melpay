@@ -1,7 +1,10 @@
 class HomeController < ApplicationController
+  include ActionView::Helpers::NumberHelper
+
   before_action :authenticate_user!
   load_and_authorize_resource except: %i[index new create]
-  before_action :set_home, only: %i[show edit update destroy]
+  # Ensure @home is set for show/edit/update/destroy and payment actions
+  before_action :set_home, only: %i[show edit update destroy pay_single_deposit pay_all_deposits]
 
   def index
     homes_for_list = Home.all.order(created_at: :desc)
@@ -243,34 +246,41 @@ class HomeController < ApplicationController
 
   # Pay a single deposit transaction
   def pay_single_deposit
-    deposit_transaction_id = params[:deposit_transaction_id]
+    deposit_transaction_id = params[:deposit_transaction_id] || params[:transaction_id] || params.dig(:home, :deposit_transaction_id)
 
-    # Find the deposit in the processed_deposits
-    deposit = @home.processed_deposits.find { |d| d['transaction_id'] == deposit_transaction_id }
+    # Ensure processed_deposits is present and find the deposit
+    deposits = @home.processed_deposits.is_a?(Array) ? @home.processed_deposits : []
+    deposit = deposits.find { |d| d['transaction_id'] == deposit_transaction_id }
 
-    redirect_to home_path(@home), alert: 'Deposit not found.' and return if deposit.nil?
+    if deposit.nil?
+      redirect_to home_path(@home), alert: 'Deposit not found.'
+      return
+    end
 
-    # Check if transaction already exists and is successful
-    existing_transaction = Transaction.find_by(
-      home_id: @home.id,
-      transaction_id: deposit_transaction_id,
-      status: 'success',
-      is_latest: true
-    )
+    # Prevent double-acting on an already-successful persisted Transaction
+    existing_transaction = Transaction.find_by(home_id: @home.id, transaction_id: deposit_transaction_id, status: 'success', is_latest: true)
+    if existing_transaction
+      redirect_to home_path(@home), alert: 'This transaction has already been completed successfully.'
+      return
+    end
 
-    redirect_to home_path(@home), alert: 'This transaction has already been completed successfully.' and return if existing_transaction
-
-    # Find the latest version of this transaction (if any)
-    latest_transaction = Transaction.where(
-      home_id: @home.id,
-      transaction_id: deposit_transaction_id,
-      is_latest: true
-    ).first
+    latest_transaction = Transaction.where(home_id: @home.id, transaction_id: deposit_transaction_id, is_latest: true).first
 
     client = @home.client || current_user.client
+    if client.nil?
+      redirect_to home_path(@home), alert: 'Client not found for this transaction.'
+      return
+    end
+
     interest_rate = client&.applied_interest_rate.to_f
     deposit_amount = deposit['amount'].to_f
     transaction_cost = deposit_amount * (interest_rate / 100.0)
+    total_cost = deposit_amount + transaction_cost
+
+    # Decide requested status and compute final status based on available credit
+    requested_status = params[:status].presence || 'success'
+    can_pay = requested_status == 'success' && (client.credit || 0) >= total_cost
+    final_status = can_pay ? 'success' : 'failed'
 
     new_attributes = {
       home_id: @home.id,
@@ -279,51 +289,53 @@ class HomeController < ApplicationController
       user_id: current_user.id,
       amount: deposit_amount,
       transaction_cost: transaction_cost,
-      total_cost: deposit_amount + transaction_cost,
+      total_cost: total_cost,
       deposit_data: deposit,
-      status: params[:status] || 'success'
+      status: final_status
     }
 
-    # If a transaction exists, create a new revision. Otherwise, create a new transaction.
-    if latest_transaction
-      # Create new revision (records change in audit trail)
-      transaction = latest_transaction.create_revision(new_attributes)
-      Rails.logger.info "Creating revision for transaction #{deposit_transaction_id}. Previous version ID: #{latest_transaction.id}"
-    else
-      # Create brand new transaction
-      transaction = Transaction.new(new_attributes)
-      Rails.logger.info "Creating new transaction #{deposit_transaction_id}"
+    transaction_record = nil
+    begin
+      client.with_lock do
+        # Create revision or new transaction while home row is locked
+        if latest_transaction
+          transaction_record = latest_transaction.create_revision(new_attributes)
+          Rails.logger.info "Creating revision for transaction #{deposit_transaction_id}. Previous version ID: #{latest_transaction.id}"
+        else
+          transaction_record = Transaction.new(new_attributes)
+          Rails.logger.info "Creating new transaction #{deposit_transaction_id}"
+        end
+
+        # Save transaction, raise if validation fails to rollback
+        transaction_record.save!
+
+        # If success, subtract total_cost from client.credit (do NOT allow negative)
+        if transaction_record.status == 'success'
+          # Double-check available balance (race-safety): raise if not enough
+          raise ActiveRecord::RecordInvalid, transaction_record if (client.credit || 0) < total_cost
+
+          client.credit = (client.credit || 0) - total_cost
+          client.save!
+        end
+
+        # Update the deposit status in processed_deposits and persist
+        deposits.each do |d|
+          d['status'] = transaction_record.status if d['transaction_id'] == deposit_transaction_id
+        end
+        @home.processed_deposits = deposits
+        @home.save!
+      end
+    rescue ActiveRecord::RecordInvalid => e
+      error_message = e.record&.errors&.full_messages&.join(', ').presence || e.message
+      redirect_to home_path(@home), alert: "Error: #{error_message}"
+      return
     end
 
-    # Always save the transaction record
-    if transaction.save
-      # Update the deposit status in processed_deposits
-      @home.processed_deposits.each do |d|
-        d['status'] = transaction.status if d['transaction_id'] == deposit_transaction_id
-      end
-      @home.save
-
-      if latest_transaction
-        # This was a revision
-        if transaction.status == 'success'
-          redirect_to home_path(@home), notice: "Payment updated to successful! Transaction ID: #{deposit_transaction_id} (Revision recorded)"
-        elsif transaction.status == 'failed'
-          redirect_to home_path(@home), alert: "Payment updated to failed and has been recorded. Transaction ID: #{deposit_transaction_id} (Revision recorded)"
-        else
-          redirect_to home_path(@home), notice: "Payment status updated: #{transaction.status}. Transaction ID: #{deposit_transaction_id} (Revision recorded)"
-        end
-      elsif transaction.status == 'success'
-        # This was a new transaction
-        redirect_to home_path(@home), notice: "Payment completed successfully! Transaction ID: #{deposit_transaction_id}"
-      elsif transaction.status == 'failed'
-        redirect_to home_path(@home), alert: "Payment failed and has been recorded. Transaction ID: #{deposit_transaction_id}"
-      else
-        redirect_to home_path(@home), notice: "Payment status: #{transaction.status}. Transaction ID: #{deposit_transaction_id}"
-      end
+    # At this point transaction_record is persisted
+    if transaction_record.status == 'success'
+      redirect_to home_path(@home), notice: "Payment completed successfully! Transaction ID: #{deposit_transaction_id}"
     else
-      # Even if save fails, log the error
-      Rails.logger.error "Failed to save transaction #{deposit_transaction_id}: #{transaction.errors.full_messages.join(', ')}"
-      redirect_to home_path(@home), alert: "Unable to record transaction: #{transaction.errors.full_messages.join(', ')}"
+      redirect_to home_path(@home), alert: "Payment failed and has been recorded. Transaction ID: #{deposit_transaction_id}"
     end
   end
 
@@ -336,6 +348,11 @@ class HomeController < ApplicationController
     revised_count = 0
 
     client = @home.client || current_user.client
+    if client.nil?
+      redirect_to home_path(@home), alert: 'Client not found for this transaction.'
+      return
+    end
+
     interest_rate = client&.applied_interest_rate.to_f
 
     @home.processed_deposits.each do |deposit|
@@ -374,33 +391,52 @@ class HomeController < ApplicationController
         status: status
       }
 
-      # If a transaction exists, create a new revision. Otherwise, create new transaction.
-      if latest_transaction
-        transaction = latest_transaction.create_revision(new_attributes)
-        is_revision = true
-      else
-        transaction = Transaction.new(new_attributes)
-        is_revision = false
-      end
+      # Decide final status based on remaining credit: process those we can pay, record failed for others
+      can_pay = status == 'success' && (client.credit || 0) >= new_attributes[:total_cost]
+      final_status = can_pay ? 'success' : 'failed'
+      new_attributes[:status] = final_status
 
-      # Save every transaction regardless of status
-      if transaction.save
-        deposit['status'] = transaction.status
+      is_revision = false
+      begin
+        # Use a row lock on client so checking and subtracting credit is atomic per-deposit
+        client.with_lock do
+          if latest_transaction
+            transaction = latest_transaction.create_revision(new_attributes)
+            is_revision = true
+          else
+            transaction = Transaction.new(new_attributes)
+            is_revision = false
+          end
+
+          transaction.save!
+
+          if transaction.status == 'success'
+            # subtract cost (we already checked can_pay)
+            client.credit = (client.credit || 0) - transaction.total_cost
+            client.save!
+          end
+
+          # update deposit status
+          deposit['status'] = transaction.status
+        end
+
         recorded_count += 1
         revised_count += 1 if is_revision
-
-        if transaction.status == 'success'
+        if final_status == 'success'
           success_count += 1
-        elsif transaction.status == 'failed'
+        else
           failed_count += 1
         end
 
-        Rails.logger.info "#{is_revision ? 'Revised' : 'Recorded'} transaction #{deposit['transaction_id']} with status: #{transaction.status}"
-      else
-        Rails.logger.error "Failed to record transaction #{deposit['transaction_id']}: #{transaction.errors.full_messages.join(', ')}"
+        Rails.logger.info "#{is_revision ? 'Revised' : 'Recorded'} transaction #{deposit['transaction_id']} with status: #{final_status}"
+      rescue ActiveRecord::RecordInvalid => e
+        error_message = e.record&.errors&.full_messages&.join(', ').presence || e.message
+        Rails.logger.error "Error #{deposit['transaction_id']}: #{error_message}"
       end
     end
 
+    # persist processed_deposits and ensure home saved
+    @home.processed_deposits = @home.processed_deposits
     @home.save if recorded_count.positive?
 
     message = "Processed #{recorded_count} transactions"
@@ -429,6 +465,6 @@ class HomeController < ApplicationController
   end
 
   def home_params
-    params.require(:home).permit(:name, :document, :client_id, :user_id, :unique_id)
+    params.require(:home).permit(:name, :credit, :document, :client_id, :user_id, :unique_id)
   end
 end

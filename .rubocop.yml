@@ -32,7 +32,6 @@ Metrics/CyclomaticComplexity:
 Metrics/PerceivedComplexity:
   Max: 50
 
-
 Style/Documentation:
   Enabled: false
 Style/ClassAndModuleChildren:
@@ -61,10 +60,16 @@ Lint/RequireParentheses:
   Enabled: false
 Lint/NestedMethodDefinition:
   Enabled: false
+Lint/NonLocalExitFromIterator:
+  Enabled: false
+Lint/SelfAssignment:
+  Enabled: false
 Style/HashEachMethods:
   Enabled: false
 Style/HashTransformKeys:
   Enabled: false
 Style/HashTransformValues:
   Enabled: false
+Style/SafeNavigationChainLength:
+    Enabled: false
 

@@ -3,7 +3,8 @@
   <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
     <div class="bg-green-100 p-6 rounded-lg shadow">
       <h3 class="text-sm font-semibold text-green-800">Current Balance</h3>
-      <p class="text-2xl font-bold text-green-600"><%= number_to_currency(@total_deposits) %></p>
+      <% client = @home.client || current_user.client %>
+      <p class="text-2xl font-bold text-green-600"><%= number_to_currency(client&.credit || 0) %></p>
     </div>
     <div class="bg-green-100 p-6 rounded-lg shadow">
       <h3 class="text-sm font-semibold text-green-800">Total Amount to transfer</h3>
@@ -101,9 +102,17 @@
               <% if is_successful %>
                 <span class="text-xs text-gray-500">Completed</span>
               <% else %>
-                <div class="flex gap-1">
-                  <%= button_to "✓", pay_single_deposit_home_path(@home, deposit_transaction_id: deposit['transaction_id'], status: 'success'), method: :post, class: "bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-2 rounded", title: "Mark as Success", data: { confirm: 'Mark this payment as successful?' } %>
-                  <%= button_to "✗", pay_single_deposit_home_path(@home, deposit_transaction_id: deposit['transaction_id'], status: 'failed'), method: :post, class: "bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1 px-2 rounded", title: "Mark as Failed", data: { confirm: 'Mark this payment as failed?' } %>
+                <div class="flex items-center gap-2">
+                  <!-- Success toggle (styled checkbox). Submits deposit_transaction_id and status=success -->
+                  <%= form_with url: pay_single_deposit_home_path(@home), method: :post, local: true do %>
+                    <%= hidden_field_tag :deposit_transaction_id, deposit['transaction_id'] %>
+                    <%= hidden_field_tag :status, 'success', id: "status_success_#{deposit['transaction_id']}" %>
+                    <label class="relative inline-block w-14 h-7 cursor-pointer" title="Mark as success">
+                      <%= check_box_tag "success_toggle_#{deposit['transaction_id']}", '1', false, class: 'hidden success-toggle', data: { submit_form: true }, onchange: "this.form.submit()" %>
+                      <span class="absolute top-0 left-0 right-0 bottom-0 bg-gray-300 rounded-full transition-colors duration-200"></span>
+                      <span class="absolute left-1 top-1 bg-white w-5 h-5 rounded-full transition-transform duration-200 transform"></span>
+                    </label>
+                  <% end %>
                 </div>
               <% end %>
             </td>
