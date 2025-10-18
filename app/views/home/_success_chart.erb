@@ -1,48 +1,12 @@
-<div class="items-center justify-center rounded-sm bg-gray-50 dark:bg-gray-800 shadow h-full">
-    <p class="text-center">Transaction Success Rate</p>
-    <div class="w-full max-w-xs mx-auto p-2">
-      <canvas id="transactionSuccessRateChart"></canvas>
+<div class="items-center justify-center rounded-sm bg-gray-50 dark:bg-gray-800 shadow h-full p-4">
+    <h3 class="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-100 text-center">Transaction Success Rate</h3>
+    <div class="w-full max-w-xs mx-auto">
+      <%= pie_chart(
+        [["Success", @success_count || 0], ["Failed", @failed_count || 0]],
+        donut: true,
+        colors: ["#10B981", "#EF4444"],
+        legend: "top",
+        suffix: " transactions"
+      ) %>
     </div>
-
-    <script>
-        document.addEventListener('turbo:load', function () {
-            const chartElement = document.getElementById('transactionSuccessRateChart');
-            if (!chartElement) return; // Ensure the canvas exists
-
-            const ctx = chartElement.getContext('2d');
-            const successCount = <%= @success_count %>;
-            const failedCount = <%= @failed_count %>;
-
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Success', 'Failed'],
-                    datasets: [{
-                        data: [successCount, failedCount],
-                        backgroundColor: ['#10B981', '#EF4444'],
-                        hoverBackgroundColor: ['#059669', '#DC2626'],
-                    }],
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(tooltipItem) {
-                                    const data = tooltipItem.dataset.data;
-                                    const total = data.reduce((acc, value) => acc + value, 0);
-                                    const value = data[tooltipItem.dataIndex];
-                                    const percentage = ((value / total) * 100).toFixed(2);
-                                    return `${tooltipItem.label}: ${value} (${percentage}%)`;
-                                }
-                            }
-                        }
-                    },
-                },
-            });
-        });
-    </script>
-  </div>
+</div>
