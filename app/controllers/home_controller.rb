@@ -272,10 +272,10 @@ class HomeController < ApplicationController
     transaction_cost = deposit_amount * (interest_rate / 100.0)
     total_cost = deposit_amount + transaction_cost
 
-    # Decide status: requested status (from form) or 'success' by default
+    # Decide requested status and compute final status based on available credit
     requested_status = params[:status].presence || 'success'
-    # Per requirement: allow marking success even if balance is insufficient; balance will be subtracted and may go negative
-    status = requested_status == 'success' ? 'success' : 'failed'
+    can_pay = requested_status == 'success' && (@home.credit || 0) >= total_cost
+    final_status = can_pay ? 'success' : 'failed'
 
     new_attributes = {
       home_id: @home.id,
@@ -286,13 +286,13 @@ class HomeController < ApplicationController
       transaction_cost: transaction_cost,
       total_cost: total_cost,
       deposit_data: deposit,
-      status: status
+      status: final_status
     }
 
     transaction_record = nil
     begin
-      ActiveRecord::Base.transaction do
-        # Create revision or new transaction inside DB transaction
+      @home.with_lock do
+        # Create revision or new transaction while home row is locked
         if latest_transaction
           transaction_record = latest_transaction.create_revision(new_attributes)
           Rails.logger.info "Creating revision for transaction #{deposit_transaction_id}. Previous version ID: #{latest_transaction.id}"
@@ -304,8 +304,11 @@ class HomeController < ApplicationController
         # Save transaction, raise if validation fails to rollback
         transaction_record.save!
 
-        # If success, subtract total_cost from home.credit (allow negative balance)
+        # If success, subtract total_cost from home.credit (do NOT allow negative)
         if transaction_record.status == 'success'
+          # Double-check available balance (race-safety): raise if not enough
+          raise ActiveRecord::RecordInvalid.new(transaction_record) if (@home.credit || 0) < total_cost
+
           @home.credit = (@home.credit || 0) - total_cost
           @home.save!
         end
@@ -318,18 +321,16 @@ class HomeController < ApplicationController
         @home.save!
       end
     rescue ActiveRecord::RecordInvalid => e
-      Rails.logger.error "Failed to save transaction #{deposit_transaction_id}: #{e.record.errors.full_messages.join(', ')}"
-      redirect_to home_path(@home), alert: "Unable to record transaction: #{e.record.errors.full_messages.join(', ')}"
+      Rails.logger.error "Failed to save transaction #{deposit_transaction_id}: #{e.record&.errors&.full_messages&.join(', ') || e.message}"
+      redirect_to home_path(@home), alert: "Unable to record transaction: #{e.record&.errors&.full_messages&.join(', ') || e.message}"
       return
     end
 
     # At this point transaction_record is persisted
     if transaction_record.status == 'success'
       redirect_to home_path(@home), notice: "Payment completed successfully! Transaction ID: #{deposit_transaction_id}"
-    elsif transaction_record.status == 'failed'
-      redirect_to home_path(@home), alert: "Payment failed and has been recorded. Transaction ID: #{deposit_transaction_id}"
     else
-      redirect_to home_path(@home), notice: "Payment status: #{transaction_record.status}. Transaction ID: #{deposit_transaction_id}"
+      redirect_to home_path(@home), alert: "Payment failed and has been recorded. Transaction ID: #{deposit_transaction_id}"
     end
   end
 
@@ -380,42 +381,50 @@ class HomeController < ApplicationController
         status: status
       }
 
-      # Ensure @home.credit is greater than the total transaction cost before proceeding
-      if @home.credit < new_attributes[:total_cost]
-        redirect_to home_path(@home),
-                    alert: "Insufficient balance to process these transactions.
-                    Current balance: #{number_to_currency(@home.credit)},
-                    Required: #{number_to_currency(new_attributes[:total_cost])}"
-        return
-      end
+      # Decide final status based on remaining credit: process those we can pay, record failed for others
+      can_pay = status == 'success' && (@home.credit || 0) >= new_attributes[:total_cost]
+      final_status = can_pay ? 'success' : 'failed'
+      new_attributes[:status] = final_status
 
-      # If a transaction exists, create a new revision. Otherwise, create new transaction.
-      if latest_transaction
-        transaction = latest_transaction.create_revision(new_attributes)
-        is_revision = true
-      else
-        transaction = Transaction.new(new_attributes)
-        is_revision = false
-      end
+      begin
+        # Use a row lock on @home so checking and subtracting credit is atomic per-deposit
+        @home.with_lock do
+          if latest_transaction
+            transaction = latest_transaction.create_revision(new_attributes)
+            true
+          else
+            transaction = Transaction.new(new_attributes)
+            false
+          end
 
-      # Save every transaction regardless of status
-      if transaction.save
-        deposit['status'] = transaction.status
+          transaction.save!
+
+          if transaction.status == 'success'
+            # subtract cost (we already checked can_pay)
+            @home.credit = (@home.credit || 0) - transaction.total_cost
+            @home.save!
+          end
+
+          # update deposit status
+          deposit['status'] = transaction.status
+        end
+
         recorded_count += 1
         revised_count += 1 if is_revision
-
-        if transaction.status == 'success'
+        if final_status == 'success'
           success_count += 1
-        elsif transaction.status == 'failed'
+        else
           failed_count += 1
         end
 
-        Rails.logger.info "#{is_revision ? 'Revised' : 'Recorded'} transaction #{deposit['transaction_id']} with status: #{transaction.status}"
-      else
-        Rails.logger.error "Failed to record transaction #{deposit['transaction_id']}: #{transaction.errors.full_messages.join(', ')}"
+        Rails.logger.info "#{is_revision ? 'Revised' : 'Recorded'} transaction #{deposit['transaction_id']} with status: #{final_status}"
+      rescue ActiveRecord::RecordInvalid => e
+        Rails.logger.error "Failed to record transaction #{deposit['transaction_id']}: #{e.record&.errors&.full_messages&.join(', ') || e.message}"
       end
     end
 
+    # persist processed_deposits and ensure home saved
+    @home.processed_deposits = @home.processed_deposits
     @home.save if recorded_count.positive?
 
     message = "Processed #{recorded_count} transactions"
