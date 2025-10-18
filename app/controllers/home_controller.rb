@@ -396,15 +396,16 @@ class HomeController < ApplicationController
       final_status = can_pay ? 'success' : 'failed'
       new_attributes[:status] = final_status
 
+      is_revision = false
       begin
         # Use a row lock on client so checking and subtracting credit is atomic per-deposit
         client.with_lock do
           if latest_transaction
             transaction = latest_transaction.create_revision(new_attributes)
-            true
+            is_revision = true
           else
             transaction = Transaction.new(new_attributes)
-            false
+            is_revision = false
           end
 
           transaction.save!
