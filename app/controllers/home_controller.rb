@@ -1,7 +1,10 @@
 class HomeController < ApplicationController
+  include ActionView::Helpers::NumberHelper
+
   before_action :authenticate_user!
   load_and_authorize_resource except: %i[index new create]
-  before_action :set_home, only: %i[show edit update destroy]
+  # Ensure @home is set for show/edit/update/destroy and payment actions
+  before_action :set_home, only: %i[show edit update destroy pay_single_deposit pay_all_deposits]
 
   def index
     homes_for_list = Home.all.order(created_at: :desc)
@@ -243,34 +246,36 @@ class HomeController < ApplicationController
 
   # Pay a single deposit transaction
   def pay_single_deposit
-    deposit_transaction_id = params[:deposit_transaction_id]
+    deposit_transaction_id = params[:deposit_transaction_id] || params[:transaction_id] || params.dig(:home, :deposit_transaction_id)
 
-    # Find the deposit in the processed_deposits
-    deposit = @home.processed_deposits.find { |d| d['transaction_id'] == deposit_transaction_id }
+    # Ensure processed_deposits is present and find the deposit
+    deposits = @home.processed_deposits.is_a?(Array) ? @home.processed_deposits : []
+    deposit = deposits.find { |d| d['transaction_id'] == deposit_transaction_id }
 
-    redirect_to home_path(@home), alert: 'Deposit not found.' and return if deposit.nil?
+    if deposit.nil?
+      redirect_to home_path(@home), alert: 'Deposit not found.'
+      return
+    end
 
-    # Check if transaction already exists and is successful
-    existing_transaction = Transaction.find_by(
-      home_id: @home.id,
-      transaction_id: deposit_transaction_id,
-      status: 'success',
-      is_latest: true
-    )
+    # Prevent double-acting on an already-successful persisted Transaction
+    existing_transaction = Transaction.find_by(home_id: @home.id, transaction_id: deposit_transaction_id, status: 'success', is_latest: true)
+    if existing_transaction
+      redirect_to home_path(@home), alert: 'This transaction has already been completed successfully.'
+      return
+    end
 
-    redirect_to home_path(@home), alert: 'This transaction has already been completed successfully.' and return if existing_transaction
-
-    # Find the latest version of this transaction (if any)
-    latest_transaction = Transaction.where(
-      home_id: @home.id,
-      transaction_id: deposit_transaction_id,
-      is_latest: true
-    ).first
+    latest_transaction = Transaction.where(home_id: @home.id, transaction_id: deposit_transaction_id, is_latest: true).first
 
     client = @home.client || current_user.client
     interest_rate = client&.applied_interest_rate.to_f
     deposit_amount = deposit['amount'].to_f
     transaction_cost = deposit_amount * (interest_rate / 100.0)
+    total_cost = deposit_amount + transaction_cost
+
+    # Decide status: requested status (from form) or 'success' by default
+    requested_status = params[:status].presence || 'success'
+    # Per requirement: allow marking success even if balance is insufficient; balance will be subtracted and may go negative
+    status = requested_status == 'success' ? 'success' : 'failed'
 
     new_attributes = {
       home_id: @home.id,
@@ -279,51 +284,52 @@ class HomeController < ApplicationController
       user_id: current_user.id,
       amount: deposit_amount,
       transaction_cost: transaction_cost,
-      total_cost: deposit_amount + transaction_cost,
+      total_cost: total_cost,
       deposit_data: deposit,
-      status: params[:status] || 'success'
+      status: status
     }
 
-    # If a transaction exists, create a new revision. Otherwise, create a new transaction.
-    if latest_transaction
-      # Create new revision (records change in audit trail)
-      transaction = latest_transaction.create_revision(new_attributes)
-      Rails.logger.info "Creating revision for transaction #{deposit_transaction_id}. Previous version ID: #{latest_transaction.id}"
-    else
-      # Create brand new transaction
-      transaction = Transaction.new(new_attributes)
-      Rails.logger.info "Creating new transaction #{deposit_transaction_id}"
+    transaction_record = nil
+    begin
+      ActiveRecord::Base.transaction do
+        # Create revision or new transaction inside DB transaction
+        if latest_transaction
+          transaction_record = latest_transaction.create_revision(new_attributes)
+          Rails.logger.info "Creating revision for transaction #{deposit_transaction_id}. Previous version ID: #{latest_transaction.id}"
+        else
+          transaction_record = Transaction.new(new_attributes)
+          Rails.logger.info "Creating new transaction #{deposit_transaction_id}"
+        end
+
+        # Save transaction, raise if validation fails to rollback
+        transaction_record.save!
+
+        # If success, subtract total_cost from home.credit (allow negative balance)
+        if transaction_record.status == 'success'
+          @home.credit = (@home.credit || 0) - total_cost
+          @home.save!
+        end
+
+        # Update the deposit status in processed_deposits and persist
+        deposits.each do |d|
+          d['status'] = transaction_record.status if d['transaction_id'] == deposit_transaction_id
+        end
+        @home.processed_deposits = deposits
+        @home.save!
+      end
+    rescue ActiveRecord::RecordInvalid => e
+      Rails.logger.error "Failed to save transaction #{deposit_transaction_id}: #{e.record.errors.full_messages.join(', ')}"
+      redirect_to home_path(@home), alert: "Unable to record transaction: #{e.record.errors.full_messages.join(', ')}"
+      return
     end
 
-    # Always save the transaction record
-    if transaction.save
-      # Update the deposit status in processed_deposits
-      @home.processed_deposits.each do |d|
-        d['status'] = transaction.status if d['transaction_id'] == deposit_transaction_id
-      end
-      @home.save
-
-      if latest_transaction
-        # This was a revision
-        if transaction.status == 'success'
-          redirect_to home_path(@home), notice: "Payment updated to successful! Transaction ID: #{deposit_transaction_id} (Revision recorded)"
-        elsif transaction.status == 'failed'
-          redirect_to home_path(@home), alert: "Payment updated to failed and has been recorded. Transaction ID: #{deposit_transaction_id} (Revision recorded)"
-        else
-          redirect_to home_path(@home), notice: "Payment status updated: #{transaction.status}. Transaction ID: #{deposit_transaction_id} (Revision recorded)"
-        end
-      elsif transaction.status == 'success'
-        # This was a new transaction
-        redirect_to home_path(@home), notice: "Payment completed successfully! Transaction ID: #{deposit_transaction_id}"
-      elsif transaction.status == 'failed'
-        redirect_to home_path(@home), alert: "Payment failed and has been recorded. Transaction ID: #{deposit_transaction_id}"
-      else
-        redirect_to home_path(@home), notice: "Payment status: #{transaction.status}. Transaction ID: #{deposit_transaction_id}"
-      end
+    # At this point transaction_record is persisted
+    if transaction_record.status == 'success'
+      redirect_to home_path(@home), notice: "Payment completed successfully! Transaction ID: #{deposit_transaction_id}"
+    elsif transaction_record.status == 'failed'
+      redirect_to home_path(@home), alert: "Payment failed and has been recorded. Transaction ID: #{deposit_transaction_id}"
     else
-      # Even if save fails, log the error
-      Rails.logger.error "Failed to save transaction #{deposit_transaction_id}: #{transaction.errors.full_messages.join(', ')}"
-      redirect_to home_path(@home), alert: "Unable to record transaction: #{transaction.errors.full_messages.join(', ')}"
+      redirect_to home_path(@home), notice: "Payment status: #{transaction_record.status}. Transaction ID: #{deposit_transaction_id}"
     end
   end
 
@@ -373,6 +379,15 @@ class HomeController < ApplicationController
         deposit_data: deposit,
         status: status
       }
+
+      # Ensure @home.credit is greater than the total transaction cost before proceeding
+      if @home.credit < new_attributes[:total_cost]
+        redirect_to home_path(@home),
+                    alert: "Insufficient balance to process these transactions.
+                    Current balance: #{number_to_currency(@home.credit)},
+                    Required: #{number_to_currency(new_attributes[:total_cost])}"
+        return
+      end
 
       # If a transaction exists, create a new revision. Otherwise, create new transaction.
       if latest_transaction
@@ -429,6 +444,6 @@ class HomeController < ApplicationController
   end
 
   def home_params
-    params.require(:home).permit(:name, :document, :client_id, :user_id, :unique_id)
+    params.require(:home).permit(:name, :credit, :document, :client_id, :user_id, :unique_id)
   end
 end
