@@ -112,13 +112,6 @@
                       <span class="absolute left-1 top-1 bg-white w-5 h-5 rounded-full transition-transform duration-200 transform"></span>
                     </label>
                   <% end %>
-
-                  <!-- Fail button (separate action) -->
-                  <%= form_with url: pay_single_deposit_home_path(@home), method: :post, local: true do %>
-                    <%= hidden_field_tag :deposit_transaction_id, deposit['transaction_id'] %>
-                    <%= hidden_field_tag :status, 'failed' %>
-                    <%= submit_tag '✗', class: 'bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1 px-2 rounded', data: { confirm: 'Mark this payment as failed?' } %>
-                  <% end %>
                 </div>
               <% end %>
             </td>

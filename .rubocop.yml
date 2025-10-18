@@ -32,7 +32,6 @@ Metrics/CyclomaticComplexity:
 Metrics/PerceivedComplexity:
   Max: 50
 
-
 Style/Documentation:
   Enabled: false
 Style/ClassAndModuleChildren:
