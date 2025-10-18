@@ -7,10 +7,11 @@
     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
       <thead class="bg-gray-50 dark:bg-gray-700">
         <tr>
-          <th class="px-6 py-3 text-center text-sm font-semibold text-gray-600 dark:text-gray-200">Document Name</th>
-          <th class="px-6 py-3 text-center text-sm font-semibold text-gray-600 dark:text-gray-200">Total Deposits</th>
-          <th class="px-6 py-3 text-center text-sm font-semibold text-gray-600 dark:text-gray-200">Total Payments Count</th>
-          <th class="px-6 py-3 text-center text-sm font-semibold text-gray-600 dark:text-gray-200">Cost Of Transaction</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-200">Global ID</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-200">Document Name</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-200">Total Deposits</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-200">Total Payments Count</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-200">Cost Of Transaction</th>
 
           <th class="px-6 py-3">VIEW</th>
         </tr>
@@ -18,7 +19,10 @@
       <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
         <% @homes.each do |home| %>
           <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-            <td class="px-6 py-4 text-gray-800 dark:text-gray-100">
+            <td class="px-6 py-4 text-sm font-medium whitespace-nowrap">
+              <%= home.unique_id %>
+            </td>
+            <td class="px-6 py-4">
               <%= home.name.presence || home.document.filename.to_s %>
             </td>
             <td class="px-6 py-4 text-center">
