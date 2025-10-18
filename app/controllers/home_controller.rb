@@ -307,7 +307,7 @@ class HomeController < ApplicationController
         # If success, subtract total_cost from home.credit (do NOT allow negative)
         if transaction_record.status == 'success'
           # Double-check available balance (race-safety): raise if not enough
-          raise ActiveRecord::RecordInvalid.new(transaction_record) if (@home.credit || 0) < total_cost
+          raise ActiveRecord::RecordInvalid, transaction_record if (@home.credit || 0) < total_cost
 
           @home.credit = (@home.credit || 0) - total_cost
           @home.save!
@@ -321,8 +321,8 @@ class HomeController < ApplicationController
         @home.save!
       end
     rescue ActiveRecord::RecordInvalid => e
-      Rails.logger.error "Failed to save transaction #{deposit_transaction_id}: #{e.record&.errors&.full_messages&.join(', ') || e.message}"
-      redirect_to home_path(@home), alert: "Unable to record transaction: #{e.record&.errors&.full_messages&.join(', ') || e.message}"
+      error_message = e.record&.errors&.full_messages&.join(', ').presence || e.message
+      redirect_to home_path(@home), alert: "Error: #{error_message}"
       return
     end
 
@@ -419,7 +419,8 @@ class HomeController < ApplicationController
 
         Rails.logger.info "#{is_revision ? 'Revised' : 'Recorded'} transaction #{deposit['transaction_id']} with status: #{final_status}"
       rescue ActiveRecord::RecordInvalid => e
-        Rails.logger.error "Failed to record transaction #{deposit['transaction_id']}: #{e.record&.errors&.full_messages&.join(', ') || e.message}"
+        error_message = e.record&.errors&.full_messages&.join(', ').presence || e.message
+        Rails.logger.error "Error #{deposit['transaction_id']}: #{error_message}"
       end
     end
 
