@@ -267,6 +267,11 @@ class HomeController < ApplicationController
     latest_transaction = Transaction.where(home_id: @home.id, transaction_id: deposit_transaction_id, is_latest: true).first
 
     client = @home.client || current_user.client
+    if client.nil?
+      redirect_to home_path(@home), alert: 'Client not found for this transaction.'
+      return
+    end
+
     interest_rate = client&.applied_interest_rate.to_f
     deposit_amount = deposit['amount'].to_f
     transaction_cost = deposit_amount * (interest_rate / 100.0)
@@ -274,7 +279,7 @@ class HomeController < ApplicationController
 
     # Decide requested status and compute final status based on available credit
     requested_status = params[:status].presence || 'success'
-    can_pay = requested_status == 'success' && (@home.credit || 0) >= total_cost
+    can_pay = requested_status == 'success' && (client.credit || 0) >= total_cost
     final_status = can_pay ? 'success' : 'failed'
 
     new_attributes = {
@@ -291,7 +296,7 @@ class HomeController < ApplicationController
 
     transaction_record = nil
     begin
-      @home.with_lock do
+      client.with_lock do
         # Create revision or new transaction while home row is locked
         if latest_transaction
           transaction_record = latest_transaction.create_revision(new_attributes)
@@ -304,13 +309,13 @@ class HomeController < ApplicationController
         # Save transaction, raise if validation fails to rollback
         transaction_record.save!
 
-        # If success, subtract total_cost from home.credit (do NOT allow negative)
+        # If success, subtract total_cost from client.credit (do NOT allow negative)
         if transaction_record.status == 'success'
           # Double-check available balance (race-safety): raise if not enough
-          raise ActiveRecord::RecordInvalid, transaction_record if (@home.credit || 0) < total_cost
+          raise ActiveRecord::RecordInvalid, transaction_record if (client.credit || 0) < total_cost
 
-          @home.credit = (@home.credit || 0) - total_cost
-          @home.save!
+          client.credit = (client.credit || 0) - total_cost
+          client.save!
         end
 
         # Update the deposit status in processed_deposits and persist
@@ -343,6 +348,11 @@ class HomeController < ApplicationController
     revised_count = 0
 
     client = @home.client || current_user.client
+    if client.nil?
+      redirect_to home_path(@home), alert: 'Client not found for this transaction.'
+      return
+    end
+
     interest_rate = client&.applied_interest_rate.to_f
 
     @home.processed_deposits.each do |deposit|
@@ -382,13 +392,13 @@ class HomeController < ApplicationController
       }
 
       # Decide final status based on remaining credit: process those we can pay, record failed for others
-      can_pay = status == 'success' && (@home.credit || 0) >= new_attributes[:total_cost]
+      can_pay = status == 'success' && (client.credit || 0) >= new_attributes[:total_cost]
       final_status = can_pay ? 'success' : 'failed'
       new_attributes[:status] = final_status
 
       begin
-        # Use a row lock on @home so checking and subtracting credit is atomic per-deposit
-        @home.with_lock do
+        # Use a row lock on client so checking and subtracting credit is atomic per-deposit
+        client.with_lock do
           if latest_transaction
             transaction = latest_transaction.create_revision(new_attributes)
             true
@@ -401,8 +411,8 @@ class HomeController < ApplicationController
 
           if transaction.status == 'success'
             # subtract cost (we already checked can_pay)
-            @home.credit = (@home.credit || 0) - transaction.total_cost
-            @home.save!
+            client.credit = (client.credit || 0) - transaction.total_cost
+            client.save!
           end
 
           # update deposit status
