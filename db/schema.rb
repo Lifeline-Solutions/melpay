@@ -73,7 +73,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_18_090830) do
     t.uuid "client_id", null: false
     t.jsonb "processed_deposits", default: []
     t.string "unique_id"
-    t.float "credit"
     t.index ["client_id"], name: "index_homes_on_client_id"
     t.index ["user_id"], name: "index_homes_on_user_id"
   end
