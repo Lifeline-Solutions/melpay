@@ -25,6 +25,10 @@ class HomeController < ApplicationController
     @total_deposit_count = Hash.new(0)
     @deposit_interest = Hash.new(0)
     totals_deposits_over_time = Hash.new(0)
+    
+    # Prepare hashes for money in (credits) and money out (transaction costs) over time
+    credits_over_time = Hash.new(0)
+    transaction_costs_over_time = Hash.new(0)
 
     # Initialize success and failed transaction counts
     @success_count = Transaction.where(status: 'success').count
@@ -77,19 +81,38 @@ class HomeController < ApplicationController
       @deposit_interest[home.id] = result[:interest]
       date = home.created_at.to_date
       totals_deposits_over_time[date] += result[:deposit_sum]
+      
+      # Add client credits to credits_over_time
+      client = home.client
+      if client && client.credit
+        credits_over_time[date] += client.credit.to_f
+      end
     end
 
     @total_deposits_sum = @totals_deposits.values.sum.to_f
 
+    # Calculate transaction costs over time from successful transactions
+    successful_transactions = Transaction.where(status: 'success', is_latest: true)
+    successful_transactions.each do |transaction|
+      date = transaction.created_at.to_date
+      transaction_costs_over_time[date] += transaction.total_cost.to_f
+    end
+
     # Build time-series for chart
-    all_dates = totals_deposits_over_time.keys.uniq.sort
+    all_dates = (totals_deposits_over_time.keys + credits_over_time.keys + transaction_costs_over_time.keys).uniq.sort
+    
     if all_dates.empty?
       @totals_deposits_over_time = {}
+      @credits_over_time = {}
+      @transaction_costs_over_time = {}
     else
       min_date = all_dates.first
       max_date = all_dates.last
       date_range = (min_date..max_date).to_a
+      
       @totals_deposits_over_time = date_range.to_h { |d| [d.strftime('%Y-%m-%d'), totals_deposits_over_time[d].to_f] }
+      @credits_over_time = date_range.to_h { |d| [d.strftime('%Y-%m-%d'), credits_over_time[d].to_f] }
+      @transaction_costs_over_time = date_range.to_h { |d| [d.strftime('%Y-%m-%d'), transaction_costs_over_time[d].to_f] }
     end
 
     # Collect recent deposits (limit 5)
@@ -105,8 +128,11 @@ class HomeController < ApplicationController
       }
     end
 
+    # UPDATED: Chart series with all three metrics (Money in, MOney out, Deposits)
     @chart_series = [
-      { name: 'Deposits', data: @totals_deposits_over_time }
+      { name: 'Deposits', data: @totals_deposits_over_time },
+      { name: 'Money In (Credits)', data: @credits_over_time },
+      { name: 'Money Out (Costs)', data: @transaction_costs_over_time }
     ]
   end
 
