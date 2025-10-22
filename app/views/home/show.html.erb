@@ -44,7 +44,7 @@
 
     <div class="overflow-x-auto">
       <% client = @home.client || current_user.client %>
-      <% interest_rate = client&.applied_interest_rate.to_f %>
+      <% client_current_rate = client&.applied_interest_rate.to_f %>
       <table class="min-w-full bg-white dark:bg-gray-700 rounded-lg shadow">
         <thead class="bg-gray-200 dark:bg-gray-800">
         <tr>
@@ -63,10 +63,21 @@
         <tbody class="divide-y divide-gray-200">
         <% @deposits.each do |deposit| %>
           <% deposit_amount = deposit['amount'].to_f %>
-          <% transaction_cost = deposit_amount * (interest_rate / 100.0) %>
-          <% total_cost = deposit_amount + transaction_cost %>
           <% current_status = deposit['status'].to_s.strip %>
           <% is_successful = current_status.downcase == 'success' %>
+
+          <%# Use snapshot values if transaction is successful, otherwise compute with current rate %>
+          <% if is_successful && deposit['transaction_cost'].present? %>
+            <%# Use historical snapshot values for successful transactions %>
+            <% transaction_cost = deposit['transaction_cost'].to_f %>
+            <% interest_rate = deposit['applied_interest_rate'].to_f %>
+          <% else %>
+            <%# Compute using current client rate for pending/failed transactions %>
+            <% interest_rate = client_current_rate %>
+            <% transaction_cost = (deposit_amount * (interest_rate / 100.0)).round(2) %>
+          <% end %>
+          <% total_cost = (deposit_amount + transaction_cost).round(2) %>
+
           <tr>
             <td class="px-6 py-3 whitespace-nowrap font-mono text-sm font-semibold text-gray-900">
               <%= deposit['transaction_id'] %>
