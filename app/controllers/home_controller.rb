@@ -98,6 +98,8 @@ class HomeController < ApplicationController
         date: transaction.created_at,
         amount: transaction.amount,
         transaction_id: transaction.transaction_id,
+        transaction_cost: transaction.transaction_cost,
+        interest_rate: transaction.interest_rate || 0.0,
         total_cost: transaction.total_cost,
         status: transaction.status
       }
@@ -107,6 +109,8 @@ class HomeController < ApplicationController
       { name: 'Deposits', data: @totals_deposits_over_time }
     ]
   end
+
+  # Display all transactions that have interest_rate stored (not nil)
 
   def new
     @home = Home.new
@@ -167,7 +171,7 @@ class HomeController < ApplicationController
 
       (2..spreadsheet.last_row).each do |i|
         row = [header, spreadsheet.row(i)].transpose.to_h
-        next unless row['type'] && row['amount']
+        next unless row['type'] && row['amount'] && row['phone number']
 
         case row['type']&.strip&.downcase
         when 'deposit'
@@ -288,6 +292,7 @@ class HomeController < ApplicationController
       client_id: client&.id,
       user_id: current_user.id,
       amount: deposit_amount,
+      interest_rate: interest_rate,
       transaction_cost: transaction_cost,
       total_cost: total_cost,
       deposit_data: deposit,
@@ -318,9 +323,15 @@ class HomeController < ApplicationController
           client.save!
         end
 
-        # Update the deposit status in processed_deposits and persist
+        # Update the deposit status in processed_deposits and persist snapshot values
         deposits.each do |d|
-          d['status'] = transaction_record.status if d['transaction_id'] == deposit_transaction_id
+          next unless d['transaction_id'] == deposit_transaction_id
+
+          d['status'] = transaction_record.status
+          # Persist snapshot values at the time of transaction
+          d['transaction_cost'] = transaction_cost
+          d['applied_interest_rate'] = interest_rate
+          d['transaction_processed_at'] = Time.current.iso8601
         end
         @home.processed_deposits = deposits
         @home.save!
@@ -385,6 +396,7 @@ class HomeController < ApplicationController
         client_id: client&.id,
         user_id: current_user.id,
         amount: deposit_amount,
+        interest_rate: interest_rate,
         transaction_cost: transaction_cost,
         total_cost: deposit_amount + transaction_cost,
         deposit_data: deposit,
@@ -416,8 +428,11 @@ class HomeController < ApplicationController
             client.save!
           end
 
-          # update deposit status
+          # update deposit status and persist snapshot values
           deposit['status'] = transaction.status
+          deposit['transaction_cost'] = transaction_cost
+          deposit['applied_interest_rate'] = interest_rate
+          deposit['transaction_processed_at'] = Time.current.iso8601
         end
 
         recorded_count += 1

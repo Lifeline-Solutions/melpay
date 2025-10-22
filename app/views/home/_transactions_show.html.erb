@@ -8,7 +8,10 @@
       <tr>
         <th class="px-4 py-2 text-left font-medium">Date</th>
         <th class="px-4 py-2 text-left font-medium">Transaction ID</th>
+        <th class="px-4 py-2 text-left font-medium">Commission </th>
         <th class="px-4 py-2 text-left font-medium">Amount</th>
+        <th class="px-4 py-2 text-left font-medium">Cost of Transaction</th>
+
         <th class="px-4 py-2 text-left font-medium">Total Cost</th>
         <th class="px-4 py-2 text-left font-medium">Success</th>
       </tr>
@@ -33,10 +36,16 @@
           <td class="px-4 py-2 whitespace-nowrap text-left text-gray-600 dark:text-gray-300">
             <%= deposit[:transaction_id].presence || 'N/A' %>
           </td>
+          <td class="px-4 py-2 text-left text-blue-600 font-semibold">
+            <%= number_to_percentage(deposit[:interest_rate].to_f, precision: 2) %>
+          </td>
           <td class="px-4 py-2 text-left text-green-600 font-semibold">
             <%= number_to_currency(deposit[:amount].to_f) %>
           </td>
-          <td class="px-4 py-2  text-left text-gray-600 dark:text-gray-300">
+          <td class="px-4 py-2 text-left text-yellow-600 font-semibold">
+            <%= number_to_currency(deposit[:transaction_cost].to_f) %>
+          </td>
+          <td class="px-4 py-2 text-left text-blue-600 font-semibold">
             <%= number_to_currency(deposit[:total_cost].to_f) %>
           </td>
           <td class="px-6 py-3 text-left">
