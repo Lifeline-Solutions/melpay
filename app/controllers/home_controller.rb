@@ -23,6 +23,7 @@ class HomeController < ApplicationController
     # Prepare hashes for per-home data
     @totals_deposits = Hash.new(0)
     @total_deposit_count = Hash.new(0)
+    @successful_transactions_count = Hash.new(0)
     @deposit_interest = Hash.new(0)
     totals_deposits_over_time = Hash.new(0)
 
@@ -79,6 +80,14 @@ class HomeController < ApplicationController
       @totals_deposits[home.id] = result[:deposit_sum]
       @total_deposit_count[home.id] = result[:deposit_count]
       @deposit_interest[home.id] = result[:interest]
+
+      # Count successful transactions for this home
+      @successful_transactions_count[home.id] = if home.processed_deposits.is_a?(Array)
+                                                  home.processed_deposits.count { |d| d['status'].to_s.strip.downcase == 'success' }
+                                                else
+                                                  0
+                                                end
+
       date = home.created_at.to_date
       totals_deposits_over_time[date] += result[:deposit_sum]
 

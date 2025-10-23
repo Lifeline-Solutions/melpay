@@ -7,10 +7,11 @@
     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
       <thead class="bg-gray-50 dark:bg-gray-700">
         <tr>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-200">Date Of Upload</th>
           <th class="px-6 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-200">Global ID</th>
           <th class="px-6 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-200">Document Name</th>
           <th class="px-6 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-200">Total Deposits</th>
-          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-200">Total Payments Count</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-200">Successful Transactions</th>
           <th class="px-6 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-200">Cost Of Transaction</th>
 
           <th class="px-6 py-3">VIEW</th>
@@ -20,6 +21,9 @@
         <% @homes.each do |home| %>
           <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
             <td class="px-6 py-4 text-sm font-medium whitespace-nowrap">
+              <%= home.created_at.strftime("%I:%M %p - %B %d, %Y") %>
+            </td>
+            <td class="px-6 py-4">
               <%= home.unique_id %>
             </td>
             <td class="px-6 py-4">
@@ -29,7 +33,15 @@
               <%= number_to_currency(@totals_deposits[home.id] || 0) %>
             </td>
             <td class="px-6 py-4 text-center">
-              <%= @total_deposit_count[home.id] || 0 %>
+              <div class="flex items-center justify-center gap-2">
+                <span class="inline-flex items-center px-3 py-1 rounded-lg text-sm font-semibold bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                  <%= @successful_transactions_count[home.id] || 0 %>
+                </span>
+                <span class="text-gray-500 dark:text-gray-400 font-medium">/</span>
+                <span class="inline-flex items-center px-3 py-1 rounded-lg text-sm font-semibold bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                  <%= @total_deposit_count[home.id] || 0 %>
+                </span>
+              </div>
             </td>
             <td class="px-6 py-4 text-center">
               <%= number_to_currency(@deposit_interest[home.id] || 0) %>
@@ -44,12 +56,22 @@
       <!-- Totals row -->
       <tfoot class="bg-gray-100 dark:bg-gray-700">
         <tr>
+          <td class="px-6 py-3 font-semibold text-gray-800 dark:text-gray-200"></td>
+          <td class="px-6 py-3 font-semibold text-gray-800 dark:text-gray-200"></td>
           <td class="px-6 py-3 font-semibold text-gray-800 dark:text-gray-200">Grand Totals</td>
           <td class="px-6 py-3 font-semibold text-center">
             <%= number_to_currency(@total_deposits_sum || 0) %>
           </td>
           <td class="px-6 py-3 font-semibold text-center">
-            <%= @total_deposit_count.values.sum || 0 %>
+            <div class="flex items-center justify-center gap-2">
+              <span class="inline-flex items-center px-3 py-1 rounded-lg text-sm font-bold bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                <%= @successful_transactions_count.values.sum || 0 %>
+              </span>
+              <span class="text-gray-600 dark:text-gray-400 font-bold">/</span>
+              <span class="inline-flex items-center px-3 py-1 rounded-lg text-sm font-bold bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200">
+                <%= @total_deposit_count.values.sum || 0 %>
+              </span>
+            </div>
           </td>
           <td class="px-6 py-3 font-semibold text-center">
             <%= number_to_currency(@deposit_interest.values.sum || 0) %>
