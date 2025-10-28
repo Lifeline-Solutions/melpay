@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_10_22_091440) do
+ActiveRecord::Schema[8.1].define(version: 2025_10_22_175310) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -110,7 +110,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_10_22_091440) do
     t.datetime "created_at", null: false
     t.jsonb "deposit_data", default: {}
     t.uuid "home_id"
-    t.decimal "interest_rate", precision: 5, scale: 2
+    t.float "interest_rate"
     t.boolean "is_latest", default: true
     t.uuid "previous_transaction_id"
     t.string "status"
