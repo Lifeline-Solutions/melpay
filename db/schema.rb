@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_10_22_175310) do
+ActiveRecord::Schema[8.1].define(version: 2025_10_30_081857) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -53,10 +53,12 @@ ActiveRecord::Schema[8.1].define(version: 2025_10_22_175310) do
   end
 
   create_table "clients", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "commission_type"
     t.datetime "created_at", null: false
     t.float "credit"
     t.decimal "custom_interest_rate", precision: 5, scale: 2
     t.string "email"
+    t.decimal "fixed_commission_amount", precision: 10, scale: 2
     t.string "kyc_reference_id"
     t.string "kyc_status"
     t.datetime "kyc_verified_at"
@@ -99,13 +101,17 @@ ActiveRecord::Schema[8.1].define(version: 2025_10_22_175310) do
   end
 
   create_table "system_settings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "commission_type", default: "percentage"
     t.datetime "created_at", null: false
+    t.decimal "fixed_commission_amount", precision: 10, scale: 2
     t.decimal "global_interest_rate", precision: 5, scale: 2, default: "2.0", null: false
     t.datetime "updated_at", null: false
   end
 
   create_table "transactions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.decimal "amount", precision: 10, scale: 2
+    t.string "applied_commission_type"
+    t.decimal "applied_commission_value", precision: 10, scale: 2
     t.uuid "client_id"
     t.datetime "created_at", null: false
     t.jsonb "deposit_data", default: {}
