@@ -32,7 +32,7 @@
     <% has_pending_deposits = @deposits.any? { |d| d['status'].to_s.strip.downcase != 'success' } %>
     <% if has_pending_deposits %>
       <div class="mb-4 flex gap-2">
-        <%= button_to "Pay All Deposits (Success)", pay_all_deposits_home_path(@home, status: 'success'), method: :post, class: "bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded", data: { confirm: 'Are you sure you want to mark all deposits as successful?' } %>
+        <button id="pay-all-btn" data-url="<%= pay_all_deposits_home_path(@home, status: 'success') %>" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Pay All Deposits (Success)</button>
       </div>
     <% else %>
       <div class="mb-4">
@@ -140,7 +140,7 @@
 
 <!-- OTP Modal (hidden by default) -->
 <div id="twofa-modal" class="fixed inset-0 flex items-center justify-center hidden bg-opacity-30 backdrop-blur-sm" style="-webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);">
-   <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+   <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md border border-gray-900 dark:border-gray-100 shadow-lg">
      <h3 class="text-lg font-semibold mb-2">Confirm transaction</h3>
      <p class="text-sm text-gray-600 dark:text-gray-100 mb-4">A one-time code has been sent to your email. Enter it below to confirm the transaction.</p>
      <form id="twofa-modal-form">
@@ -158,7 +158,7 @@
  </div>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('turbo:load', function() {
     // Intercept forms with class 'twofa-deposit-form'
     document.querySelectorAll('.twofa-deposit-form').forEach(function(form) {
       form.addEventListener('submit', function(e) {
@@ -195,6 +195,33 @@
         });
       });
     });
+
+    // Pay All Deposits (batch) button handler - creates pending transactions and opens OTP modal
+    var payAllBtn = document.getElementById('pay-all-btn');
+    if (payAllBtn) {
+      payAllBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        var url = payAllBtn.dataset.url;
+        var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': token,
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ status: 'success' })
+        }).then(function(res) { return res.json(); }).then(function(json) {
+          if (json && json.pending) {
+            openTwoFAModal('BATCH');
+          } else if (json && json.error) {
+            alert(json.error || 'Error initiating batch transaction');
+          } else {
+            alert('Unexpected response');
+          }
+        }).catch(function(err) { console.error(err); alert('Network error initiating batch'); });
+      });
+    }
 
     var currentDepositId = null;
     function openTwoFAModal(depositId) {
