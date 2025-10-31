@@ -21,7 +21,13 @@ class User < ApplicationRecord
     save!
   end
 
+  # OTP is valid for 5 minutes
   def otp_valid?(code)
-    otp_code == code && otp_sent_at > 10.minutes.ago
+    otp_code == code && otp_sent_at.present? && otp_sent_at > 5.minutes.ago
+  end
+
+  # Clear OTP after successful verification
+  def clear_otp!
+    update(otp_code: nil, otp_sent_at: nil)
   end
 end
