@@ -17,7 +17,7 @@ Role.find_or_create_by!(name: 'admin')
 Role.find_or_create_by!(name: 'auditor')
 Role.find_or_create_by!(name: 'account_manager')
 
-client = Client.find_or_create_by!(name: 'Solidus', email: 'admin@solidus.com', credit: 3000)
+client = Client.find_or_create_by!(name: 'Solidus', email: 'admin@solidus.com', credit: 10000)
 
 user = User.create!(
   email: 'abolger254@gmail.com',

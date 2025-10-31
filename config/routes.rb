@@ -8,7 +8,8 @@ Rails.application.routes.draw do
   get 'two_factor/send_otp', to: 'two_factor#send_otp', as: :send_otp_two_factor
   get 'two_factor/verify', to: 'two_factor#verify', as: :verify_otp
   post 'two_factor/check', to: 'two_factor#check', as: :check_otp
-  
+  post 'two_factor/cancel_pending', to: 'two_factor#cancel_pending', as: :cancel_pending_two_factor
+
   resources :users, only: [:index, :show, :edit, :update]
   resources :home do
     member do
