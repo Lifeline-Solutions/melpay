@@ -1,7 +1,8 @@
 class HomeController < ApplicationController
   include ActionView::Helpers::NumberHelper
 
-  before_action :authenticate_user!
+  # require both normal Devise authentication and completion of 2FA
+  before_action :authenticate_user!, :require_2fa
   load_and_authorize_resource except: %i[index new create]
   # Ensure @home is set for show/edit/update/destroy and payment actions
   before_action :set_home, only: %i[show edit update destroy pay_single_deposit pay_all_deposits]
