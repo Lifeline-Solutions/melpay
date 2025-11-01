@@ -32,13 +32,13 @@ class InterestRatesController < ApplicationController
   def update_custom
     if params[:client].present? && params[:client][:id].present?
       client = Client.find(params[:client][:id])
-      
+
       # Prepare update attributes
       update_attrs = {}
-      
+
       if params[:client][:commission_type].present?
         update_attrs[:commission_type] = params[:client][:commission_type]
-        
+
         if params[:client][:commission_type] == 'percentage'
           update_attrs[:custom_interest_rate] = params[:client][:custom_interest_rate]
           update_attrs[:fixed_commission_amount] = nil
@@ -52,7 +52,7 @@ class InterestRatesController < ApplicationController
         update_attrs[:custom_interest_rate] = nil
         update_attrs[:fixed_commission_amount] = nil
       end
-      
+
       if client.update(update_attrs)
         redirect_to interest_rates_path, notice: "Custom commission updated for #{client.name}."
       else

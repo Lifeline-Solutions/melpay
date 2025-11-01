@@ -8,7 +8,7 @@ class Client < ApplicationRecord
 
   validates :name, :email, presence: true
   validates :kyc_status, inclusion: { in: STATUSES }
-  
+
   # Existing validation for percentage rates
   validates :custom_interest_rate,
             numericality: {
@@ -16,15 +16,15 @@ class Client < ApplicationRecord
               less_than_or_equal_to: 100
             },
             allow_nil: true
-  
+
   # New validations for fixed commissions
-  validates :fixed_commission_amount, 
-            numericality: { 
-              greater_than_or_equal_to: 0 
-            }, 
+  validates :fixed_commission_amount,
+            numericality: {
+              greater_than_or_equal_to: 0
+            },
             allow_nil: true
-  validates :commission_type, 
-            inclusion: { in: %w[percentage fixed] }, 
+  validates :commission_type,
+            inclusion: { in: %w[percentage fixed] },
             allow_nil: true
 
   before_validation :set_default_kyc_status, on: :create

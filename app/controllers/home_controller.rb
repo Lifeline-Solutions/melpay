@@ -310,9 +310,9 @@ class HomeController < ApplicationController
     end
 
     interest_rate = client&.applied_interest_rate.to_f
-    fixed_commission_amount = client&.applied_commission_display.to_f
+    client&.applied_commission_display.to_f
     deposit_amount = deposit['amount'].to_f
-    
+
     if client.fixed?
       transaction_cost = client.effective_commission_value.to_f
       interest_rate = 0.0
@@ -320,7 +320,7 @@ class HomeController < ApplicationController
       interest_rate = client.applied_interest_rate.to_f
       transaction_cost = deposit_amount * (interest_rate / 100.0)
     end
-    
+
     total_cost = deposit_amount + transaction_cost
 
     # Decide requested status and compute final status based on available credit
