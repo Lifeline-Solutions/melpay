@@ -71,10 +71,18 @@
             <%# Use historical snapshot values for successful transactions %>
             <% transaction_cost = deposit['transaction_cost'].to_f %>
             <% interest_rate = deposit['applied_interest_rate'].to_f %>
+            <% fixed_commission_amount = deposit['applied_commission_display'].to_f || 0.0 %>
           <% else %>
-            <%# Compute using current client rate for pending/failed transactions %>
-            <% interest_rate = client_current_rate %>
-            <% transaction_cost = (deposit_amount * (interest_rate / 100.0)).round(2) %>
+            <%# Calculate for pending/failed transactions using current rates %>
+            <% if client&.fixed? %>
+              <% fixed_commission_amount = client&.effective_commission_value.to_f || 0.0 %>
+              <% transaction_cost = fixed_commission_amount %>
+              <% interest_rate = 0.0 %>
+            <% else %>
+              <% interest_rate = client_current_rate %>
+              <% transaction_cost = (deposit_amount * (interest_rate / 100.0)).round(2) %>
+              <% fixed_commission_amount = 0.0 %>
+            <% end %>
           <% end %>
           <% total_cost = (deposit_amount + transaction_cost).round(2) %>
 
