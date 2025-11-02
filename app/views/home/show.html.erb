@@ -147,8 +147,9 @@
 </div>
 
 <!-- OTP Modal (hidden by default) -->
-<div id="twofa-modal" class="fixed inset-0 flex items-center justify-center hidden bg-opacity-30 backdrop-blur-sm" style="-webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);">
-   <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md border border-gray-900 dark:border-gray-100 shadow-lg">
+<!-- modal intentionally moved below and consolidated to a single instance -->
+<div id="twofa-modal" class="fixed inset-0 flex items-center justify-center hidden bg-black/40" style="position:fixed; inset:0; z-index:99999; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);">
+   <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md border border-gray-900 dark:border-gray-100 shadow-lg" style="z-index:100000; position:relative;">
      <h3 class="text-lg font-semibold mb-2">Confirm transaction</h3>
      <p class="text-sm text-gray-600 dark:text-gray-100 mb-4">A one-time code has been sent to your email. Enter it below to confirm the transaction.</p>
      <form id="twofa-modal-form">
@@ -234,15 +235,27 @@
     var currentDepositId = null;
     function openTwoFAModal(depositId) {
       currentDepositId = depositId;
-      document.getElementById('twofa-modal').classList.remove('hidden');
+      var modal = document.getElementById('twofa-modal');
+      // Move modal to document.body to avoid stacking-context issues (sidebar transform)
+      if (modal && modal.parentNode !== document.body) {
+        document.body.appendChild(modal);
+      }
+      modal.classList.remove('hidden');
       document.getElementById('twofa-code').value = '';
       document.getElementById('twofa-error').classList.add('hidden');
       document.getElementById('twofa-code').focus();
+      // lock body scroll while modal is open
+      document.documentElement.classList.add('overflow-hidden');
+      document.body.classList.add('overflow-hidden');
     }
 
     function closeTwoFAModal() {
       currentDepositId = null;
-      document.getElementById('twofa-modal').classList.add('hidden');
+      var modal = document.getElementById('twofa-modal');
+      if (modal) modal.classList.add('hidden');
+      // restore body scroll
+      document.documentElement.classList.remove('overflow-hidden');
+      document.body.classList.remove('overflow-hidden');
     }
 
     document.getElementById('twofa-cancel').addEventListener('click', function() {
