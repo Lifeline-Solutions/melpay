@@ -39,10 +39,6 @@ class Client < ApplicationRecord
     "#{name} (Current: #{applied_commission_display})"
   end
 
-  def applied_interest_rate
-    custom_interest_rate || SystemSetting.instance.global_interest_rate
-  end
-
   def rate_type
     custom_interest_rate.present? ? 'Custom' : 'Global'
   end
