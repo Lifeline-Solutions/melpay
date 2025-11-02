@@ -1,7 +1,8 @@
 class HomeController < ApplicationController
   include ActionView::Helpers::NumberHelper
 
-  before_action :authenticate_user!
+  # require both normal Devise authentication and completion of 2FA
+  before_action :authenticate_user!, :require_2fa
   load_and_authorize_resource except: %i[index new create]
   # Ensure @home is set for show/edit/update/destroy and payment actions
   before_action :set_home, only: %i[show edit update destroy pay_single_deposit pay_all_deposits]
@@ -290,22 +291,29 @@ class HomeController < ApplicationController
     deposit = deposits.find { |d| d['transaction_id'] == deposit_transaction_id }
 
     if deposit.nil?
-      redirect_to home_path(@home), alert: 'Deposit not found.'
+      respond_to do |format|
+        format.html { redirect_to home_path(@home), alert: 'Deposit not found.' }
+        format.json { render json: { error: 'Deposit not found' }, status: :not_found }
+      end
       return
     end
 
     # Prevent double-acting on an already-successful persisted Transaction
     existing_transaction = Transaction.find_by(home_id: @home.id, transaction_id: deposit_transaction_id, status: 'success', is_latest: true)
     if existing_transaction
-      redirect_to home_path(@home), alert: 'This transaction has already been completed successfully.'
+      respond_to do |format|
+        format.html { redirect_to home_path(@home), alert: 'This transaction has already been completed successfully.' }
+        format.json { render json: { error: 'Already completed' }, status: :unprocessable_entity }
+      end
       return
     end
 
-    latest_transaction = Transaction.where(home_id: @home.id, transaction_id: deposit_transaction_id, is_latest: true).first
-
     client = @home.client || current_user.client
     if client.nil?
-      redirect_to home_path(@home), alert: 'Client not found for this transaction.'
+      respond_to do |format|
+        format.html { redirect_to home_path(@home), alert: 'Client not found for this transaction.' }
+        format.json { render json: { error: 'Client not found' }, status: :unprocessable_entity }
+      end
       return
     end
 
@@ -323,11 +331,7 @@ class HomeController < ApplicationController
 
     total_cost = deposit_amount + transaction_cost
 
-    # Decide requested status and compute final status based on available credit
-    requested_status = params[:status].presence || 'success'
-    can_pay = requested_status == 'success' && (client.credit || 0) >= total_cost
-    final_status = can_pay ? 'success' : 'failed'
-
+    # Create a pending transaction record and trigger 2FA before finalizing
     new_attributes = {
       home_id: @home.id,
       transaction_id: deposit_transaction_id,
@@ -338,75 +342,65 @@ class HomeController < ApplicationController
       transaction_cost: transaction_cost,
       total_cost: total_cost,
       deposit_data: deposit,
-      status: final_status
+      status: 'pending'
     }
-
-    transaction_record = nil
     begin
-      client.with_lock do
-        # Create revision or new transaction while home row is locked
-        if latest_transaction
-          transaction_record = latest_transaction.create_revision(new_attributes)
-          Rails.logger.info "Creating revision for transaction #{deposit_transaction_id}. Previous version ID: #{latest_transaction.id}"
-        else
-          transaction_record = Transaction.new(new_attributes)
-          Rails.logger.info "Creating new transaction #{deposit_transaction_id}"
+      # If there's an existing 'latest' transaction, we'll create a revision placeholder
+      latest_transaction = Transaction.where(home_id: @home.id, transaction_id: deposit_transaction_id, is_latest: true).first
+
+      transaction_record = if latest_transaction
+                             latest_transaction.create_revision(new_attributes)
+                           else
+                             Transaction.new(new_attributes)
+                           end
+
+      transaction_record.save!
+
+      # Store pending transaction id in session so the 2FA verify step can finalize it
+      session[:pending_transaction_id] = transaction_record.id
+      session[:pending_transaction_home_id] = @home.id
+
+      # Trigger OTP to user (email and optional SMS)
+      current_user.generate_otp!
+      UserMailer.with(user: current_user).send_otp.deliver_later
+      if current_user.phone_number.present?
+        begin
+          SmsSender.send_otp(current_user.phone_number, current_user.otp_code)
+        rescue StandardError => e
+          Rails.logger.warn("Failed to send SMS OTP for transaction #{deposit_transaction_id}: #{e.message}")
         end
+      end
 
-        # Save transaction, raise if validation fails to rollback
-        transaction_record.save!
-
-        # If success, subtract total_cost from client.credit (do NOT allow negative)
-        if transaction_record.status == 'success'
-          # Double-check available balance (race-safety): raise if not enough
-          raise ActiveRecord::RecordInvalid, transaction_record if (client.credit || 0) < total_cost
-
-          client.credit = (client.credit || 0) - total_cost
-          client.save!
-        end
-
-        # Update the deposit status in processed_deposits and persist snapshot values
-        deposits.each do |d|
-          next unless d['transaction_id'] == deposit_transaction_id
-
-          d['status'] = transaction_record.status
-          # Persist snapshot values at the time of transaction
-          d['transaction_cost'] = transaction_cost
-          d['applied_interest_rate'] = interest_rate
-          d['transaction_processed_at'] = Time.current.iso8601
-        end
-        @home.processed_deposits = deposits
-        @home.save!
+      respond_to do |format|
+        format.html { redirect_to verify_otp_path, notice: 'OTP sent. Please enter the code to confirm this payment.' }
+        format.json { render json: { pending: true, message: 'OTP sent to your email.' }, status: :ok }
       end
     rescue ActiveRecord::RecordInvalid => e
       error_message = e.record&.errors&.full_messages&.join(', ').presence || e.message
-      redirect_to home_path(@home), alert: "Error: #{error_message}"
-      return
-    end
-
-    # At this point transaction_record is persisted
-    if transaction_record.status == 'success'
-      redirect_to home_path(@home), notice: "Payment completed successfully! Transaction ID: #{deposit_transaction_id}"
-    else
-      redirect_to home_path(@home), alert: "Payment failed and has been recorded. Transaction ID: #{deposit_transaction_id}"
+      respond_to do |format|
+        format.html { redirect_to home_path(@home), alert: "Error creating pending transaction: #{error_message}" }
+        format.json { render json: { error: error_message }, status: :unprocessable_entity }
+      end
     end
   end
 
-  # Pay all pending deposits at once
+  # Pay all pending deposits at once (now creates pending transactions and requires 2FA to finalize)
   def pay_all_deposits
-    status = params[:status] || 'success'
-    success_count = 0
-    failed_count = 0
-    recorded_count = 0
-    revised_count = 0
+    params[:status] || 'success'
 
     client = @home.client || current_user.client
     if client.nil?
-      redirect_to home_path(@home), alert: 'Client not found for this transaction.'
+      respond_to do |format|
+        format.html { redirect_to home_path(@home), alert: 'Client not found for this transaction.' }
+        format.json { render json: { error: 'Client not found' }, status: :unprocessable_entity }
+      end
       return
     end
 
     interest_rate = client&.applied_interest_rate.to_f
+
+    pending_ids = []
+    recorded_count = 0
 
     @home.processed_deposits.each do |deposit|
       # Skip if already successful (completed transactions cannot be changed)
@@ -417,17 +411,7 @@ class HomeController < ApplicationController
         is_latest: true
       )
 
-      if existing_transaction
-        Rails.logger.info "Skipping already successful transaction: #{deposit['transaction_id']}"
-        next
-      end
-
-      # Find the latest version of this transaction (if any)
-      latest_transaction = Transaction.where(
-        home_id: @home.id,
-        transaction_id: deposit['transaction_id'],
-        is_latest: true
-      ).first
+      next if existing_transaction
 
       deposit_amount = deposit['amount'].to_f
       transaction_cost = deposit_amount * (interest_rate / 100.0)
@@ -442,66 +426,63 @@ class HomeController < ApplicationController
         transaction_cost: transaction_cost,
         total_cost: deposit_amount + transaction_cost,
         deposit_data: deposit,
-        status: status
+        status: 'pending'
       }
 
-      # Decide final status based on remaining credit: process those we can pay, record failed for others
-      can_pay = status == 'success' && (client.credit || 0) >= new_attributes[:total_cost]
-      final_status = can_pay ? 'success' : 'failed'
-      new_attributes[:status] = final_status
-
-      is_revision = false
       begin
-        # Use a row lock on client so checking and subtracting credit is atomic per-deposit
-        client.with_lock do
-          if latest_transaction
-            transaction = latest_transaction.create_revision(new_attributes)
-            is_revision = true
-          else
-            transaction = Transaction.new(new_attributes)
-            is_revision = false
-          end
+        latest_transaction = Transaction.where(home_id: @home.id, transaction_id: deposit['transaction_id'], is_latest: true).first
 
-          transaction.save!
+        transaction = if latest_transaction
+                        latest_transaction.create_revision(new_attributes)
+                      else
+                        Transaction.new(new_attributes)
+                      end
 
-          if transaction.status == 'success'
-            # subtract cost (we already checked can_pay)
-            client.credit = (client.credit || 0) - transaction.total_cost
-            client.save!
-          end
-
-          # update deposit status and persist snapshot values
-          deposit['status'] = transaction.status
-          deposit['transaction_cost'] = transaction_cost
-          deposit['applied_interest_rate'] = interest_rate
-          deposit['transaction_processed_at'] = Time.current.iso8601
-        end
-
+        transaction.save!
+        pending_ids << transaction.id
         recorded_count += 1
-        revised_count += 1 if is_revision
-        if final_status == 'success'
-          success_count += 1
-        else
-          failed_count += 1
-        end
 
-        Rails.logger.info "#{is_revision ? 'Revised' : 'Recorded'} transaction #{deposit['transaction_id']} with status: #{final_status}"
+        # update deposit snapshot to pending so UI shows pending immediately
+        deposit['status'] = 'pending'
+        deposit['transaction_cost'] = transaction_cost
+        deposit['applied_interest_rate'] = interest_rate
+        deposit['transaction_processed_at'] = Time.current.iso8601
       rescue ActiveRecord::RecordInvalid => e
-        error_message = e.record&.errors&.full_messages&.join(', ').presence || e.message
-        Rails.logger.error "Error #{deposit['transaction_id']}: #{error_message}"
+        Rails.logger.error "Failed creating pending transaction for #{deposit['transaction_id']}: #{e.record&.errors&.full_messages&.join(', ') || e.message}"
+        next
       end
     end
 
-    # persist processed_deposits and ensure home saved
-    @home.processed_deposits = @home.processed_deposits
-    @home.save if recorded_count.positive?
+    # persist processed_deposits if we changed them
+    if recorded_count.positive?
+      @home.processed_deposits = @home.processed_deposits
+      @home.save!
 
-    message = "Processed #{recorded_count} transactions"
-    message += " (#{revised_count} revisions)" if revised_count.positive?
-    message += ": #{success_count} successful" if success_count.positive?
-    message += ", #{failed_count} failed" if failed_count.positive?
+      # Store pending transaction ids in session for finalization by 2FA
+      session[:pending_transaction_ids] = pending_ids
+      session[:pending_transaction_home_id] = @home.id
 
-    redirect_to home_path(@home), notice: message
+      # Trigger OTP to user
+      current_user.generate_otp!
+      UserMailer.with(user: current_user).send_otp.deliver_later
+      if current_user.phone_number.present?
+        begin
+          SmsSender.send_otp(current_user.phone_number, current_user.otp_code)
+        rescue StandardError => e
+          Rails.logger.warn("Failed to send SMS OTP for batch: #{e.message}")
+        end
+      end
+
+      respond_to do |format|
+        format.html { redirect_to verify_otp_path, notice: "OTP sent to confirm processing of #{recorded_count} transactions." }
+        format.json { render json: { pending: true, count: recorded_count, message: 'OTP sent to your email.' }, status: :ok }
+      end
+    else
+      respond_to do |format|
+        format.html { redirect_to home_path(@home), alert: 'No transactions available to process.' }
+        format.json { render json: { error: 'No transactions available' }, status: :unprocessable_entity }
+      end
+    end
   end
 
   def destroy

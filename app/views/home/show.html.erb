@@ -32,7 +32,7 @@
     <% has_pending_deposits = @deposits.any? { |d| d['status'].to_s.strip.downcase != 'success' } %>
     <% if has_pending_deposits %>
       <div class="mb-4 flex gap-2">
-        <%= button_to "Pay All Deposits (Success)", pay_all_deposits_home_path(@home, status: 'success'), method: :post, class: "bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded", data: { confirm: 'Are you sure you want to mark all deposits as successful?' } %>
+        <button id="pay-all-btn" data-url="<%= pay_all_deposits_home_path(@home, status: 'success') %>" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Pay All Deposits (Success)</button>
       </div>
     <% else %>
       <div class="mb-4">
@@ -86,7 +86,7 @@
           <% end %>
           <% total_cost = (deposit_amount + transaction_cost).round(2) %>
 
-          <tr>
+          <tr data-transaction-id="<%= deposit['transaction_id'] %>">
             <td class="px-6 py-3 whitespace-nowrap font-mono text-sm font-semibold text-gray-900">
               <%= deposit['transaction_id'] %>
             </td>
@@ -105,7 +105,7 @@
             <td class="px-6 py-3 text-blue-600 font-semibold">
               <%= number_to_currency(total_cost) %>
             </td>
-            <td class="px-6 py-3">
+            <td class="px-6 py-3 deposit-status" data-status="<%= current_status.present? ? current_status.downcase : 'pending' %>">
               <% if current_status.present? %>
                 <span class="px-2 py-1 text-xs font-semibold rounded-full <%= current_status.downcase == 'success' ? 'bg-green-100 text-green-800' : current_status.downcase == 'pending' ? 'bg-yellow-100 text-yellow-800' : current_status.downcase == 'failed' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800' %>">
                   <%= current_status.capitalize %>
@@ -123,11 +123,11 @@
               <% else %>
                 <div class="flex items-center gap-2">
                   <!-- Success toggle (styled checkbox). Submits deposit_transaction_id and status=success -->
-                  <%= form_with url: pay_single_deposit_home_path(@home), method: :post, local: true do %>
-                    <%= hidden_field_tag :deposit_transaction_id, deposit['transaction_id'] %>
+                  <%= form_with url: pay_single_deposit_home_path(@home), method: :post, local: false, html: { class: 'twofa-deposit-form' }, data: { deposit_id: deposit['transaction_id'] } do %>
+                    <%= hidden_field_tag :deposit_transaction_id, deposit['transaction_id'], class: 'deposit-transaction-id' %>
                     <%= hidden_field_tag :status, 'success', id: "status_success_#{deposit['transaction_id']}" %>
                     <label class="relative inline-block w-14 h-7 cursor-pointer" title="Mark as success">
-                      <%= check_box_tag "success_toggle_#{deposit['transaction_id']}", '1', false, class: 'hidden success-toggle', data: { submit_form: true }, onchange: "this.form.submit()" %>
+                      <%= check_box_tag "success_toggle_#{deposit['transaction_id']}", '1', false, class: 'hidden success-toggle', data: { submit_form: true }, onchange: "this.form.dispatchEvent(new Event('submit',{cancelable:true,bubbles:true}))" %>
                       <span class="absolute top-0 left-0 right-0 bottom-0 bg-gray-300 rounded-full transition-colors duration-200"></span>
                       <span class="absolute left-1 top-1 bg-white w-5 h-5 rounded-full transition-transform duration-200 transform"></span>
                     </label>
@@ -145,3 +145,168 @@
     </div>
   </div>
 </div>
+
+<!-- OTP Modal (hidden by default) -->
+<div id="twofa-modal" class="fixed inset-0 flex items-center justify-center hidden bg-opacity-30 backdrop-blur-sm" style="-webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);">
+   <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md border border-gray-900 dark:border-gray-100 shadow-lg">
+     <h3 class="text-lg font-semibold mb-2">Confirm transaction</h3>
+     <p class="text-sm text-gray-600 dark:text-gray-100 mb-4">A one-time code has been sent to your email. Enter it below to confirm the transaction.</p>
+     <form id="twofa-modal-form">
+      <input type="text" id="twofa-code" name="otp_code" aria-label="One-time code" maxlength="6" class="w-full border rounded px-3 py-2 mb-3" placeholder="Enter 6-digit code" autocomplete="one-time-code" />
+       <div class="flex justify-between items-center">
+         <button type="button" id="twofa-resend" class="text-sm text-blue-600 dark:text-gray-100">Resend code</button>
+         <div class="flex gap-2">
+           <button type="button" id="twofa-cancel" class="px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded">Cancel</button>
+           <button type="submit" id="twofa-submit" class="px-4 py-2 bg-blue-600 text-white rounded">Verify</button>
+         </div>
+       </div>
+     </form>
+     <div id="twofa-error" class="text-red-600 text-sm mt-3 hidden"></div>
+   </div>
+ </div>
+
+<script>
+  document.addEventListener('turbo:load', function() {
+    // Intercept forms with class 'twofa-deposit-form'
+    document.querySelectorAll('.twofa-deposit-form').forEach(function(form) {
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        var depositId = form.querySelector('.deposit-transaction-id').value;
+        var url = form.action;
+        var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        // Send request to create pending transaction and send OTP
+        fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': token,
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ deposit_transaction_id: depositId, status: 'success' })
+        }).then(function(res) {
+          return res.json();
+        }).then(function(json) {
+          if (json && json.pending) {
+            // Open modal
+            openTwoFAModal(depositId);
+          } else if (json && json.error) {
+            alert(json.error || 'Error initiating transaction');
+          } else {
+            alert('Unexpected response');
+          }
+        }).catch(function(err) {
+          console.error(err);
+          alert('Network error initiating transaction');
+        });
+      });
+    });
+
+    // Pay All Deposits (batch) button handler - creates pending transactions and opens OTP modal
+    var payAllBtn = document.getElementById('pay-all-btn');
+    if (payAllBtn) {
+      payAllBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        var url = payAllBtn.dataset.url;
+        var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': token,
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ status: 'success' })
+        }).then(function(res) { return res.json(); }).then(function(json) {
+          if (json && json.pending) {
+            openTwoFAModal('BATCH');
+          } else if (json && json.error) {
+            alert(json.error || 'Error initiating batch transaction');
+          } else {
+            alert('Unexpected response');
+          }
+        }).catch(function(err) { console.error(err); alert('Network error initiating batch'); });
+      });
+    }
+
+    var currentDepositId = null;
+    function openTwoFAModal(depositId) {
+      currentDepositId = depositId;
+      document.getElementById('twofa-modal').classList.remove('hidden');
+      document.getElementById('twofa-code').value = '';
+      document.getElementById('twofa-error').classList.add('hidden');
+      document.getElementById('twofa-code').focus();
+    }
+
+    function closeTwoFAModal() {
+      currentDepositId = null;
+      document.getElementById('twofa-modal').classList.add('hidden');
+    }
+
+    document.getElementById('twofa-cancel').addEventListener('click', function() {
+      // If user cancels, tell server to cancel the pending transaction and mark it failed
+      var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+      fetch('<%= cancel_pending_two_factor_path %>', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': token,
+          'Accept': 'application/json'
+        }
+      }).then(function(res) { return res.json(); }).then(function(json) {
+        if (json && json.success) {
+          // simply reload the page to show latest server-side data
+          closeTwoFAModal();
+          window.location.reload();
+        } else {
+          console.warn('Cancel pending failed');
+          closeTwoFAModal();
+        }
+      }).catch(function() { closeTwoFAModal(); });
+    });
+
+    document.getElementById('twofa-resend').addEventListener('click', function() {
+      var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+      fetch('<%= send_otp_two_factor_path %>', {
+        method: 'GET',
+        headers: {
+          'X-CSRF-Token': token,
+          'Accept': 'application/json'
+        }
+      }).then(function(res) { return res.json(); }).then(function(json) {
+        alert(json && json.message ? json.message : 'OTP resent');
+      }).catch(function() { alert('Error resending OTP'); });
+    });
+
+    // Handle OTP submit
+    document.getElementById('twofa-modal-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var code = document.getElementById('twofa-code').value.trim();
+      if (!code || code.length < 4) {
+        var err = document.getElementById('twofa-error'); err.textContent = 'Please enter the 6-digit code'; err.classList.remove('hidden'); return;
+      }
+
+      var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+      fetch('<%= check_otp_path %>', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': token,
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ otp_code: code })
+      }).then(function(res) { return res.json(); }).then(function(json) {
+        if (json && json.success) {
+          // Finalization succeeded on the server — reload the page so all counts and snapshots are accurate
+          closeTwoFAModal();
+          window.location.reload();
+          return;
+         } else {
+           var err = document.getElementById('twofa-error'); err.textContent = json && json.error ? json.error : 'Invalid or expired code'; err.classList.remove('hidden');
+         }
+       }).catch(function(err) { console.error(err); alert('Network error verifying code'); });
+     });
+   });
+ </script>
