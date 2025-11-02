@@ -1,5 +1,6 @@
 class ClientsController < ApplicationController
   before_action :authenticate_user!
+  before_action :set_system_setting, only: %i[edit update new]
   before_action :set_client, only: %i[show edit update approve_kyc reject_kyc]
   load_and_authorize_resource
   def index
@@ -40,14 +41,14 @@ class ClientsController < ApplicationController
 
   def update
     if @client.update(client_params)
-      # Check if the request came from interest rates page
-      if request.referer&.include?(interest_rates_path)
-        redirect_to interest_rates_path, notice: " #{@client.name}'s interest rate was updated."
+      # Check if the request came from interest rates page or is a Turbo Stream request
+      if request.referer&.include?(interest_rates_path) || request.format.turbo_stream?
+        redirect_to interest_rates_path, notice: " #{@client.name}'s commission was updated."
       else
         redirect_to @client, notice: 'Client updated.'
       end
     else
-      render :edit
+      render :edit, status: :unprocessable_entity
     end
   end
 
@@ -63,11 +64,15 @@ class ClientsController < ApplicationController
 
   private
 
+  def set_system_setting
+    @system_setting = SystemSetting.instance
+  end
+
   def set_client
     @client = Client.find(params[:id])
   end
 
   def client_params
-    params.require(:client).permit(:name, :email, :phone, :credit, :custom_interest_rate)
+    params.require(:client).permit(:name, :email, :phone, :credit, :custom_interest_rate, :commission_type, :fixed_commission_amount)
   end
 end

@@ -19,25 +19,44 @@ class InterestRatesController < ApplicationController
     render :manage
   end
 
-  # Handle global rate updates
   def update_global
     if @system_setting.update(system_setting_params)
-      redirect_to interest_rates_path, notice: 'Global interest rate updated.'
+      redirect_to interest_rates_path, notice: 'Global commission settings updated.'
     else
-      flash.now[:alert] = 'Failed to update global interest rate.'
+      flash.now[:alert] = 'Failed to update global commission settings.'
       @clients = Client.order(:name)
       render :manage
     end
   end
 
-  # Handle custom client rate updates
   def update_custom
     if params[:client].present? && params[:client][:id].present?
       client = Client.find(params[:client][:id])
-      if client.update(custom_interest_rate: params[:client][:custom_interest_rate])
-        redirect_to interest_rates_path, notice: "Custom interest rate updated for #{client.name}."
+
+      # Prepare update attributes
+      update_attrs = {}
+
+      if params[:client][:commission_type].present?
+        update_attrs[:commission_type] = params[:client][:commission_type]
+
+        if params[:client][:commission_type] == 'percentage'
+          update_attrs[:custom_interest_rate] = params[:client][:custom_interest_rate]
+          update_attrs[:fixed_commission_amount] = nil
+        elsif params[:client][:commission_type] == 'fixed'
+          update_attrs[:fixed_commission_amount] = params[:client][:fixed_commission_amount]
+          update_attrs[:custom_interest_rate] = nil
+        end
       else
-        redirect_to manage_interest_rates_path, alert: "Failed to update custom interest rate for #{client.name}."
+        # Reset to use global settings
+        update_attrs[:commission_type] = nil
+        update_attrs[:custom_interest_rate] = nil
+        update_attrs[:fixed_commission_amount] = nil
+      end
+
+      if client.update(update_attrs)
+        redirect_to interest_rates_path, notice: "Custom commission updated for #{client.name}."
+      else
+        redirect_to manage_interest_rates_path, alert: "Failed to update custom commission for #{client.name}."
       end
     else
       redirect_to manage_interest_rates_path, alert: 'Please select a client.'
@@ -88,10 +107,10 @@ class InterestRatesController < ApplicationController
   end
 
   def system_setting_params
-    params.require(:system_setting).permit(:global_interest_rate)
+    params.require(:system_setting).permit(:global_interest_rate, :commission_type, :fixed_commission_amount)
   end
 
   def client_params
-    params.require(:client).permit(:custom_interest_rate)
+    params.require(:client).permit(:custom_interest_rate, :commission_type, :fixed_commission_amount)
   end
 end

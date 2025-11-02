@@ -37,23 +37,67 @@
                              required: true %>
         </div>
 
+        <!-- Commission Type Selection -->
         <div>
-          <%= f.label :custom_interest_rate, "Custom Interest Rate (%)", class: "block text-sm font-medium text-gray-700" %>
-          <%= f.number_field :custom_interest_rate, step: 0.01, class: "mt-1 block w-40 border rounded p-2" %>
-          <p class="text-xs text-gray-500 mt-1">Leave empty to use the global default rate (<%= @global_interest_rate %>%).</p>
+          <%= f.label :commission_type, "Commission Type", class: "block text-sm font-medium text-gray-700" %>
+          <%= f.select :commission_type, 
+                options_for_select([
+                  ['Use Global Default', ''], 
+                  ['Percentage', 'percentage'], 
+                  ['Fixed Amount', 'fixed']
+                ], @client.commission_type),
+                {}, 
+                class: "mt-1 block w-full border rounded p-2",
+                id: "client_commission_type" %>
+          <p class="text-xs text-gray-500 mt-1">
+            <% if @system_setting %>
+              Global default: <%= @system_setting.commission_type.titleize %> 
+              (<%= @system_setting.percentage? ? "#{@system_setting.global_interest_rate}%" : number_to_currency(@system_setting.fixed_commission_amount) %>)
+            <% else %>
+              Global default: Percentage (2.0%)
+            <% end %>
+          </p>
+        </div>
+
+        <!-- Conditional Fields - Remove server-side visibility logic -->
+        <div id="percentage-fields" class="hidden">
+          <div>
+            <%= f.label :custom_interest_rate, "Custom Interest Rate (%)", class: "block text-sm font-medium text-gray-700" %>
+            <%= f.number_field :custom_interest_rate, step: 0.01, class: "mt-1 block w-40 border rounded p-2" %>
+            <p class="text-xs text-gray-500 mt-1">
+              Leave empty to use global default rate (<%= @system_setting&.global_interest_rate || 2.0 %>%).
+            </p>
+          </div>
+        </div>
+
+        <div id="fixed-fields" class="hidden">
+          <div>
+            <%= f.label :fixed_commission_amount, "Fixed Commission Amount", class: "block text-sm font-medium text-gray-700" %>
+            <div class="flex items-center">
+              <span class="mr-2 text-gray-600">$</span>
+              <%= f.number_field :fixed_commission_amount, step: 0.01, class: "mt-1 block w-40 border rounded p-2" %>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">
+              Leave empty to use global fixed amount (<%= number_to_currency(@system_setting&.fixed_commission_amount) %>).
+            </p>
+          </div>
         </div>
 
         <div class="flex items-center gap-3 mt-4">
           <%= f.submit "Save Client", class: "px-4 py-2 bg-indigo-600 text-white rounded" %>
 
-          <% if @client.custom_interest_rate.present? %>
+          <% if @client.commission_type.present? || @client.custom_interest_rate.present? %>
             <%= button_to "Reset to Global", 
                   client_path(@client), 
                   method: :patch,
-                  params: { client: { custom_interest_rate: nil } },
+                  params: { client: { 
+                    commission_type: nil, 
+                    custom_interest_rate: nil,
+                    fixed_commission_amount: nil 
+                  } },
                   data: { 
-                    confirm: "Reset #{@client.name}'s interest rate to global default?", 
-                    turbo_confirm: "Reset #{@client.name}'s interest rate to global default?" 
+                    confirm: "Reset #{@client.name}'s commission to global default?", 
+                    turbo_confirm: "Reset #{@client.name}'s commission to global default?" 
                   },
                   class: "px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 hover:text-gray-900 transition-colors duration-200" %>
           <% end %>
@@ -64,3 +108,32 @@
     <% end %>
   </div>
 </div>
+
+<script>
+document.addEventListener('turbo:load', function() {
+  const commissionTypeSelect = document.getElementById('client_commission_type');
+  const percentageFields = document.getElementById('percentage-fields');
+  const fixedFields = document.getElementById('fixed-fields');
+  
+  function toggleCommissionFields() {
+    const selectedType = commissionTypeSelect.value;
+    
+    // Hide both fields first
+    percentageFields.classList.add('hidden');
+    fixedFields.classList.add('hidden');
+    
+    // Show the appropriate field based on selection
+    if (selectedType === 'percentage') {
+      percentageFields.classList.remove('hidden');
+    } else if (selectedType === 'fixed') {
+      fixedFields.classList.remove('hidden');
+    }
+    // If "Use Global Default" is selected, both fields remain hidden
+  }
+  
+  if (commissionTypeSelect) {
+    commissionTypeSelect.addEventListener('change', toggleCommissionFields);
+    toggleCommissionFields(); // Set initial state
+  }
+});
+</script>

@@ -22,7 +22,16 @@
       <div>
         <p class="text-sm font-medium text-blue-900">
           <strong>Global Default Commission</strong>
-          <span class="ml-2 text-lg font-semibold"><%= number_to_percentage(@global_rate, precision: 2) %></span>
+          <span class="ml-2 text-lg font-semibold">
+            <% if @system_setting.percentage? %>
+              <%= number_to_percentage(@system_setting.global_interest_rate, precision: 2) %>
+            <% else %>
+              <%= number_to_currency(@system_setting.fixed_commission_amount) %>
+            <% end %>
+          </span>
+          <span class="ml-2 text-sm font-normal text-blue-700">
+            (<%= @system_setting.commission_type.titleize %>)
+          </span>
         </p>
         <p class="text-sm text-blue-700 mt-1">
           Used by <%= @global_count %> clients
@@ -40,6 +49,7 @@
       <thead class="bg-gray-50">
         <tr>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rate Type</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Applied Rate</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Custom Rate</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
@@ -56,15 +66,31 @@
             </td>
 
             <td class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm text-gray-900">
+                <%= client.effective_commission_type.titleize %>
+              </div>
+            </td>
+
+            <td class="px-6 py-4 whitespace-nowrap">
               <div class="text-sm font-semibold text-gray-900">
-                <%= number_to_percentage(client.custom_interest_rate || @global_rate, precision: 2) %>
+                <% if client.effective_commission_type == 'percentage' %>
+                  <%= number_to_percentage(client.effective_commission_value, precision: 2) %>
+                <% else %>
+                  <%= number_to_currency(client.effective_commission_value) %>
+                <% end %>
               </div>
             </td>
 
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="text-sm text-gray-500">
-                <% if client.custom_interest_rate.present? %>
-                  <%= number_to_percentage(client.custom_interest_rate, precision: 2) %>
+                <% if client.commission_type.present? %>
+                  <% if client.percentage? && client.custom_interest_rate.present? %>
+                    <%= number_to_percentage(client.custom_interest_rate, precision: 2) %>
+                  <% elsif client.fixed? && client.fixed_commission_amount.present? %>
+                    <%= number_to_currency(client.fixed_commission_amount) %>
+                  <% else %>
+                    <span class="text-gray-400">—</span>
+                  <% end %>
                 <% else %>
                   <span class="text-gray-400">—</span>
                 <% end %>
@@ -72,7 +98,7 @@
             </td>
 
             <td class="px-6 py-4 whitespace-nowrap">
-              <% if client.custom_interest_rate.present? %>
+              <% if client.commission_type.present? || client.custom_interest_rate.present? %>
                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Custom</span>
               <% else %>
                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Global</span>
@@ -84,11 +110,15 @@
                 <%= link_to "Edit Client", edit_client_path(client), 
                       class: "inline-block px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md shadow-sm hover:bg-gray-200 hover:text-gray-900 transition-colors duration-200" %>
                 
-                <% if client.custom_interest_rate.present? %>
+                <% if client.commission_type.present? || client.custom_interest_rate.present? %>
                   <%= button_to "Remove Custom", 
                         client_path(client), 
                         method: :patch,
-                        params: { client: { custom_interest_rate: nil } },
+                        params: { client: { 
+                          commission_type: nil, 
+                          custom_interest_rate: nil,
+                          fixed_commission_amount: nil 
+                        } },
                         data: { 
                           confirm: "Remove custom rate for #{client.name}?", 
                           turbo_confirm: "Remove custom rate for #{client.name}?" 
@@ -108,7 +138,7 @@
     <p>
       Showing <%= @clients.count %> clients • 
       <strong><%= @custom_count %></strong> with custom rates • 
-      <strong><%= @nil_interest_rate_count %></strong> using global rate
+      <strong><%= @global_count %></strong> using global rate
     </p>
   </div>
 </div>
