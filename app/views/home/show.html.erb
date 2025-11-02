@@ -241,9 +241,15 @@
         document.body.appendChild(modal);
       }
       modal.classList.remove('hidden');
-      document.getElementById('twofa-code').value = '';
-      document.getElementById('twofa-error').classList.add('hidden');
-      document.getElementById('twofa-code').focus();
+      var twofaCode = document.getElementById('twofa-code');
+      var twofaError = document.getElementById('twofa-error');
+      if (twofaCode) {
+        twofaCode.value = '';
+        twofaCode.focus();
+      }
+      if (twofaError) {
+        twofaError.classList.add('hidden');
+      }
       // lock body scroll while modal is open
       document.documentElement.classList.add('overflow-hidden');
       document.body.classList.add('overflow-hidden');
