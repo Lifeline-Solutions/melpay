@@ -298,12 +298,22 @@ class HomeController < ApplicationController
       return
     end
 
-    # Prevent double-acting on an already-successful persisted Transaction
-    existing_transaction = Transaction.find_by(home_id: @home.id, transaction_id: deposit_transaction_id, status: 'success', is_latest: true)
-    if existing_transaction
+    # Prevent double-acting on an already-successful transaction (success only)
+    existing_success = Transaction.where(home_id: @home.id, transaction_id: deposit_transaction_id, is_latest: true, status: 'success').first
+    if existing_success
       respond_to do |format|
         format.html { redirect_to home_path(@home), alert: 'This transaction has already been completed successfully.' }
         format.json { render json: { error: 'Already completed' }, status: :unprocessable_entity }
+      end
+      return
+    end
+
+    # Allow retry if previous is failed, but prevent duplicate OTP triggers for already pending transaction
+    existing_pending = Transaction.find_by(home_id: @home.id, transaction_id: deposit_transaction_id, status: 'pending', is_latest: true)
+    if existing_pending
+      respond_to do |format|
+        format.html { redirect_to verify_otp_path, notice: 'OTP already sent. Please enter the code to confirm this payment.' }
+        format.json { render json: { pending: true, message: 'OTP already sent to your email.' }, status: :ok }
       end
       return
     end
@@ -318,7 +328,6 @@ class HomeController < ApplicationController
     end
 
     interest_rate = client&.applied_interest_rate.to_f
-    client&.applied_commission_display.to_f
     deposit_amount = deposit['amount'].to_f
 
     if client.fixed?
@@ -355,7 +364,6 @@ class HomeController < ApplicationController
                            end
 
       transaction_record.save!
-
       # Store pending transaction id in session so the 2FA verify step can finalize it
       session[:pending_transaction_id] = transaction_record.id
       session[:pending_transaction_home_id] = @home.id
@@ -404,14 +412,17 @@ class HomeController < ApplicationController
 
     @home.processed_deposits.each do |deposit|
       # Skip if already successful (completed transactions cannot be changed)
-      existing_transaction = Transaction.find_by(
+      existing_success = Transaction.where(
         home_id: @home.id,
         transaction_id: deposit['transaction_id'],
-        status: 'success',
-        is_latest: true
-      )
+        is_latest: true,
+        status: 'success'
+      ).first
+      next if existing_success
 
-      next if existing_transaction
+      # Prevent duplicate OTP triggers for already pending transaction
+      existing_pending = Transaction.find_by(home_id: @home.id, transaction_id: deposit['transaction_id'], status: 'pending', is_latest: true)
+      next if existing_pending
 
       deposit_amount = deposit['amount'].to_f
       transaction_cost = deposit_amount * (interest_rate / 100.0)
