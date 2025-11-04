@@ -332,7 +332,6 @@ class HomeController < ApplicationController
 
     if client.fixed?
       transaction_cost = client.effective_commission_value.to_f
-      interest_rate = 0.0
     else
       interest_rate = client.applied_interest_rate.to_f
       transaction_cost = deposit_amount * (interest_rate / 100.0)
@@ -349,6 +348,8 @@ class HomeController < ApplicationController
       amount: deposit_amount,
       interest_rate: interest_rate,
       transaction_cost: transaction_cost,
+      applied_commission_type: client.commission_type,
+      applied_commission_value: client.fixed_commission_amount,
       total_cost: total_cost,
       deposit_data: deposit,
       status: 'pending'

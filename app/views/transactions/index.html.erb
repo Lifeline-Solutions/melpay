@@ -1,31 +1,68 @@
-<div class="rounded-sm bg-gray-50 dark:bg-gray-800 p-4 shadow h-full flex flex-col">
-  <h2 class="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-100">
+<div class="p-6">
+  <h2 class="text-lg font-semibold mb-3">
     All Transactions
   </h2>
 
   <div class="overflow-x-auto flex-grow">
-    <table class="min-w-full text-sm">
+    <table class="w-full text-sm">
       <thead class="bg-gray-200 dark:bg-gray-700">
       <tr>
         <th class="px-4 py-2 text-left font-medium">Date</th>
+        <th class="px-4 py-2 text-left font-medium">Document ID</th>
         <th class="px-4 py-2 text-left font-medium">Transaction ID</th>
         <th class="px-4 py-2 text-left font-medium">Status</th>
+        <th class="px-4 py-2 text-left font-medium">Commission Type</th>
+        <th class="px-4 py-2 text-left font-medium">Percentage Transaction</th>
+        <th class="px-4 py-2 text-left font-medium">Transaction Fee</th>
+
         <th class="px-4 py-2 text-right font-medium">Amount</th>
       </tr>
       </thead>
       <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
       <% @transactions.each do |transaction| %>
         <tr>
-          <td class="px-4 py-2 whitespace-nowrap text-gray-600 dark:text-gray-300">
-            <%= transaction.created_at.strftime("%-I:%M%P/%m/%y") %>
+          <td class="px-4 py-2">
+            <%= transaction.created_at.strftime("%I:%M:%S %p - %B %d, %Y") %>
           </td>
-          <td class="px-4 py-2 text-gray-600 dark:text-gray-300 truncate max-w-[120px]">
+          <td class="px-4 py-2">
+            <%= transaction.home.unique_id %>
+          </td>
+          <td class="px-4 py-2">
             <%= transaction.transaction_id %>
           </td>
-          <td class="px-4 py-2 text-gray-600 dark:text-gray-300">
-            <%= transaction.status.capitalize %>
+
+
+          <td class="px-4 py-2">
+            <% current_status = transaction.status.to_s.strip %>
+            <% if current_status.present? %>
+                <span class="px-2 py-1 text-xs font-semibold rounded-full <%= current_status.downcase == 'success' ? 'bg-green-100 text-green-800' : current_status.downcase == 'pending' ? 'bg-yellow-100 text-yellow-800' : current_status.downcase == 'failed' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800' %>">
+                  <%= current_status.capitalize %>
+                </span>
+            <% else %>
+              <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Pending</span>
+            <% end %>
           </td>
-          <td class="px-4 py-2 text-right text-green-600 font-semibold">
+
+          <td class="px-4 py-2 capitalize text-center">
+            <% if transaction.applied_commission_type.present?  %>
+              <%= transaction.applied_commission_type %>
+            <% end %>
+          </td>
+
+
+          <td class="px-4 py-2 text-green-600 font-semibold">
+            <% if transaction.interest_rate.present? && transaction.interest_rate.to_f != 0 %>
+              <%= number_to_percentage(transaction.interest_rate.to_f, precision: 2) %>
+            <% elsif transaction.applied_commission_value.present? %>
+              <%= number_to_currency(transaction.applied_commission_value) %>
+            <% else %>
+              <span class="text-gray-500">&mdash;</span>
+            <% end %>
+          </td>
+          <td class="px-4 py-2 font-semibold">
+            <%= number_to_currency(transaction.transaction_cost.to_f) %>
+          </td>
+          <td class="px-4 py-2  font-semibold">
             <%= number_to_currency(transaction.amount.to_f) %>
           </td>
         </tr>
