@@ -406,6 +406,7 @@ class HomeController < ApplicationController
       return
     end
 
+    # Use the client's applied interest rate as the baseline (same as single-pay flow)
     interest_rate = client&.applied_interest_rate.to_f
 
     pending_ids = []
@@ -426,8 +427,18 @@ class HomeController < ApplicationController
       next if existing_pending
 
       deposit_amount = deposit['amount'].to_f
-      transaction_cost = deposit_amount * (interest_rate / 100.0)
 
+      # Compute transaction cost using the exact same logic as pay_single_deposit
+      transaction_cost = if client.fixed?
+                           client.effective_commission_value.to_f
+                         else
+                           # keep interest_rate as derived above
+                           (deposit_amount * (interest_rate / 100.0)).round(2)
+                         end
+
+      total_cost = deposit_amount + transaction_cost
+
+      # Use the same applied_commission fields as pay_single_deposit
       new_attributes = {
         home_id: @home.id,
         transaction_id: deposit['transaction_id'],
@@ -436,7 +447,9 @@ class HomeController < ApplicationController
         amount: deposit_amount,
         interest_rate: interest_rate,
         transaction_cost: transaction_cost,
-        total_cost: deposit_amount + transaction_cost,
+        applied_commission_type: client.commission_type,
+        applied_commission_value: client.fixed_commission_amount,
+        total_cost: total_cost,
         deposit_data: deposit,
         status: 'pending'
       }
@@ -454,10 +467,12 @@ class HomeController < ApplicationController
         pending_ids << transaction.id
         recorded_count += 1
 
-        # update deposit snapshot to pending so UI shows pending immediately
+        # update deposit snapshot to pending (store same snapshot fields as single-pay)
         deposit['status'] = 'pending'
         deposit['transaction_cost'] = transaction_cost
         deposit['applied_interest_rate'] = interest_rate
+        deposit['applied_commission_type'] = client.commission_type
+        deposit['applied_commission_value'] = client.fixed_commission_amount
         deposit['transaction_processed_at'] = Time.current.iso8601
       rescue ActiveRecord::RecordInvalid => e
         Rails.logger.error "Failed creating pending transaction for #{deposit['transaction_id']}: #{e.record&.errors&.full_messages&.join(', ') || e.message}"
@@ -488,11 +503,15 @@ class HomeController < ApplicationController
       respond_to do |format|
         format.html { redirect_to verify_otp_path, notice: "OTP sent to confirm processing of #{recorded_count} transactions." }
         format.json { render json: { pending: true, count: recorded_count, message: 'OTP sent to your email.' }, status: :ok }
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.replace('twofa-modal', partial: 'home/twofa_modal', locals: { pending_type: 'batch', transaction_id: nil, count: recorded_count })
+        end
       end
     else
       respond_to do |format|
         format.html { redirect_to home_path(@home), alert: 'No transactions available to process.' }
         format.json { render json: { error: 'No transactions available' }, status: :unprocessable_entity }
+        format.turbo_stream { render turbo_stream: turbo_stream.replace('twofa-modal', partial: 'home/twofa_modal_error', locals: { error: 'No transactions available' }) }
       end
     end
   end
