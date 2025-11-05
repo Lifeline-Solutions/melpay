@@ -153,7 +153,12 @@
      <h3 class="text-lg font-semibold mb-2">Confirm transaction</h3>
      <p class="text-sm text-gray-600 dark:text-gray-100 mb-4">A one-time code has been sent to your email. Enter it below to confirm the transaction.</p>
      <form id="twofa-modal-form">
-      <input type="text" id="twofa-code" name="otp_code" aria-label="One-time code" maxlength="6" class="w-full border rounded px-3 py-2 mb-3" placeholder="Enter 6-digit code" autocomplete="one-time-code" />
+      <div class="flex gap-2 justify-center mb-3">
+        <% 6.times do |i| %>
+          <%= text_field_tag "otp_digit_#{i}", nil, autocomplete: (i == 0 ? 'one-time-code' : nil), inputmode: 'numeric', pattern: '\\d', maxlength: 1, placeholder: '•', class: "border border-gray-300 rounded-lg focus:ring-primary-600 focus:border-primary-600 w-10 h-12 text-center mx-1 text-xl dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 otp-digit", required: true, id: "otp_digit_#{i}" %>
+        <% end %>
+        <%= hidden_field_tag :otp_code, '', id: 'otp_code' %>
+      </div>
        <div class="flex justify-between items-center">
          <button type="button" id="twofa-resend" class="text-sm text-blue-600 dark:text-gray-100">Resend code</button>
          <div class="flex gap-2">
@@ -241,18 +246,54 @@
         document.body.appendChild(modal);
       }
       modal.classList.remove('hidden');
-      var twofaCode = document.getElementById('twofa-code');
-      var twofaError = document.getElementById('twofa-error');
-      if (twofaCode) {
-        twofaCode.value = '';
-        twofaCode.focus();
-      }
-      if (twofaError) {
-        twofaError.classList.add('hidden');
-      }
       // lock body scroll while modal is open
       document.documentElement.classList.add('overflow-hidden');
       document.body.classList.add('overflow-hidden');
+
+      // Setup 6-digit inputs
+      var inputs = Array.from(document.querySelectorAll('#twofa-modal .otp-digit'));
+      var hiddenOtp = document.querySelector('#twofa-modal #otp_code');
+      var twofaError = document.getElementById('twofa-error');
+
+      function updateHiddenOtp() {
+        if (!hiddenOtp) return;
+        hiddenOtp.value = inputs.map(function(i){ return i.value; }).join('');
+      }
+
+      // clear values and focus first
+      inputs.forEach(function(i){ i.value = ''; });
+      updateHiddenOtp();
+      if (inputs[0]) inputs[0].focus();
+      if (twofaError) twofaError.classList.add('hidden');
+
+      // bind input behaviors (guard to avoid duplicate bindings across opens)
+      inputs.forEach(function(input, idx){
+        if (input.dataset.bound === '1') return;
+        input.dataset.bound = '1';
+        input.addEventListener('input', function(){
+          this.value = this.value.replace(/\D/g, '').slice(0,1);
+          if (this.value && idx < inputs.length - 1) inputs[idx + 1].focus();
+          updateHiddenOtp();
+        });
+        input.addEventListener('keydown', function(e){
+          if (e.key === 'Backspace' && this.value === '' && idx > 0) {
+            inputs[idx - 1].focus();
+          }
+        });
+        input.addEventListener('paste', function(e){
+          e.preventDefault();
+          var paste = (e.clipboardData || window.clipboardData).getData('text') || '';
+          var digitsOnly = paste.replace(/\D/g,'').slice(0, inputs.length - idx);
+          for (var j = 0; j < digitsOnly.length; j++) {
+            if (inputs[idx + j]) inputs[idx + j].value = digitsOnly[j];
+          }
+          var next = idx + digitsOnly.length;
+          if (inputs[next]) inputs[next].focus();
+          updateHiddenOtp();
+        });
+      });
+
+      // On form submit inside modal, ensure hidden field is updated (handler defined below)
     }
 
     function closeTwoFAModal() {
@@ -302,9 +343,19 @@
     // Handle OTP submit
     document.getElementById('twofa-modal-form').addEventListener('submit', function(e) {
       e.preventDefault();
-      var code = document.getElementById('twofa-code').value.trim();
-      if (!code || code.length < 4) {
-        var err = document.getElementById('twofa-error'); err.textContent = 'Please enter the 6-digit code'; err.classList.remove('hidden'); return;
+      var hiddenOtp = document.querySelector('#twofa-modal #otp_code');
+      var inputs = Array.from(document.querySelectorAll('#twofa-modal .otp-digit'));
+      var err = document.getElementById('twofa-error');
+      var code = '';
+      if (inputs && inputs.length) {
+        code = inputs.map(function(i){ return i.value; }).join('');
+      } else if (hiddenOtp) {
+        code = hiddenOtp.value.trim();
+      }
+      if (!code || code.length < 6) {
+        err.textContent = 'Please enter the 6-digit code';
+        err.classList.remove('hidden');
+        return;
       }
 
       var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -323,7 +374,8 @@
           window.location.reload();
           return;
          } else {
-           var err = document.getElementById('twofa-error'); err.textContent = json && json.error ? json.error : 'Invalid or expired code'; err.classList.remove('hidden');
+           err.textContent = json && json.error ? json.error : 'Invalid or expired code';
+           err.classList.remove('hidden');
          }
        }).catch(function(err) { console.error(err); alert('Network error verifying code'); });
      });
