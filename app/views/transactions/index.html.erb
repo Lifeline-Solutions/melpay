@@ -85,7 +85,7 @@
       <% first_page = 1 %>
       <% last_page  = @total_pages.to_i %>
       <% start_page = [@page.to_i - window, first_page].max %>
-      <% end_page   = [@page.to_i + window, last_page].max %>
+      <% end_page   = [@page.to_i + window, last_page].min %>
 
       <%# Ensure at least a small set when near edges %>
       <% start_page = [start_page, last_page - (window * 2)].min if last_page > (window * 2) %>
