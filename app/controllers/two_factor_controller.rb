@@ -52,7 +52,11 @@ class TwoFactorController < ApplicationController
               latest_transaction = Transaction.where(home_id: home.id, transaction_id: transaction.transaction_id, is_latest: true).first
               final_attrs = transaction.attributes.slice('home_id', 'transaction_id', 'client_id', 'user_id', 'amount', 'interest_rate', 'transaction_cost', 'total_cost',
                                                          'deposit_data')
-              final_attrs['status'] = (client.credit || 0) >= transaction.total_cost.to_f ? 'success' : 'failed'
+              # Determine candidate status by balance
+              candidate_status = (client.credit || 0) >= transaction.total_cost.to_f ? 'success' : 'failed'
+              # Enforce success-only-once: if any historical success exists, force failed
+              ever_success = Transaction.where(home_id: home.id, transaction_id: transaction.transaction_id, status: 'success').exists?
+              final_attrs['status'] = ever_success ? 'failed' : candidate_status
 
               final_transaction = if latest_transaction && latest_transaction.id != transaction.id
                                     latest_transaction.create_revision(final_attrs)
@@ -144,7 +148,11 @@ class TwoFactorController < ApplicationController
             # Build final attributes based on pending transaction snapshot
             final_attrs = transaction.attributes.slice('home_id', 'transaction_id', 'client_id', 'user_id', 'amount', 'interest_rate', 'transaction_cost', 'total_cost',
                                                        'deposit_data')
-            final_attrs['status'] = (client.credit || 0) >= transaction.total_cost.to_f ? 'success' : 'failed'
+            # Determine candidate status by balance
+            candidate_status = (client.credit || 0) >= transaction.total_cost.to_f ? 'success' : 'failed'
+            # Enforce success-only-once: if any historical success exists, force failed
+            ever_success = Transaction.where(home_id: home.id, transaction_id: transaction.transaction_id, status: 'success').exists?
+            final_attrs['status'] = ever_success ? 'failed' : candidate_status
 
             final_transaction = if latest_transaction && latest_transaction.id != transaction.id
                                   latest_transaction.create_revision(final_attrs)

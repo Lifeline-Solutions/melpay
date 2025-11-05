@@ -299,7 +299,7 @@ class HomeController < ApplicationController
     end
 
     # Prevent double-acting on an already-successful transaction (success only)
-    existing_success = Transaction.where(home_id: @home.id, transaction_id: deposit_transaction_id, is_latest: true, status: 'success').first
+    existing_success = Transaction.where(home_id: @home.id, transaction_id: deposit_transaction_id, status: 'success').exists?
     if existing_success
       respond_to do |format|
         format.html { redirect_to home_path(@home), alert: 'This transaction has already been completed successfully.' }
@@ -417,9 +417,8 @@ class HomeController < ApplicationController
       existing_success = Transaction.where(
         home_id: @home.id,
         transaction_id: deposit['transaction_id'],
-        is_latest: true,
         status: 'success'
-      ).first
+      ).exists?
       next if existing_success
 
       # Prevent duplicate OTP triggers for already pending transaction
