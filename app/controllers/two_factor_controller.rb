@@ -57,7 +57,7 @@ class TwoFactorController < ApplicationController
 
               latest_transaction = Transaction.where(home_id: home.id, transaction_id: transaction.transaction_id, is_latest: true).first
               final_attrs = transaction.attributes.slice('home_id', 'transaction_id', 'client_id', 'user_id', 'amount', 'interest_rate', 'transaction_cost', 'total_cost',
-                                                         'deposit_data')
+                                                         'deposit_data', 'applied_commission_type', 'applied_commission_value')
               # Determine status by balance
               final_attrs['status'] = (client.credit || 0) >= transaction.total_cost.to_f ? 'success' : 'failed'
 
@@ -88,6 +88,8 @@ class TwoFactorController < ApplicationController
                 d['status'] = final_transaction.status
                 d['transaction_cost'] = final_transaction.transaction_cost
                 d['applied_interest_rate'] = final_transaction.interest_rate
+                d['applied_commission_type'] = final_transaction.applied_commission_type
+                d['applied_commission_value'] = final_transaction.applied_commission_value
                 d['transaction_processed_at'] = Time.current.iso8601
               end
               home.processed_deposits = deposits
@@ -155,7 +157,7 @@ class TwoFactorController < ApplicationController
 
               # Build final attributes based on pending transaction snapshot
               final_attrs = transaction.attributes.slice('home_id', 'transaction_id', 'client_id', 'user_id', 'amount', 'interest_rate', 'transaction_cost', 'total_cost',
-                                                         'deposit_data')
+                                                         'deposit_data', 'applied_commission_type', 'applied_commission_value')
               # Determine status by balance
               final_attrs['status'] = (client.credit || 0) >= transaction.total_cost.to_f ? 'success' : 'failed'
 
@@ -185,6 +187,8 @@ class TwoFactorController < ApplicationController
                   d['status'] = final_transaction.status
                   d['transaction_cost'] = final_transaction.transaction_cost
                   d['applied_interest_rate'] = final_transaction.interest_rate
+                  d['applied_commission_type'] = final_transaction.applied_commission_type
+                  d['applied_commission_value'] = final_transaction.applied_commission_value
                 end
                 d['transaction_processed_at'] = Time.current.iso8601
               end
@@ -271,7 +275,7 @@ class TwoFactorController < ApplicationController
 
             latest_transaction = Transaction.where(home_id: home.id, transaction_id: transaction.transaction_id, is_latest: true).first
             final_attrs = transaction.attributes.slice('home_id', 'transaction_id', 'client_id', 'user_id', 'amount', 'interest_rate', 'transaction_cost', 'total_cost',
-                                                       'deposit_data')
+                                                       'deposit_data', 'applied_commission_type', 'applied_commission_value')
             final_attrs['status'] = 'failed'
 
             final_transaction = if latest_transaction && latest_transaction.id != transaction.id
@@ -289,6 +293,8 @@ class TwoFactorController < ApplicationController
               d['status'] = final_transaction.status
               d['transaction_cost'] = final_transaction.transaction_cost
               d['applied_interest_rate'] = final_transaction.interest_rate
+              d['applied_commission_type'] = final_transaction.applied_commission_type
+              d['applied_commission_value'] = final_transaction.applied_commission_value
               d['transaction_processed_at'] = Time.current.iso8601
             end
             home.processed_deposits = deposits
@@ -332,7 +338,8 @@ class TwoFactorController < ApplicationController
         end
 
         latest_transaction = Transaction.where(home_id: home.id, transaction_id: transaction.transaction_id, is_latest: true).first
-        final_attrs = transaction.attributes.slice('home_id', 'transaction_id', 'client_id', 'user_id', 'amount', 'interest_rate', 'transaction_cost', 'total_cost', 'deposit_data')
+        final_attrs = transaction.attributes.slice('home_id', 'transaction_id', 'client_id', 'user_id', 'amount', 'interest_rate', 'transaction_cost', 'total_cost',
+                                                   'deposit_data', 'applied_commission_type', 'applied_commission_value')
         final_attrs['status'] = 'failed'
 
         final_transaction = if latest_transaction && latest_transaction.id != transaction.id
@@ -351,6 +358,8 @@ class TwoFactorController < ApplicationController
           d['status'] = final_transaction.status
           d['transaction_cost'] = final_transaction.transaction_cost
           d['applied_interest_rate'] = final_transaction.interest_rate
+          d['applied_commission_type'] = final_transaction.applied_commission_type
+          d['applied_commission_value'] = final_transaction.applied_commission_value
           d['transaction_processed_at'] = Time.current.iso8601
         end
         home.processed_deposits = deposits
