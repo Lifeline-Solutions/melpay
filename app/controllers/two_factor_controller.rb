@@ -58,6 +58,9 @@ class TwoFactorController < ApplicationController
               latest_transaction = Transaction.where(home_id: home.id, transaction_id: transaction.transaction_id, is_latest: true).first
               final_attrs = transaction.attributes.slice('home_id', 'transaction_id', 'client_id', 'user_id', 'amount', 'interest_rate', 'transaction_cost', 'total_cost',
                                                          'deposit_data', 'applied_commission_type', 'applied_commission_value')
+              # Backfill commission fields if missing on the pending snapshot
+              final_attrs['applied_commission_type'] ||= client.effective_commission_type
+              final_attrs['applied_commission_value'] ||= client.effective_commission_value
               # Determine status by balance
               final_attrs['status'] = (client.credit || 0) >= transaction.total_cost.to_f ? 'success' : 'failed'
 
@@ -158,6 +161,9 @@ class TwoFactorController < ApplicationController
               # Build final attributes based on pending transaction snapshot
               final_attrs = transaction.attributes.slice('home_id', 'transaction_id', 'client_id', 'user_id', 'amount', 'interest_rate', 'transaction_cost', 'total_cost',
                                                          'deposit_data', 'applied_commission_type', 'applied_commission_value')
+              # Backfill commission fields if missing on the pending snapshot
+              final_attrs['applied_commission_type'] ||= client.effective_commission_type
+              final_attrs['applied_commission_value'] ||= client.effective_commission_value
               # Determine status by balance
               final_attrs['status'] = (client.credit || 0) >= transaction.total_cost.to_f ? 'success' : 'failed'
 
@@ -276,6 +282,9 @@ class TwoFactorController < ApplicationController
             latest_transaction = Transaction.where(home_id: home.id, transaction_id: transaction.transaction_id, is_latest: true).first
             final_attrs = transaction.attributes.slice('home_id', 'transaction_id', 'client_id', 'user_id', 'amount', 'interest_rate', 'transaction_cost', 'total_cost',
                                                        'deposit_data', 'applied_commission_type', 'applied_commission_value')
+            # Backfill commission fields if missing on the pending snapshot
+            final_attrs['applied_commission_type'] ||= client.effective_commission_type
+            final_attrs['applied_commission_value'] ||= client.effective_commission_value
             final_attrs['status'] = 'failed'
 
             final_transaction = if latest_transaction && latest_transaction.id != transaction.id
@@ -340,6 +349,9 @@ class TwoFactorController < ApplicationController
         latest_transaction = Transaction.where(home_id: home.id, transaction_id: transaction.transaction_id, is_latest: true).first
         final_attrs = transaction.attributes.slice('home_id', 'transaction_id', 'client_id', 'user_id', 'amount', 'interest_rate', 'transaction_cost', 'total_cost',
                                                    'deposit_data', 'applied_commission_type', 'applied_commission_value')
+        # Backfill commission fields if missing on the pending snapshot
+        final_attrs['applied_commission_type'] ||= client.effective_commission_type
+        final_attrs['applied_commission_value'] ||= client.effective_commission_value
         final_attrs['status'] = 'failed'
 
         final_transaction = if latest_transaction && latest_transaction.id != transaction.id
