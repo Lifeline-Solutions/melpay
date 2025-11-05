@@ -2,7 +2,16 @@ class TransactionsController < ApplicationController
   before_action :authenticate_user!
 
   def index
-    @transactions = Transaction.all.order(created_at: :desc)
+    @per_page = 20
+    @page = (params[:page] || 1).to_i
+    @page = 1 if @page < 1
+
+    scope = Transaction.order(created_at: :desc)
+    @total_count = scope.count
+    @total_pages = (@total_count / @per_page.to_f).ceil
+
+    @transactions = scope.offset((@page - 1) * @per_page).limit(@per_page)
+    # Now @transactions contains at most 20 records; use @page/@total_pages for nav
   end
 
   def new

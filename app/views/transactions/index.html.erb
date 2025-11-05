@@ -2,7 +2,6 @@
 <h2 class="text-lg font-semibold mb-3">
     All Transactions
   </h2>
-
   <div class="overflow-x-auto flex-grow">
     <table class="w-full text-sm">
       <thead class="bg-gray-200 dark:bg-gray-700">
@@ -16,7 +15,6 @@
         <th class="px-4 py-2 font-medium">Transaction Fee</th>
         <th class="px-4 py-2 font-medium">Amount</th>
         <th class="px-4 py-2 font-medium">Total Cost</th>
-
       </tr>
       </thead>
       <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
@@ -31,8 +29,6 @@
           <td class="px-4 py-2">
             <%= transaction.transaction_id %>
           </td>
-
-
           <td class="px-4 py-2">
             <% current_status = transaction.status.to_s.strip %>
             <% if current_status.present? %>
@@ -43,14 +39,11 @@
               <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Pending</span>
             <% end %>
           </td>
-
           <td class="px-4 py-2 capitalize text-center">
             <% if transaction.applied_commission_type.present?  %>
               <%= transaction.applied_commission_type %>
             <% end %>
           </td>
-
-
           <td class="px-4 py-2 text-green-600 font-semibold">
             <% if transaction.interest_rate.present? && transaction.interest_rate.to_f != 0 %>
               <%= number_to_percentage(transaction.interest_rate.to_f, precision: 2) %>
