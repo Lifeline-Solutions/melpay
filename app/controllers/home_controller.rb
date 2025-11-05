@@ -299,7 +299,7 @@ class HomeController < ApplicationController
     end
 
     # Prevent double-acting on an already-successful transaction (success only)
-    existing_success = Transaction.where(home_id: @home.id, transaction_id: deposit_transaction_id, is_latest: true, status: 'success').first
+    existing_success = Transaction.where(home_id: @home.id, transaction_id: deposit_transaction_id, status: 'success').exists?
     if existing_success
       respond_to do |format|
         format.html { redirect_to home_path(@home), alert: 'This transaction has already been completed successfully.' }
@@ -348,8 +348,8 @@ class HomeController < ApplicationController
       amount: deposit_amount,
       interest_rate: interest_rate,
       transaction_cost: transaction_cost,
-      applied_commission_type: client.commission_type,
-      applied_commission_value: client.fixed_commission_amount,
+      applied_commission_type: client.effective_commission_type,
+      applied_commission_value: client.effective_commission_value,
       total_cost: total_cost,
       deposit_data: deposit,
       status: 'pending'
@@ -417,9 +417,8 @@ class HomeController < ApplicationController
       existing_success = Transaction.where(
         home_id: @home.id,
         transaction_id: deposit['transaction_id'],
-        is_latest: true,
         status: 'success'
-      ).first
+      ).exists?
       next if existing_success
 
       # Prevent duplicate OTP triggers for already pending transaction
@@ -447,8 +446,8 @@ class HomeController < ApplicationController
         amount: deposit_amount,
         interest_rate: interest_rate,
         transaction_cost: transaction_cost,
-        applied_commission_type: client.commission_type,
-        applied_commission_value: client.fixed_commission_amount,
+        applied_commission_type: client.effective_commission_type,
+        applied_commission_value: client.effective_commission_value,
         total_cost: total_cost,
         deposit_data: deposit,
         status: 'pending'
@@ -471,8 +470,8 @@ class HomeController < ApplicationController
         deposit['status'] = 'pending'
         deposit['transaction_cost'] = transaction_cost
         deposit['applied_interest_rate'] = interest_rate
-        deposit['applied_commission_type'] = client.commission_type
-        deposit['applied_commission_value'] = client.fixed_commission_amount
+        deposit['applied_commission_type'] = client.effective_commission_type
+        deposit['applied_commission_value'] = client.effective_commission_value
         deposit['transaction_processed_at'] = Time.current.iso8601
       rescue ActiveRecord::RecordInvalid => e
         Rails.logger.error "Failed creating pending transaction for #{deposit['transaction_id']}: #{e.record&.errors&.full_messages&.join(', ') || e.message}"
