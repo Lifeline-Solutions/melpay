@@ -49,14 +49,17 @@ class TwoFactorController < ApplicationController
             end
 
             client.with_lock do
+              # If this transaction has ever succeeded, leave it as-is and skip creating a new revision
+              if Transaction.where(home_id: home.id, transaction_id: transaction.transaction_id, status: 'success').exists?
+                Rails.logger.info "Skipping finalization for #{transaction.transaction_id}: already successful"
+                next
+              end
+
               latest_transaction = Transaction.where(home_id: home.id, transaction_id: transaction.transaction_id, is_latest: true).first
               final_attrs = transaction.attributes.slice('home_id', 'transaction_id', 'client_id', 'user_id', 'amount', 'interest_rate', 'transaction_cost', 'total_cost',
                                                          'deposit_data')
-              # Determine candidate status by balance
-              candidate_status = (client.credit || 0) >= transaction.total_cost.to_f ? 'success' : 'failed'
-              # Enforce success-only-once: if any historical success exists, force failed
-              ever_success = Transaction.where(home_id: home.id, transaction_id: transaction.transaction_id, status: 'success').exists?
-              final_attrs['status'] = ever_success ? 'failed' : candidate_status
+              # Determine status by balance
+              final_attrs['status'] = (client.credit || 0) >= transaction.total_cost.to_f ? 'success' : 'failed'
 
               final_transaction = if latest_transaction && latest_transaction.id != transaction.id
                                     latest_transaction.create_revision(final_attrs)
@@ -142,62 +145,78 @@ class TwoFactorController < ApplicationController
         begin
           final_transaction = nil
           client.with_lock do
-            # Create a revision (this will mark previous is_latest = false)
-            latest_transaction = Transaction.where(home_id: home.id, transaction_id: transaction.transaction_id, is_latest: true).first
+            # If this transaction has ever succeeded, do nothing and return success (idempotent)
+            if Transaction.where(home_id: home.id, transaction_id: transaction.transaction_id, status: 'success').exists?
+              # Clear OTP outside the lock, then respond below
+              final_transaction = nil
+            else
+              # Create a revision (this will mark previous is_latest = false)
+              latest_transaction = Transaction.where(home_id: home.id, transaction_id: transaction.transaction_id, is_latest: true).first
 
-            # Build final attributes based on pending transaction snapshot
-            final_attrs = transaction.attributes.slice('home_id', 'transaction_id', 'client_id', 'user_id', 'amount', 'interest_rate', 'transaction_cost', 'total_cost',
-                                                       'deposit_data')
-            # Determine candidate status by balance
-            candidate_status = (client.credit || 0) >= transaction.total_cost.to_f ? 'success' : 'failed'
-            # Enforce success-only-once: if any historical success exists, force failed
-            ever_success = Transaction.where(home_id: home.id, transaction_id: transaction.transaction_id, status: 'success').exists?
-            final_attrs['status'] = ever_success ? 'failed' : candidate_status
+              # Build final attributes based on pending transaction snapshot
+              final_attrs = transaction.attributes.slice('home_id', 'transaction_id', 'client_id', 'user_id', 'amount', 'interest_rate', 'transaction_cost', 'total_cost',
+                                                         'deposit_data')
+              # Determine status by balance
+              final_attrs['status'] = (client.credit || 0) >= transaction.total_cost.to_f ? 'success' : 'failed'
 
-            final_transaction = if latest_transaction && latest_transaction.id != transaction.id
-                                  latest_transaction.create_revision(final_attrs)
-                                else
-                                  # If the pending transaction is already the latest, create a revision from it
-                                  transaction.create_revision(final_attrs)
-                                end
+              final_transaction = if latest_transaction && latest_transaction.id != transaction.id
+                                    latest_transaction.create_revision(final_attrs)
+                                  else
+                                    # If the pending transaction is already the latest, create a revision from it
+                                    transaction.create_revision(final_attrs)
+                                  end
 
-            final_transaction.save!
+              final_transaction.save!
 
-            if final_transaction.status == 'success'
-              # Double-check balance
-              raise ActiveRecord::RecordInvalid, final_transaction if (client.credit || 0) < final_transaction.total_cost.to_f
+              if final_transaction.status == 'success'
+                # Double-check balance
+                raise ActiveRecord::RecordInvalid, final_transaction if (client.credit || 0) < final_transaction.total_cost.to_f
 
-              client.credit = (client.credit || 0) - final_transaction.total_cost.to_f
-              client.save!
+                client.credit = (client.credit || 0) - final_transaction.total_cost.to_f
+                client.save!
+              end
+
+              # Update home's processed_deposits snapshot for this transaction
+              deposits = home.processed_deposits.is_a?(Array) ? home.processed_deposits : []
+              deposits.each do |d|
+                next unless d['transaction_id'] == (final_transaction&.transaction_id || transaction.transaction_id)
+
+                if final_transaction
+                  d['status'] = final_transaction.status
+                  d['transaction_cost'] = final_transaction.transaction_cost
+                  d['applied_interest_rate'] = final_transaction.interest_rate
+                end
+                d['transaction_processed_at'] = Time.current.iso8601
+              end
+              home.processed_deposits = deposits
+              home.save!
             end
-
-            # Update home's processed_deposits snapshot for this transaction
-            deposits = home.processed_deposits.is_a?(Array) ? home.processed_deposits : []
-            deposits.each do |d|
-              next unless d['transaction_id'] == final_transaction.transaction_id
-
-              d['status'] = final_transaction.status
-              d['transaction_cost'] = final_transaction.transaction_cost
-              d['applied_interest_rate'] = final_transaction.interest_rate
-              d['transaction_processed_at'] = Time.current.iso8601
-            end
-            home.processed_deposits = deposits
-            home.save!
           end
 
           current_user.clear_otp!
 
           respond_to do |format|
-            format.html { redirect_to home_path(pending_home_id), notice: 'Transaction confirmed and processed.' }
-            format.json do
-              render json: {
-                success: true,
-                message: 'Transaction confirmed and processed.',
-                transaction_id: final_transaction.transaction_id,
-                status: final_transaction.status,
-                transaction_cost: final_transaction.transaction_cost,
-                total_cost: final_transaction.total_cost
-              }, status: :ok
+            if final_transaction
+              format.html { redirect_to home_path(pending_home_id), notice: 'Transaction confirmed and processed.' }
+              format.json do
+                render json: {
+                  success: true,
+                  message: 'Transaction confirmed and processed.',
+                  transaction_id: final_transaction.transaction_id,
+                  status: final_transaction.status,
+                  transaction_cost: final_transaction.transaction_cost,
+                  total_cost: final_transaction.total_cost
+                }, status: :ok
+              end
+            else
+              # Already successful earlier: idempotent success response, no changes applied
+              format.html { redirect_to home_path(pending_home_id), notice: 'This transaction was already completed successfully.' }
+              format.json do
+                render json: {
+                  success: true,
+                  message: 'Already completed successfully.'
+                }, status: :ok
+              end
             end
           end
           return
@@ -244,6 +263,12 @@ class TwoFactorController < ApplicationController
         home = Home.find_by(id: pending_home_id) || transaction.home
         begin
           client.with_lock do
+            # If there was ever a success for this transaction, do not alter history
+            if Transaction.where(home_id: home.id, transaction_id: transaction.transaction_id, status: 'success').exists?
+              Rails.logger.info "Skipping cancel for #{transaction.transaction_id}: already successful"
+              next
+            end
+
             latest_transaction = Transaction.where(home_id: home.id, transaction_id: transaction.transaction_id, is_latest: true).first
             final_attrs = transaction.attributes.slice('home_id', 'transaction_id', 'client_id', 'user_id', 'amount', 'interest_rate', 'transaction_cost', 'total_cost',
                                                        'deposit_data')
@@ -300,6 +325,12 @@ class TwoFactorController < ApplicationController
 
     begin
       client.with_lock do
+        # If ever succeeded, do not change history
+        if Transaction.where(home_id: home.id, transaction_id: transaction.transaction_id, status: 'success').exists?
+          render json: { success: true, message: 'Transaction already successful; no cancellation applied.' }, status: :ok
+          return
+        end
+
         latest_transaction = Transaction.where(home_id: home.id, transaction_id: transaction.transaction_id, is_latest: true).first
         final_attrs = transaction.attributes.slice('home_id', 'transaction_id', 'client_id', 'user_id', 'amount', 'interest_rate', 'transaction_cost', 'total_cost', 'deposit_data')
         final_attrs['status'] = 'failed'
