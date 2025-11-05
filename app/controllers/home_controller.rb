@@ -330,6 +330,15 @@ class HomeController < ApplicationController
     interest_rate = client&.applied_interest_rate.to_f
     deposit_amount = deposit['amount'].to_f
 
+    # Guard against zero or negative amounts
+    if deposit_amount <= 0
+      respond_to do |format|
+        format.html { redirect_to home_path(@home), alert: 'Invalid amount. Amount must be greater than zero.' }
+        format.json { render json: { error: 'Invalid amount (must be > 0)' }, status: :unprocessable_entity }
+      end
+      return
+    end
+
     if client.fixed?
       transaction_cost = client.effective_commission_value.to_f
     else
@@ -426,6 +435,9 @@ class HomeController < ApplicationController
       next if existing_pending
 
       deposit_amount = deposit['amount'].to_f
+
+      # Skip invalid (zero or negative) amounts
+      next if deposit_amount <= 0
 
       # Compute transaction cost using the exact same logic as pay_single_deposit
       transaction_cost = if client.fixed?
