@@ -7,15 +7,16 @@
     <table class="w-full text-sm">
       <thead class="bg-gray-200 dark:bg-gray-700">
       <tr>
-        <th class="px-4 py-2 text-left font-medium">Date</th>
-        <th class="px-4 py-2 text-left font-medium">Document ID</th>
-        <th class="px-4 py-2 text-left font-medium">Transaction ID</th>
-        <th class="px-4 py-2 text-left font-medium">Status</th>
-        <th class="px-4 py-2 text-left font-medium">Commission Type</th>
-        <th class="px-4 py-2 text-left font-medium">Percentage Transaction</th>
-        <th class="px-4 py-2 text-left font-medium">Transaction Fee</th>
+        <th class="px-4 py-2 font-medium">Date</th>
+        <th class="px-4 py-2 font-medium">Document ID</th>
+        <th class="px-4 py-2 font-medium">Transaction ID</th>
+        <th class="px-4 py-2 font-medium">Status</th>
+        <th class="px-4 py-2 font-medium">Commission Type</th>
+        <th class="px-4 py-2 font-medium">Percentage Transaction</th>
+        <th class="px-4 py-2 font-medium">Transaction Fee</th>
+        <th class="px-4 py-2 font-medium">Amount</th>
+        <th class="px-4 py-2 font-medium">Total Cost</th>
 
-        <th class="px-4 py-2 text-right font-medium">Amount</th>
       </tr>
       </thead>
       <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
@@ -64,6 +65,9 @@
           </td>
           <td class="px-4 py-2  font-semibold">
             <%= number_to_currency(transaction.amount.to_f) %>
+          </td>
+          <td class="px-4 py-2  font-semibold">
+            <%= number_to_currency(transaction.total_cost.to_f) %>
           </td>
         </tr>
       <% end %>
