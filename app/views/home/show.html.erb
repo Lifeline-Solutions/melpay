@@ -94,7 +94,8 @@
               <%= deposit['phone number'] || 'N/A' %>
             </td>
             <td class="px-6 py-3 text-green-600 font-semibold">
-              <%= number_to_currency(deposit_amount) %>
+                <%= number_to_currency(deposit_amount) %>
+
             </td>
             <td class="px-6 py-3 text-yellow-600 font-semibold">
               <%= number_to_currency(transaction_cost) %>
@@ -120,6 +121,8 @@
             <td class="px-6 py-3">
               <% if is_successful %>
                 <span class="text-xs text-gray-500">Completed</span>
+              <% elsif deposit_amount < 1 %>
+                <span class="text-xs text-red-600">Invalid transaction</span>
               <% else %>
                 <div class="flex items-center gap-2">
                   <!-- Success toggle (styled checkbox). Submits deposit_transaction_id and status=success -->
