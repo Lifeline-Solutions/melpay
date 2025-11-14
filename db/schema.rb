@@ -55,7 +55,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_14_163326) do
   create_table "clients", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "commission_type"
     t.datetime "created_at", null: false
-    t.decimal "credit", precision: 15, scale: 2, default: "0.0", null: false
+    t.float "credit"
     t.decimal "custom_interest_rate", precision: 5, scale: 2
     t.string "email"
     t.decimal "fixed_commission_amount", precision: 10, scale: 2
@@ -145,12 +145,14 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_14_163326) do
     t.string "transaction_id"
     t.datetime "updated_at", null: false
     t.uuid "user_id"
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["client_id"], name: "index_transactions_on_client_id"
     t.index ["home_id"], name: "index_transactions_on_home_id"
     t.index ["previous_transaction_id"], name: "index_transactions_on_previous_transaction_id"
     t.index ["transaction_id", "is_latest"], name: "index_transactions_on_transaction_id_and_is_latest"
     t.index ["transaction_id"], name: "index_transactions_on_transaction_id"
     t.index ["user_id"], name: "index_transactions_on_user_id"
+    t.index ["uuid"], name: "index_transactions_on_uuid", unique: true
   end
 
   create_table "users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

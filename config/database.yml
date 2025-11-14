@@ -1,0 +1,28 @@
+# Rails database configuration
+# Uses DATABASE_URL if present, otherwise falls back to local PostgreSQL
+
+default: &default
+  <% if ENV['DATABASE_URL'] %>
+  url: <%= ENV['DATABASE_URL'] %>
+  <% else %>
+  adapter: postgresql
+  encoding: unicode
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  username: <%= ENV['PGUSER'] || 'postgres' %>
+  password: <%= ENV['PGPASSWORD'] || '' %>
+  host: <%= ENV['PGHOST'] || 'localhost' %>
+  port: <%= ENV['PGPORT'] || 5432 %>
+  <% end %>
+
+development:
+  <<: *default
+  database: <%= ENV['PG_DATABASE'] || 'melpay_development' %>
+
+test:
+  <<: *default
+  database: <%= ENV['PG_TEST_DATABASE'] || 'melpay_test' %>
+
+production:
+  <<: *default
+  database: <%= ENV['PG_DATABASE'] || 'melpay_production' %>
+
