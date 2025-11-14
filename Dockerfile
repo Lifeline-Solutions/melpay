@@ -45,11 +45,13 @@ COPY . .
 # Precompile bootsnap code for faster boot times
 RUN bundle exec bootsnap precompile app/ lib/
 
-# Precompiling assets for production without requiring secret RAILS_MASTER_KEY
-# Also set a dummy DATABASE_URL so Rails doesn't try to read database.yml at build time
+# Provide dummy secrets & DB URL for asset compilation; create stub database.yml if missing
 ENV SECRET_KEY_BASE_DUMMY=1 \
     DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres
-RUN ./bin/rails assets:precompile
+RUN if [ ! -f config/database.yml ]; then \
+      printf "default: &default\n  adapter: postgresql\n  encoding: unicode\n  pool: <%%= ENV.fetch('RAILS_MAX_THREADS'){5} %%>\n  url: <%%= ENV['DATABASE_URL'] %%>\n\nproduction:\n  <<: *default\n" > config/database.yml; \
+    fi && \
+    ./bin/rails assets:precompile
 
 
 
