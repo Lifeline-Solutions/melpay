@@ -13,7 +13,9 @@
         </div>
         <% else %>
         <div class="flex items-center ps-2.5">
-          <%= image_tag 'icon.png', id: 'logo-top', class: 'h2 w-28 me-3 sm:h4' %>
+          <%= link_to root_path, id: 'logo-top', class: 'h2 w-28 me-3 sm:h4' do %>
+            <%= image_tag 'icon.png', class: 'h2 w-28 me-3 sm:h4' %>
+          <% end %>
         </div>
       <% end %>
     <ul class="space-y-2 font-medium">
