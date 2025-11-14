@@ -5,6 +5,14 @@ class Users::SessionsController < Devise::SessionsController
     # Sign in but require 2FA before granting full access
     sign_in(resource_name, resource)
 
+    # Create login event tracked by PaperTrail
+    LoginEvent.create!(
+      user: resource,
+      ip: request.remote_ip,
+      user_agent: request.user_agent,
+      session_id: session.id.to_s
+    )
+
     # mark 2FA as not completed
     session[:two_factor_authenticated] = false
 
@@ -26,6 +34,15 @@ class Users::SessionsController < Devise::SessionsController
 
   # DELETE /resource/sign_out
   def destroy
+    # create log event before sign out (this is optional)
+    # Commented out first then will revisit
+    # LoginEvent.create!(
+    #   user: current_user,
+    #   ip: request.remote_ip,
+    #   user_agent: request.user_agent,
+    #   session_id: session.id.to_s
+    # )
+
     # clear 2FA session flag
     session.delete(:two_factor_authenticated)
     super
