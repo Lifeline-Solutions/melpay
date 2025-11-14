@@ -10,8 +10,8 @@ class ApplicationController < ActionController::Base
   # 2FA check (after login)
   before_action :require_2fa, unless: -> { devise_controller? || controller_name == 'two_factor' }
 
-  # PaperTrail
-  before_action :set_paper_trail_whodunnit, unless: -> { devise_controller? && action_name == 'create' }
+  # PaperTrail - Modified to handle Devise login
+  before_action :set_paper_trail_whodunnit
 
   def update_allowed_parameters
     devise_parameter_sanitizer.permit(:sign_up) { |u| u.permit(:first_name, :last_name, :email, :password) }
@@ -32,5 +32,17 @@ class ApplicationController < ActionController::Base
       request_id: request.uuid,
       whodunnit_uuid: current_user&.id
     }
+  end
+
+  # Override PaperTrail method to handle Devise login scenario
+  def set_paper_trail_whodunnit
+    # For Devise sessions controller during login, set whodunnit manually after authentication
+    if devise_controller? && controller_name == 'sessions' && action_name == 'create'
+      # Skip setting whodunnit here - it will be set in SessionsController after user is authenticated
+      return
+    end
+
+    # For all other cases, we are using the default PaperTrail behavior
+    super
   end
 end
