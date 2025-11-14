@@ -1,9 +1,10 @@
 # Rails database configuration
-# Uses DATABASE_URL if present, otherwise falls back to local PostgreSQL
+# Uses DATABASE_URL if present and valid, otherwise falls back to local/PG* env vars
 
 default: &default
-  <% if ENV['DATABASE_URL'] %>
-  url: <%= ENV['DATABASE_URL'] %>
+  <% db_url = ENV['DATABASE_URL'].to_s %>
+  <% if !db_url.empty? && !db_url.include?('${') && (db_url.start_with?('postgres://') || db_url.start_with?('postgresql://')) %>
+  url: <%= db_url %>
   <% else %>
   adapter: postgresql
   encoding: unicode
@@ -18,11 +19,22 @@ development:
   <<: *default
   database: <%= ENV['PG_DATABASE'] || 'melpay_development' %>
 
+development_queue:
+  <<: *default
+  database: <%= ENV['PG_QUEUE_DATABASE'] || ENV['PG_DATABASE'] || 'melpay_development' %>
+
 test:
   <<: *default
   database: <%= ENV['PG_TEST_DATABASE'] || 'melpay_test' %>
+
+test_queue:
+  <<: *default
+  database: <%= ENV['PG_QUEUE_TEST_DATABASE'] || ENV['PG_TEST_DATABASE'] || 'melpay_test' %>
 
 production:
   <<: *default
   database: <%= ENV['PG_DATABASE'] || 'melpay_production' %>
 
+production_queue:
+  <<: *default
+  database: <%= ENV['PG_QUEUE_DATABASE'] || ENV['PG_DATABASE'] || 'melpay_production' %>

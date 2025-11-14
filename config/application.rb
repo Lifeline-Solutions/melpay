@@ -1,5 +1,18 @@
 require_relative "boot"
 
+# Sanitize invalid DATABASE_URL placeholders before ActiveRecord reads it
+begin
+  db_url = ENV['DATABASE_URL'].to_s
+  if !db_url.empty?
+    invalid_placeholder = db_url.include?('${')
+    invalid_scheme = !(db_url.start_with?('postgres://') || db_url.start_with?('postgresql://'))
+    ENV.delete('DATABASE_URL') if invalid_placeholder || invalid_scheme
+  end
+rescue => _e
+  # If anything goes wrong, just remove the variable to fall back to database.yml
+  ENV.delete('DATABASE_URL')
+end
+
 require "rails/all"
 
 # Require the gems listed in Gemfile, including any gems
