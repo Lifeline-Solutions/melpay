@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_10_30_081857) do
+ActiveRecord::Schema[8.1].define(version: 2025_11_14_071937) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -88,6 +88,16 @@ ActiveRecord::Schema[8.1].define(version: 2025_10_30_081857) do
     t.datetime "updated_at", null: false
     t.index ["homes_id"], name: "index_homes_transactions_on_homes_id"
     t.index ["transactions_id"], name: "index_homes_transactions_on_transactions_id"
+  end
+
+  create_table "login_events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "ip"
+    t.string "session_id"
+    t.datetime "updated_at", null: false
+    t.string "user_agent"
+    t.uuid "user_id", null: false
+    t.index ["user_id"], name: "index_login_events_on_user_id"
   end
 
   create_table "roles", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -185,6 +195,20 @@ ActiveRecord::Schema[8.1].define(version: 2025_10_30_081857) do
     t.index ["user_id"], name: "index_users_roles_on_user_id"
   end
 
+  create_table "versions", force: :cascade do |t|
+    t.datetime "created_at"
+    t.string "event", null: false
+    t.string "ip"
+    t.bigint "item_id", null: false
+    t.string "item_type", null: false
+    t.text "object"
+    t.string "request_id"
+    t.string "user_agent"
+    t.string "whodunnit"
+    t.uuid "whodunnit_uuid"
+    t.index ["item_type", "item_id"], name: "index_versions_on_item_type_and_item_id"
+  end
+
   add_foreign_key "accounts", "clients"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
@@ -192,5 +216,6 @@ ActiveRecord::Schema[8.1].define(version: 2025_10_30_081857) do
   add_foreign_key "homes", "users"
   add_foreign_key "homes_transactions", "homes", column: "homes_id"
   add_foreign_key "homes_transactions", "transactions", column: "transactions_id"
+  add_foreign_key "login_events", "users"
   add_foreign_key "users", "clients"
 end
