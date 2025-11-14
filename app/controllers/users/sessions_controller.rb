@@ -2,6 +2,10 @@ class Users::SessionsController < Devise::SessionsController
   # POST /resource/sign_in
   def create
     self.resource = warden.authenticate!(auth_options)
+
+    # Manually set PaperTrail whodunnit for this specific action
+    PaperTrail.request.whodunnit = resource.id.to_s
+
     # Sign in but require 2FA before granting full access
     sign_in(resource_name, resource)
 
@@ -34,14 +38,18 @@ class Users::SessionsController < Devise::SessionsController
 
   # DELETE /resource/sign_out
   def destroy
-    # create log event before sign out (this is optional)
-    # Commented out first then will revisit
-    # LoginEvent.create!(
-    #   user: current_user,
-    #   ip: request.remote_ip,
-    #   user_agent: request.user_agent,
-    #   session_id: session.id.to_s
-    # )
+    # Manually set PaperTrail whodunnit for logout
+    PaperTrail.request.whodunnit = current_user.id.to_s if current_user
+
+    # Create logout event tracked by PaperTrail
+    if current_user
+      LogoutEvent.create!(
+        user: current_user,
+        ip: request.remote_ip,
+        user_agent: request.user_agent,
+        session_id: session.id.to_s
+      )
+    end
 
     # clear 2FA session flag
     session.delete(:two_factor_authenticated)
