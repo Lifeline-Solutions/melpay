@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_11_14_071937) do
+ActiveRecord::Schema[8.1].define(version: 2025_11_14_163326) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -98,6 +98,16 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_14_071937) do
     t.string "user_agent"
     t.uuid "user_id", null: false
     t.index ["user_id"], name: "index_login_events_on_user_id"
+  end
+
+  create_table "logout_events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "ip"
+    t.string "session_id"
+    t.datetime "updated_at", null: false
+    t.string "user_agent"
+    t.uuid "user_id", null: false
+    t.index ["user_id"], name: "index_logout_events_on_user_id"
   end
 
   create_table "roles", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -199,9 +209,9 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_14_071937) do
     t.datetime "created_at"
     t.string "event", null: false
     t.string "ip"
-    t.bigint "item_id", null: false
+    t.string "item_id", null: false
     t.string "item_type", null: false
-    t.text "object"
+    t.jsonb "object_changes"
     t.string "request_id"
     t.string "user_agent"
     t.string "whodunnit"
@@ -217,5 +227,6 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_14_071937) do
   add_foreign_key "homes_transactions", "homes", column: "homes_id"
   add_foreign_key "homes_transactions", "transactions", column: "transactions_id"
   add_foreign_key "login_events", "users"
+  add_foreign_key "logout_events", "users"
   add_foreign_key "users", "clients"
 end
