@@ -77,4 +77,4 @@ gem 'roo'
 gem 'sentry-rails'
 gem 'sentry-ruby'
 
-gem "paper_trail", "~> 17.0"
+gem 'paper_trail', '~> 17.0'
