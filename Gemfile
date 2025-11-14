@@ -76,3 +76,5 @@ gem 'rolify'
 gem 'roo'
 gem 'sentry-rails'
 gem 'sentry-ruby'
+
+gem 'paper_trail', '~> 17.0'

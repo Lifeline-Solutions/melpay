@@ -1,4 +1,5 @@
 class Transaction < ApplicationRecord
+  has_paper_trail
   belongs_to :home, optional: true
   belongs_to :client, optional: true
   belongs_to :user, optional: true
