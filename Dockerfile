@@ -53,7 +53,6 @@ RUN ./bin/rails assets:precompile
 
 
 
-
 # Final stage for app image
 FROM base
 
