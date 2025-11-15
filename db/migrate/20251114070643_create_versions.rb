@@ -9,7 +9,7 @@ class CreateVersions < ActiveRecord::Migration[8.1]
   TEXT_BYTES = 1_073_741_823
 
   def change
-    create_table :versions do |t|
+    create_table :versions, id: :uuid do |t|
       # Consider using bigint type for performance if you are going to store only numeric ids.
       # t.bigint   :whodunnit
       t.string   :whodunnit
