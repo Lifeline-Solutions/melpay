@@ -1,13 +1,13 @@
 # Name of your application. Used to uniquely configure containers.
-service: melpay
+service: malpay
 
 # Name of the container image.
-image: your-user/melpay
+image: ger619/malpay
 
 # Deploy to these servers.
 servers:
   web:
-    - 192.168.0.1
+    - 172.66.0.96
   # job:
   #   hosts:
   #     - 192.168.0.1

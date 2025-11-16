@@ -311,6 +311,43 @@ class HomeController < ApplicationController
     # Allow retry if previous is failed, but prevent duplicate OTP triggers for already pending transaction
     existing_pending = Transaction.find_by(home_id: @home.id, transaction_id: deposit_transaction_id, status: 'pending', is_latest: true)
     if existing_pending
+      # Ensure snapshot reflects pending state and reuse the same pending transaction id in session
+      begin
+        client = @home.client || current_user.client
+        deposit_amount = deposit['amount'].to_f
+        interest_rate = client&.applied_interest_rate.to_f
+        transaction_cost = if client&.fixed?
+                              client.effective_commission_value.to_f
+                            else
+                              deposit_amount * (interest_rate / 100.0)
+                            end
+
+        deposit['status'] = 'pending'
+        deposit['transaction_cost'] = transaction_cost
+        deposit['applied_interest_rate'] = interest_rate
+        deposit['applied_commission_type'] = client&.effective_commission_type
+        deposit['applied_commission_value'] = client&.effective_commission_value
+        deposit['transaction_processed_at'] = Time.current.iso8601
+        @home.processed_deposits = deposits
+        @home.save!
+      rescue StandardError => e
+        Rails.logger.warn "Failed to update snapshot for existing pending #{deposit_transaction_id}: #{e.message}"
+      end
+
+      # Reuse the same pending transaction and send OTP again to avoid user being stuck
+      session[:pending_transaction_id] = existing_pending.id
+      session[:pending_transaction_home_id] = @home.id
+
+      current_user.generate_otp!
+      UserMailer.with(user: current_user).send_otp.deliver_later
+      if current_user.phone_number.present?
+        begin
+          SmsSender.send_otp(current_user.phone_number, current_user.otp_code)
+        rescue StandardError => e
+          Rails.logger.warn("Failed to send SMS OTP for transaction #{deposit_transaction_id}: #{e.message}")
+        end
+      end
+
       respond_to do |format|
         format.html { redirect_to verify_otp_path, notice: 'OTP already sent. Please enter the code to confirm this payment.' }
         format.json { render json: { pending: true, message: 'OTP already sent to your email.' }, status: :ok }
@@ -374,6 +411,21 @@ class HomeController < ApplicationController
                            end
 
       transaction_record.save!
+
+      # Update the deposit snapshot to reflect pending state immediately
+      begin
+        deposit['status'] = 'pending'
+        deposit['transaction_cost'] = transaction_record.transaction_cost
+        deposit['applied_interest_rate'] = transaction_record.interest_rate
+        deposit['applied_commission_type'] = transaction_record.applied_commission_type
+        deposit['applied_commission_value'] = transaction_record.applied_commission_value
+        deposit['transaction_processed_at'] = Time.current.iso8601
+        @home.processed_deposits = deposits
+        @home.save!
+      rescue StandardError => e
+        Rails.logger.warn "Failed to update home snapshot for pending #{deposit_transaction_id}: #{e.message}"
+      end
+
       # Store pending transaction id in session so the 2FA verify step can finalize it
       session[:pending_transaction_id] = transaction_record.id
       session[:pending_transaction_home_id] = @home.id
@@ -521,7 +573,7 @@ class HomeController < ApplicationController
     else
       respond_to do |format|
         format.html { redirect_to home_path(@home), alert: 'No transactions available to process.' }
-        format.json { render json: { error: 'No transactions available' }, status: :unprocessable_entity }
+        format.json { render json: { error: 'Error,  No transactions available' }, status: :unprocessable_entity }
         format.turbo_stream { render turbo_stream: turbo_stream.replace('twofa-modal', partial: 'home/twofa_modal_error', locals: { error: 'No transactions available' }) }
       end
     end
