@@ -317,10 +317,10 @@ class HomeController < ApplicationController
         deposit_amount = deposit['amount'].to_f
         interest_rate = client&.applied_interest_rate.to_f
         transaction_cost = if client&.fixed?
-                              client.effective_commission_value.to_f
-                            else
-                              deposit_amount * (interest_rate / 100.0)
-                            end
+                             client.effective_commission_value.to_f
+                           else
+                             deposit_amount * (interest_rate / 100.0)
+                           end
 
         deposit['status'] = 'pending'
         deposit['transaction_cost'] = transaction_cost
