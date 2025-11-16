@@ -39,15 +39,7 @@ COPY Gemfile Gemfile.lock ./
 RUN gem install bundler -v 2.7.1 && \
     bundle install && \
     rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
-    bundle exec bootsnap precompile --gemfile && \
-    find "${BUNDLE_PATH}" -name "*.o" -delete && \
-    find "${BUNDLE_PATH}" -name "*.c" -delete && \
-    find "${BUNDLE_PATH}" -name "*.h" -delete && \
-    find "${BUNDLE_PATH}" -type d -name "test" -exec rm -rf {} + 2>/dev/null || true && \
-    find "${BUNDLE_PATH}" -type d -name "spec" -exec rm -rf {} + 2>/dev/null || true && \
-    find "${BUNDLE_PATH}" -type d -name "doc" -exec rm -rf {} + 2>/dev/null || true && \
-    find "${BUNDLE_PATH}" -name "*.md" -delete && \
-    find "${BUNDLE_PATH}" -name "*.rdoc" -delete
+    bundle exec bootsnap precompile --gemfile
 
 # Copy application code
 COPY . .
