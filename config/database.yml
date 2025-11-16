@@ -1,11 +1,11 @@
 # Rails database configuration
-# Uses DATABASE_URL if present (and sanitized in boot), otherwise falls back to PG* env vars.
+# Uses DATABASE_URL if present; otherwise falls back to PG* env vars.
 
 default: &default
-  url: <%= ENV['DATABASE_URL'] if ENV['DATABASE_URL'].present? %>
   adapter: postgresql
   encoding: unicode
-  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS", 5) %>
+  url: <%= ENV['DATABASE_URL'] if ENV['DATABASE_URL'].present? %>
   username: <%= ENV['PGUSER'] || 'postgres' %>
   password: <%= ENV['PGPASSWORD'] || '' %>
   host: <%= ENV['PGHOST'] || 'localhost' %>
@@ -15,6 +15,7 @@ development:
   primary:
     <<: *default
     database: <%= ENV['PG_DATABASE'] || 'melpay_development' %>
+
   queue:
     <<: *default
     database: <%= ENV['PG_QUEUE_DATABASE'] || ENV['PG_DATABASE'] || 'melpay_development' %>
@@ -22,11 +23,15 @@ development:
     <<: *default
     database: <%= ENV['PG_CACHE_DATABASE'] || ENV['PG_DATABASE'] || 'melpay_development' %>
 
+  cache:
+    <<: *default
+    database: <%= ENV['PG_CACHE_DATABASE'] || 'melpay_development_cache' %>
 
 test:
   primary:
     <<: *default
     database: <%= ENV['PG_TEST_DATABASE'] || 'melpay_test' %>
+
   queue:
     <<: *default
     database: <%= ENV['PG_QUEUE_TEST_DATABASE'] || ENV['PG_TEST_DATABASE'] || 'melpay_test' %>
@@ -34,14 +39,19 @@ test:
     <<: *default
     database: <%= ENV['PG_CACHE_TEST_DATABASE'] || ENV['PG_TEST_DATABASE'] || 'melpay_test' %>
 
+  cache:
+    <<: *default
+    database: <%= ENV['PG_CACHE_TEST_DATABASE'] || 'melpay_test_cache' %>
 
 production:
   primary:
     <<: *default
     database: <%= ENV['PG_DATABASE'] || 'melpay_production' %>
+
   queue:
     <<: *default
     database: <%= ENV['PG_QUEUE_DATABASE'] || ENV['PG_DATABASE'] || 'melpay_production' %>
+
   cache:
     <<: *default
-    database: <%= ENV['PG_CACHE_DATABASE'] || ENV['PG_DATABASE'] || 'melpay_production' %>
+    database: <%= ENV['PG_CACHE_DATABASE'] || 'melpay_production_cache' %>
