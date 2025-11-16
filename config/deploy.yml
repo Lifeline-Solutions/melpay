@@ -1,7 +1,13 @@
 # Name of your application. Used to uniquely configure containers.
-service: malpay
+# Renamed from `malpay` to `melpay` for consistency with project directory name.
+# Rollback: If issues arise after deploy, revert this change to `malpay` and run `bin/kamal deploy --no-prune`.
+service: melpay
 
 # Name of the container image.
+# Currently still using existing Docker Hub repository `ger619/malpay`.
+# To migrate to `ger619/melpay` later:
+#   docker tag ger619/malpay:latest ger619/melpay:latest && docker push ger619/melpay:latest
+#   Update `image:` below and deploy with --no-prune, then prune after validation.
 image: ger619/malpay
 
 # Deploy to these servers.
@@ -32,6 +38,11 @@ registry:
   # Always use an access token rather than real password when possible.
   password:
     - KAMAL_REGISTRY_PASSWORD
+# Troubleshooting auth:
+#   1. Ensure env var exported: echo "$KAMAL_REGISTRY_PASSWORD" | grep .
+#   2. Login manually: echo "$KAMAL_REGISTRY_PASSWORD" | docker login -u ger619 --password-stdin
+#   3. If unauthorized, rotate PAT in Docker Hub (Read/Write scopes) and re-export.
+#   4. Hidden newline? printf '%s' "$KAMAL_REGISTRY_PASSWORD" | od -An -t x1 | tail -n1 (should not end with 0a)
 
 # Inject ENV variables into containers (secrets come from .kamal/secrets).
 env:
@@ -41,7 +52,9 @@ env:
     - POSTGRES_PASSWORD
   clear:
     # Database configuration
-    PGHOST: 139.59.44.224
+    # Using the Docker service name because both app and db run on the same Docker network (kamal)
+    # The database accessory is named 'melpay-db' and is accessible via that hostname
+    PGHOST: melpay-db
     PGPORT: 5432
     PGUSER: melpay
     PG_DATABASE: melpay_production
@@ -86,11 +99,12 @@ asset_path: /rails/public/assets
 # Configure the image builder.
 builder:
   arch: amd64
+  # Use remote server for building images so local Docker is not required
+  remote: ssh://root@139.59.44.224
+  # Registry cache disabled due to Docker Hub upload issues
+  # The build cache was causing 400 errors when pushing large layers
 
-  # # Build image via remote server (useful for faster amd64 builds on arm64 computers)
-  # remote: ssh://docker@docker-builder-server
-  #
-  # # Pass arguments and secrets to the Docker build process
+  # args and secrets can be configured here if needed
   # args:
   #   RUBY_VERSION: 3.4.7
   # secrets:
