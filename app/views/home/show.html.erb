@@ -99,17 +99,29 @@
               <%= deposit['phone number'] || 'N/A' %>
             </td>
             <td class="px-6 py-3 text-green-600 font-semibold">
+              <% if deposit_amount < 1 %>
+                <span class="text-xs text-red-600 flex">Invalid amount</span>
+              <% else %>
                 <%= number_to_currency(deposit_amount) %>
+              <% end %>
 
             </td>
             <td class="px-6 py-3 text-yellow-600 font-semibold">
-              <%= number_to_currency(transaction_cost) %>
+              <% if transaction_cost < 1 %>
+                <span class="text-xs text-red-600 flex">Invalid transaction cost</span>
+              <% else %>
+                <%= number_to_currency(transaction_cost) %>
+              <% end %>
             </td>
             <td class="px-6 py-3">
               <%= number_to_percentage(interest_rate, precision: 2) %>
             </td>
             <td class="px-6 py-3 text-blue-600 font-semibold">
-              <%= number_to_currency(total_cost) %>
+              <% if total_cost < 1 %>
+                <span class="text-xs text-red-600 flex">Invalid total cost</span>
+              <% else %>
+                <%= number_to_currency(total_cost) %>
+            <% end %>
             </td>
             <td class="px-6 py-3 deposit-status" data-status="<%= current_status.present? ? current_status.downcase : 'pending' %>">
               <% if current_status.present? %>
