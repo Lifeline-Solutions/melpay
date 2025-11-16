@@ -17,16 +17,6 @@ RETRY_DELAY=30
 echo -e "${YELLOW}Loading environment secrets...${NC}"
 source .kamal/secrets
 
-# Verify Docker login
-echo -e "${YELLOW}Verifying Docker Hub authentication...${NC}"
-echo "$KAMAL_REGISTRY_PASSWORD" | docker login -u ger619 --password-stdin
-
-if [ $? -ne 0 ]; then
-    echo -e "${RED}Docker login failed. Please check your credentials.${NC}"
-    exit 1
-fi
-
-echo -e "${GREEN}Docker login successful.${NC}"
 
 # Ensure database accessory is running
 echo -e "${YELLOW}Ensuring database accessory is running...${NC}"
@@ -35,6 +25,16 @@ if bin/kamal accessory boot db; then
 else
     echo -e "${YELLOW}Database accessory may already be running (this is OK).${NC}"
 fi
+
+# Add lock cleanup on failure
+cleanup_on_failure() {
+    local exit_code=$?
+    if [ $exit_code -ne 0 ]; then
+        echo -e "${YELLOW}Deployment failed, releasing deploy lock...${NC}"
+        bin/kamal lock release 2>/dev/null || true
+    fi
+}
+trap cleanup_on_failure EXIT
 
 # Function to deploy with retry
 deploy_with_retry() {
@@ -54,9 +54,6 @@ deploy_with_retry() {
                 echo -e "${YELLOW}Waiting $RETRY_DELAY seconds before retry...${NC}"
                 sleep $RETRY_DELAY
 
-                # Re-authenticate in case token expired
-                echo -e "${YELLOW}Re-authenticating with Docker Hub...${NC}"
-                echo "$KAMAL_REGISTRY_PASSWORD" | docker login -u ger619 --password-stdin
 
                 attempt=$((attempt + 1))
             else
