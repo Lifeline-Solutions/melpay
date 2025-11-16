@@ -7,7 +7,7 @@ image: ger619/malpay
 # Deploy to these servers.
 servers:
   web:
-    - 172.66.0.96
+    - 139.59.44.224
   # job:
   #   hosts:
   #     - 192.168.0.1
@@ -17,15 +17,17 @@ servers:
 # Remove this section when using multiple web servers and ensure you terminate SSL at your load balancer.
 #
 # Note: If using Cloudflare, set encryption mode in SSL/TLS setting to "Full" to enable CF-to-app encryption.
+# Note: SSL requires a domain name. Uncomment and set host when you have a domain configured.
 proxy:
-  ssl: true
-  host: app.example.com
+  ssl: false
+  # host: app.example.com
+  # To enable SSL, set ssl: true and uncomment host with your actual domain
 
 # Credentials for your image host.
 registry:
   # Specify the registry server, if you're not using Docker Hub
   # server: registry.digitalocean.com / ghcr.io / ...
-  username: your-user
+  username: ger619
 
   # Always use an access token rather than real password when possible.
   password:
@@ -36,7 +38,14 @@ env:
   secret:
     - RAILS_MASTER_KEY
     - SECRET_KEY_BASE
+    - POSTGRES_PASSWORD
   clear:
+    # Database configuration
+    PGHOST: 139.59.44.224
+    PGPORT: 5432
+    PGUSER: melpay
+    PG_DATABASE: melpay_production
+
     # Run the Solid Queue Supervisor inside the web server's Puma process to do jobs.
     # When you start using multiple servers, you should split out job processing to a dedicated machine.
     SOLID_QUEUE_IN_PUMA: true
@@ -83,7 +92,7 @@ builder:
   #
   # # Pass arguments and secrets to the Docker build process
   # args:
-  #   RUBY_VERSION: 3.3.5
+  #   RUBY_VERSION: 3.4.7
   # secrets:
   #   - GITHUB_TOKEN
   #   - RAILS_MASTER_KEY
@@ -93,25 +102,16 @@ builder:
 #   user: app
 
 # Use accessory services (secrets come from .kamal/secrets).
-# accessories:
-#   db:
-#     image: mysql:8.0
-#     host: 192.168.0.2
-#     # Change to 3306 to expose port to the world instead of just local network.
-#     port: "127.0.0.1:3306:3306"
-#     env:
-#       clear:
-#         MYSQL_ROOT_HOST: '%'
-#       secret:
-#         - MYSQL_ROOT_PASSWORD
-#     files:
-#       - config/mysql/production.cnf:/etc/mysql/my.cnf
-#       - db/production.sql:/docker-entrypoint-initdb.d/setup.sql
-#     directories:
-#       - data:/var/lib/mysql
-#   redis:
-#     image: redis:7.0
-#     host: 192.168.0.2
-#     port: 6379
-#     directories:
-#       - data:/data
+accessories:
+  db:
+    image: postgres:16
+    host: 139.59.44.224
+    port: "127.0.0.1:5432:5432"
+    env:
+      clear:
+        POSTGRES_USER: melpay
+        POSTGRES_DB: melpay_production
+      secret:
+        - POSTGRES_PASSWORD
+    directories:
+      - data:/var/lib/postgresql/data

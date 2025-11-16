@@ -472,37 +472,46 @@ class HomeController < ApplicationController
 
     pending_ids = []
     recorded_count = 0
+    skipped_invalid = 0
+    skipped_success = 0
 
     @home.processed_deposits.each do |deposit|
+      deposit_amount = deposit['amount'].to_f
+
+      # Count and skip invalid amounts
+      if deposit_amount < 1
+        skipped_invalid += 1
+        next
+      end
+
       # Skip if already successful (completed transactions cannot be changed)
       existing_success = Transaction.where(
         home_id: @home.id,
         transaction_id: deposit['transaction_id'],
         status: 'success'
       ).exists?
-      next if existing_success
+      if existing_success
+        skipped_success += 1
+        next
+      end
 
       # If already pending, reuse the same transaction instead of skipping
       existing_pending = Transaction.find_by(home_id: @home.id, transaction_id: deposit['transaction_id'], status: 'pending', is_latest: true)
       if existing_pending
         # Update snapshot to reflect pending state (ensure consistency)
         begin
-          deposit_amount = deposit['amount'].to_f
-          # Skip if invalid
-          if deposit_amount.positive?
-            calc_rate = client&.fixed? ? nil : interest_rate
-            transaction_cost = if client&.fixed?
-                                 client.effective_commission_value.to_f
-                               else
-                                 (deposit_amount * (calc_rate / 100.0))
-                               end
-            deposit['status'] = 'pending'
-            deposit['transaction_cost'] = transaction_cost
-            deposit['applied_interest_rate'] = (calc_rate || 0.0)
-            deposit['applied_commission_type'] = client&.effective_commission_type
-            deposit['applied_commission_value'] = client&.effective_commission_value
-            deposit['transaction_processed_at'] = Time.current.iso8601
-          end
+          calc_rate = client&.fixed? ? nil : interest_rate
+          transaction_cost = if client&.fixed?
+                               client.effective_commission_value.to_f
+                             else
+                               (deposit_amount * (calc_rate / 100.0))
+                             end
+          deposit['status'] = 'pending'
+          deposit['transaction_cost'] = transaction_cost
+          deposit['applied_interest_rate'] = (calc_rate || 0.0)
+          deposit['applied_commission_type'] = client&.effective_commission_type
+          deposit['applied_commission_value'] = client&.effective_commission_value
+          deposit['transaction_processed_at'] = Time.current.iso8601
         rescue StandardError => e
           Rails.logger.warn "Failed to update snapshot for existing pending #{deposit['transaction_id']}: #{e.message}"
         end
@@ -511,11 +520,6 @@ class HomeController < ApplicationController
         recorded_count += 1
         next
       end
-
-      deposit_amount = deposit['amount'].to_f
-
-      # Skip invalid (zero or negative) amounts
-      next if deposit_amount <= 0
 
       # Compute transaction cost using the exact same logic as pay_single_deposit
       transaction_cost = if client.fixed?
@@ -597,10 +601,21 @@ class HomeController < ApplicationController
         end
       end
     else
+      # Determine appropriate message based on what was skipped
+      if skipped_success > 0 && skipped_invalid == 0
+        error_message = 'All deposits have already been processed successfully.'
+      elsif skipped_invalid > 0 && skipped_success == 0
+        error_message = 'No valid transactions available. All deposits have invalid amounts (less than 1).'
+      elsif skipped_success > 0 && skipped_invalid > 0
+        error_message = 'No transactions to process. All deposits are either completed or have invalid amounts.'
+      else
+        error_message = 'No transactions available to process.'
+      end
+
       respond_to do |format|
-        format.html { redirect_to home_path(@home), alert: 'No transactions available to process.' }
-        format.json { render json: { error: 'Error,  No transactions available' }, status: :unprocessable_entity }
-        format.turbo_stream { render turbo_stream: turbo_stream.replace('twofa-modal', partial: 'home/twofa_modal_error', locals: { error: 'No transactions available' }) }
+        format.html { redirect_to home_path(@home), alert: error_message }
+        format.json { render json: { error: error_message }, status: :unprocessable_entity }
+        format.turbo_stream { render turbo_stream: turbo_stream.replace('twofa-modal', partial: 'home/twofa_modal_error', locals: { error: error_message }) }
       end
     end
   end

@@ -7,7 +7,7 @@ default: &default
   pool: <%= ENV.fetch("RAILS_MAX_THREADS", 5) %>
   url: <%= ENV['DATABASE_URL'] if ENV['DATABASE_URL'].present? %>
   username: <%= ENV['PGUSER'] || 'postgres' %>
-  password: <%= ENV['PGPASSWORD'] || '' %>
+  password: <%= ENV['POSTGRES_PASSWORD'] || ENV['PGPASSWORD'] || '' %>
   host: <%= ENV['PGHOST'] || 'localhost' %>
   port: <%= ENV['PGPORT'] || 5432 %>
 
@@ -49,4 +49,4 @@ production:
 
   cache:
     <<: *default
-    database: <%= ENV['PG_CACHE_DATABASE'] || 'melpay_production' %>
+    database: <%= ENV['PG_CACHE_DATABASE'] || ENV['PG_DATABASE'] || 'melpay_production' %>
