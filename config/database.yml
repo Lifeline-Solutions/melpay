@@ -32,9 +32,14 @@ test:
   queue:
     <<: *default
     database: <%= ENV['PG_QUEUE_TEST_DATABASE'] || ENV['PG_TEST_DATABASE'] || 'melpay_test' %>
+
   cache:
     <<: *default
     database: <%= ENV['PG_CACHE_TEST_DATABASE'] || ENV['PG_TEST_DATABASE'] || 'melpay_test' %>
+
+  cable:
+    <<: *default
+    database: <%= ENV['PG_CABLE_TEST_DATABASE'] || ENV['PG_TEST_DATABASE'] || 'melpay_test' %>
 
 
 
@@ -50,3 +55,8 @@ production:
   cache:
     <<: *default
     database: <%= ENV['PG_CACHE_DATABASE'] || ENV['PG_DATABASE'] || 'melpay_production' %>
+
+  cable:
+    <<: *default
+    database: <%= ENV['PG_CABLE_DATABASE'] || ENV['PG_DATABASE'] || 'melpay_production' %>
+

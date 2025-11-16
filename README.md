@@ -474,3 +474,116 @@ Gemfile
 
 You now have a blueprint for a full-featured, multi-tenant enterprise payments platform in Rails, with Beyonic API integration for payouts, remittances, and collections. Each organization is fully isolated, and the system supports banks, cash-pickup, mobile money, and agents.
 
+---
+
+## Deployment (Kamal)
+
+This project uses [Kamal](https://github.com/basecamp/kamal) for zero/min-downtime Docker-based deployment.
+
+### 1. Prerequisites
+- Docker Hub account: `ger619` (current image repo: `ger619/malpay`)
+- Server(s) reachable via SSH (configured in `config/deploy.yml`)
+- Installed CLI: `bundle exec kamal -v` via `bin/kamal`
+- PAT (Docker Hub) with Read/Write scope (use token, not password if 2FA enabled)
+
+### 2. Export Secrets (Required Every New Shell)
+```zsh
+export KAMAL_REGISTRY_PASSWORD="dckr_pat_..."
+export RAILS_MASTER_KEY="$(cat config/master.key)"
+export SECRET_KEY_BASE="$(ruby -rsecurerandom -e 'puts SecureRandom.hex(64)')" # Only first time; then persist somewhere secure
+export POSTGRES_PASSWORD="<prod-db-password>"
+```
+(Optional) Store in `.env.deploy` (not committed) and source:
+```zsh
+set -a; source .env.deploy; set +a
+```
+
+### 3. Auth Sanity Check
+```zsh
+docker logout
+echo "$KAMAL_REGISTRY_PASSWORD" | docker login -u ger619 --password-stdin
+```
+Expected: `Login Succeeded`. If not, rotate token.
+
+### 4. Build Image
+```zsh
+bin/kamal build --verbose
+```
+Lists a new image tagged (timestamp) plus `latest`.
+
+### 5. First Deploy (Safe / No Prune)
+```zsh
+bin/kamal deploy --no-prune --verbose
+```
+Validate app health (logs, web response) before pruning old releases.
+
+### 6. Prune Old Releases After Validation
+```zsh
+bin/kamal app prune
+```
+
+### 7. Verify Containers & Volumes
+```zsh
+ssh root@139.59.44.224 -- docker ps --format '{{.Names}} {{.Image}}'
+ssh root@139.59.44.224 -- docker volume ls | grep melpay_storage
+```
+
+### 8. Troubleshooting Auth Failures
+Error: `unauthorized: incorrect username or password`
+Checklist:
+1. PAT exported? `printenv KAMAL_REGISTRY_PASSWORD | wc -c` (>0)
+2. Hidden newline? `printf '%s' "$KAMAL_REGISTRY_PASSWORD" | od -An -t x1 | tail -n1` (should not be `0a`)
+3. Manual login works? (Step 3 above)
+4. PAT revoked/expired? Rotate it.
+5. Using account password with 2FA? Use PAT instead.
+
+Rotate PAT:
+```zsh
+export KAMAL_REGISTRY_PASSWORD="<new_pat>"
+docker logout
+echo "$KAMAL_REGISTRY_PASSWORD" | docker login -u ger619 --password-stdin
+bin/kamal deploy --no-prune
+```
+
+### 9. Migrating Image Name (Optional)
+Currently `image: ger619/malpay`. To align with project name:
+```zsh
+docker tag ger619/malpay:latest ger619/melpay:latest
+docker push ger619/melpay:latest
+# Edit config/deploy.yml: image: ger619/melpay
+bin/kamal deploy --no-prune
+bin/kamal app prune
+```
+Rollback: revert file change & redeploy.
+
+### 10. Rollback Strategy
+If deploy fails post-change:
+```zsh
+git checkout config/deploy.yml # restore previous version
+bin/kamal deploy --no-prune
+```
+Use `--no-prune` until stable; then prune.
+
+### 11. Quick Status & Logs
+```zsh
+bin/kamal app info
+bin/kamal logs -f
+```
+
+### 12. Security Tips
+- Never commit raw PATs; `.kamal/secrets` references env vars only.
+- Prefer secret managers or macOS Keychain for local dev.
+- Rotate PATs periodically and after any suspicion of compromise.
+
+### 13. Reference Commands Cheat Sheet
+```zsh
+# Build & Deploy
+bin/kamal build --verbose
+bin/kamal deploy --no-prune
+# Prune
+bin/kamal app prune
+# Console
+bin/kamal console
+# Logs
+bin/kamal logs -f
+```

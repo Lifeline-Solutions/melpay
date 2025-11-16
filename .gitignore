@@ -46,3 +46,4 @@ node_modules
 
 .env.local
 .docker_registry_token
+.kamal/secrets

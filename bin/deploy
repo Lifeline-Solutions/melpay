@@ -1,0 +1,72 @@
+#!/bin/bash
+# Deploy script with retry logic for handling Docker Hub push failures
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Configuration
+MAX_RETRIES=3
+RETRY_DELAY=30
+
+# Source secrets
+echo -e "${YELLOW}Loading environment secrets...${NC}"
+source .kamal/secrets
+
+# Verify Docker login
+echo -e "${YELLOW}Verifying Docker Hub authentication...${NC}"
+echo "$KAMAL_REGISTRY_PASSWORD" | docker login -u ger619 --password-stdin
+
+if [ $? -ne 0 ]; then
+    echo -e "${RED}Docker login failed. Please check your credentials.${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}Docker login successful.${NC}"
+
+# Ensure database accessory is running
+echo -e "${YELLOW}Ensuring database accessory is running...${NC}"
+if bin/kamal accessory boot db; then
+    echo -e "${GREEN}Database accessory is ready.${NC}"
+else
+    echo -e "${YELLOW}Database accessory may already be running (this is OK).${NC}"
+fi
+
+# Function to deploy with retry
+deploy_with_retry() {
+    local attempt=1
+
+    while [ $attempt -le $MAX_RETRIES ]; do
+        echo -e "${YELLOW}Deployment attempt $attempt of $MAX_RETRIES...${NC}"
+
+        if bin/kamal deploy "$@"; then
+            echo -e "${GREEN}Deployment successful!${NC}"
+            return 0
+        else
+            local exit_code=$?
+            echo -e "${RED}Deployment attempt $attempt failed with exit code $exit_code${NC}"
+
+            if [ $attempt -lt $MAX_RETRIES ]; then
+                echo -e "${YELLOW}Waiting $RETRY_DELAY seconds before retry...${NC}"
+                sleep $RETRY_DELAY
+
+                # Re-authenticate in case token expired
+                echo -e "${YELLOW}Re-authenticating with Docker Hub...${NC}"
+                echo "$KAMAL_REGISTRY_PASSWORD" | docker login -u ger619 --password-stdin
+
+                attempt=$((attempt + 1))
+            else
+                echo -e "${RED}All deployment attempts failed. Please check the errors above.${NC}"
+                return $exit_code
+            fi
+        fi
+    done
+}
+
+# Run deployment with retry logic
+deploy_with_retry "$@"
+
