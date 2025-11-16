@@ -99,10 +99,8 @@ asset_path: /rails/public/assets
 # Configure the image builder.
 builder:
   arch: amd64
-  # Use local caching to speed up builds and reduce push size
-  cache:
-    type: registry
-    options: mode=max
+  # Registry cache disabled due to Docker Hub upload issues
+  # The build cache was causing 400 errors when pushing large layers
 
   # # Build image via remote server (useful for faster amd64 builds on arm64 computers)
   # remote: ssh://docker@docker-builder-server
