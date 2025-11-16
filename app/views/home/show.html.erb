@@ -27,20 +27,25 @@
   <!-- Deposits Table -->
   <div class="mb-8">
     <h2 class="text-xl font-bold mb-4">Deposits</h2>
+    <%# Global Payment Buttons - show Pay All only when there is at least one valid (amount >= 1) non-success deposit %>
+    <% has_valid_pending = @deposits.any? do |d|
+      status = d['status'].to_s.strip.downcase
+      amount = (d['amount'] || 0).to_f
+      status != 'success' && amount >= 1
+    end %>
 
-    <!-- Global Payment Buttons -->
-    <% has_pending_deposits = @deposits.any? { |d| d['status'].to_s.strip.downcase != 'success' } %>
-    <% if has_pending_deposits %>
+    <% if has_valid_pending %>
       <div class="mb-4 flex gap-2">
         <button id="pay-all-btn" data-url="<%= pay_all_deposits_home_path(@home, status: 'success') %>" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Pay All Deposits (Success)</button>
       </div>
     <% else %>
       <div class="mb-4">
-        <span class="inline-block bg-green-100 text-green-800 text-sm font-semibold px-4 py-2 rounded">
-          ✓ All deposits have been processed successfully
-        </span>
+    <span class="inline-block bg-green-100 text-green-800 text-sm font-semibold px-4 py-2 rounded">
+      ✓ All deposits have been processed successfully
+    </span>
       </div>
     <% end %>
+
 
     <div class="overflow-x-auto">
       <% client = @home.client || current_user.client %>

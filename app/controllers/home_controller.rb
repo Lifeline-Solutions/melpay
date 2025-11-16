@@ -482,9 +482,35 @@ class HomeController < ApplicationController
       ).exists?
       next if existing_success
 
-      # Prevent duplicate OTP triggers for already pending transaction
+      # If already pending, reuse the same transaction instead of skipping
       existing_pending = Transaction.find_by(home_id: @home.id, transaction_id: deposit['transaction_id'], status: 'pending', is_latest: true)
-      next if existing_pending
+      if existing_pending
+        # Update snapshot to reflect pending state (ensure consistency)
+        begin
+          deposit_amount = deposit['amount'].to_f
+          # Skip if invalid
+          if deposit_amount.positive?
+            calc_rate = client&.fixed? ? nil : interest_rate
+            transaction_cost = if client&.fixed?
+                                 client.effective_commission_value.to_f
+                               else
+                                 (deposit_amount * (calc_rate / 100.0))
+                               end
+            deposit['status'] = 'pending'
+            deposit['transaction_cost'] = transaction_cost
+            deposit['applied_interest_rate'] = (calc_rate || 0.0)
+            deposit['applied_commission_type'] = client&.effective_commission_type
+            deposit['applied_commission_value'] = client&.effective_commission_value
+            deposit['transaction_processed_at'] = Time.current.iso8601
+          end
+        rescue StandardError => e
+          Rails.logger.warn "Failed to update snapshot for existing pending #{deposit['transaction_id']}: #{e.message}"
+        end
+
+        pending_ids << existing_pending.id
+        recorded_count += 1
+        next
+      end
 
       deposit_amount = deposit['amount'].to_f
 
