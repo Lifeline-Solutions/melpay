@@ -489,13 +489,13 @@ class HomeController < ApplicationController
         begin
           deposit_amount = deposit['amount'].to_f
           # Skip if invalid
-          if deposit_amount > 0
+          if deposit_amount.positive?
             calc_rate = client&.fixed? ? nil : interest_rate
             transaction_cost = if client&.fixed?
-                                  client.effective_commission_value.to_f
-                                else
-                                  (deposit_amount * (calc_rate / 100.0))
-                                end
+                                 client.effective_commission_value.to_f
+                               else
+                                 (deposit_amount * (calc_rate / 100.0))
+                               end
             deposit['status'] = 'pending'
             deposit['transaction_cost'] = transaction_cost
             deposit['applied_interest_rate'] = (calc_rate || 0.0)
