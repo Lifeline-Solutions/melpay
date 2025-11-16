@@ -602,15 +602,15 @@ class HomeController < ApplicationController
       end
     else
       # Determine appropriate message based on what was skipped
-      if skipped_success > 0 && skipped_invalid == 0
-        error_message = 'All deposits have already been processed successfully.'
-      elsif skipped_invalid > 0 && skipped_success == 0
-        error_message = 'No valid transactions available. All deposits have invalid amounts (less than 1).'
-      elsif skipped_success > 0 && skipped_invalid > 0
-        error_message = 'No transactions to process. All deposits are either completed or have invalid amounts.'
-      else
-        error_message = 'No transactions available to process.'
-      end
+      error_message = if skipped_success.positive? && skipped_invalid.zero?
+                        'All deposits have already been processed successfully.'
+                      elsif skipped_invalid.positive? && skipped_success.zero?
+                        'No valid transactions available. All deposits have invalid amounts (less than 1).'
+                      elsif skipped_success.positive? && skipped_invalid.positive?
+                        'No transactions to process. All deposits are either completed or have invalid amounts.'
+                      else
+                        'No transactions available to process.'
+                      end
 
       respond_to do |format|
         format.html { redirect_to home_path(@home), alert: error_message }
