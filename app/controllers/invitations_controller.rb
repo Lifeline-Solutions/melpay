@@ -49,7 +49,7 @@ class InvitationsController < Devise::InvitationsController
 
   private
 
-  # Strong parameters for invitation
+  # Strong parameters for invitation (user_pass is generated server-side)
   def invite_params
     params.require(:user).permit(:email, :first_name, :last_name, :client_id, roles: [])
   end

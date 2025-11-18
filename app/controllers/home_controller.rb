@@ -36,44 +36,7 @@ class HomeController < ApplicationController
     @success_count = Transaction.where(status: 'success').count
     @failed_count = Transaction.where(status: 'failed').count
 
-    # Helper for spreadsheet parsing
-    def parse_spreadsheet(home)
-      return { deposits: [], deposit_sum: 0, deposit_count: 0, interest: 0 } unless home.document.attached?
-
-      Tempfile.create(['uploaded_file', ".#{home.document.filename.extension}"]) do |tempfile|
-        content = home.document.download.force_encoding('UTF-8')
-        tempfile.write(content)
-        tempfile.rewind
-        spreadsheet = case home.document.filename.extension
-                      when 'csv' then Roo::CSV.new(tempfile.path)
-                      when 'xls' then Roo::Excel.new(tempfile.path)
-                      when 'xlsx' then Roo::Excelx.new(tempfile.path)
-                      end
-        return { deposits: [], deposit_sum: 0, deposit_count: 0, interest: 0 } unless spreadsheet
-
-        header = spreadsheet.row(1).map(&:to_s)
-        deposits = []
-        count_key = header.find { |h| h.to_s.strip.downcase == 'count' }
-        (2..spreadsheet.last_row).each do |i|
-          row = [header, spreadsheet.row(i)].transpose.to_h
-          next unless row['type'] && row['amount']
-
-          deposits << row if row['type'].to_s.strip.downcase == 'deposit'
-        end
-        deposit_sum = deposits.sum { |d| d['amount'].to_f }
-        deposit_count = if count_key
-                          deposits.map { |d| d[count_key].to_i }.uniq.sum
-                        else
-                          deposits.size
-                        end
-        client = home.client
-        interest_rate = client&.applied_interest_rate.to_f
-        interest = deposit_sum * (interest_rate / 100.0)
-        { deposits: deposits, deposit_sum: deposit_sum, deposit_count: deposit_count, interest: interest }
-      end
-    rescue StandardError
-      { deposits: [], deposit_sum: 0, deposit_count: 0, interest: 0 }
-    end
+    # parse_spreadsheet is implemented as a private method below
 
     # Compute per-home and per-date totals
     @homes.each do |home|
@@ -205,12 +168,24 @@ class HomeController < ApplicationController
 
       (2..spreadsheet.last_row).each do |i|
         row = [header, spreadsheet.row(i)].transpose.to_h
-        next unless row['type'] && row['amount'] && row['phone number']
+        # require an amount; skip otherwise
+        next unless row['amount']
 
-        case row['type']&.strip&.downcase
-        when 'deposit'
-          @deposits << row
-        end
+        # Determine display_name: prefer `name` header if present, otherwise the `type` column
+        display_name = if header.map(&:to_s).map(&:strip).map(&:downcase).include?('name')
+                         row['name'].to_s.strip
+                       else
+                         row['type'].to_s.strip
+                       end
+
+        # Only include the row if the spreadsheet's display_name exactly matches current_user.user_pass
+        # (case-insensitive). If not present or not matching, skip the row entirely.
+        next unless current_user.present? && display_name.present? && display_name.downcase == current_user.user_pass.to_s.strip.downcase
+
+        # At this point the row is allowed — set the type to the matched display_name for clarity
+        row['type'] = display_name
+
+        @deposits << row
       end
 
       # Number/count the deposits
@@ -248,10 +223,12 @@ class HomeController < ApplicationController
       # Save the processed deposits with their unique IDs to prevent re-processing
       @home.update(processed_deposits: @deposits)
 
-      # Total number of deposits in distinct counts, only for type 'deposit'
-      @total_deposit_count = @deposits.select { |d| d['type'].to_s.strip.downcase == 'deposit' }
-        .map { |d| d['count'].to_i }
-        .count
+      # Total number of deposits: prefer distinct-sum of provided 'count' column when available
+      @total_deposit_count = if @deposits.any? && @deposits.first.key?('count')
+                               @deposits.map { |d| d['count'].to_i }.uniq.sum
+                             else
+                               @deposits.size
+                             end
 
       # Calculate total deposits
       @total_deposits = @deposits.sum { |d| d['amount'].to_f }
@@ -639,5 +616,61 @@ class HomeController < ApplicationController
 
   def home_params
     params.require(:home).permit(:name, :credit, :document, :client_id, :user_id, :unique_id)
+  end
+
+  # Parse the attached spreadsheet for a single Home and return deposit rows and aggregates.
+  # Behavior:
+  # - A row is considered a deposit if the spreadsheet's `type` column equals 'deposit' (case-insensitive).
+  # - The displayed `type` value is taken from the spreadsheet `name` column (if present) or the `type` column otherwise.
+  # - That displayed `type` is only kept (not nil'd) when it exactly matches `current_user.user_pass` (case-insensitive).
+  # - Otherwise the `type` value is set to nil (hidden).
+  def parse_spreadsheet(home)
+    return { deposits: [], deposit_sum: 0, deposit_count: 0, interest: 0 } unless home.document.attached?
+
+    Tempfile.create(['uploaded_file', ".#{home.document.filename.extension}"]) do |tempfile|
+      content = home.document.download.force_encoding('UTF-8')
+      tempfile.write(content)
+      tempfile.rewind
+      spreadsheet = case home.document.filename.extension
+                    when 'csv' then Roo::CSV.new(tempfile.path)
+                    when 'xls' then Roo::Excel.new(tempfile.path)
+                    when 'xlsx' then Roo::Excelx.new(tempfile.path)
+                    end
+      return { deposits: [], deposit_sum: 0, deposit_count: 0, interest: 0 } unless spreadsheet
+
+      header = spreadsheet.row(1).map(&:to_s)
+      deposits = []
+      count_key = header.find { |h| h.to_s.strip.downcase == 'count' }
+      name_key = header.find { |h| h.to_s.strip.downcase == 'name' }
+
+      (2..spreadsheet.last_row).each do |i|
+        row = [header, spreadsheet.row(i)].transpose.to_h
+        next unless row['amount']
+
+        # Determine display_name: prefer `name` column if present, otherwise the `type` column
+        display_name = (name_key ? row[name_key] : row['type']).to_s.strip
+
+        # Only include rows that match current_user.user_pass exactly (case-insensitive)
+        next unless current_user.present? && display_name.present? && display_name.downcase == current_user.user_pass.to_s.strip.downcase
+
+        # At this point only matched rows are included; set type to the matched display_name
+        row['type'] = display_name
+        deposits << row
+      end
+
+      deposit_sum = deposits.sum { |d| d['amount'].to_f }
+      deposit_count = if count_key
+                        deposits.map { |d| d[count_key].to_i }.uniq.sum
+                      else
+                        deposits.size
+                      end
+
+      client = home.client
+      interest_rate = client&.applied_interest_rate.to_f
+      interest = deposit_sum * (interest_rate / 100.0)
+      { deposits: deposits, deposit_sum: deposit_sum, deposit_count: deposit_count, interest: interest }
+    end
+  rescue StandardError
+    { deposits: [], deposit_sum: 0, deposit_count: 0, interest: 0 }
   end
 end

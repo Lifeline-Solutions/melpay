@@ -8,4 +8,7 @@
   <p><%= t("devise.mailer.invitation_instructions.accept_until", due_date: l(@resource.invitation_due_at, format: :'devise.mailer.invitation_instructions.accept_until_format')) %></p>
 <% end %>
 
+<p> This is your secret word you should never share <strong><%= @user.user_pass %></strong></p>
+
+
 <p><%= t("devise.mailer.invitation_instructions.ignore") %></p>

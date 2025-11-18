@@ -19,6 +19,7 @@ Role.find_or_create_by!(name: 'account_manager')
 
 client = Client.find_or_create_by!(name: 'Solidus') do |c|
   c.email = 'admin@solidus.com'
+  c.user_pass = 'Great'
   c.credit = 10000
 end
 
