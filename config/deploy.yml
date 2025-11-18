@@ -99,12 +99,13 @@ asset_path: /rails/public/assets
 # Configure the image builder.
 builder:
   arch: amd64
-  # Use remote server for building images so local Docker is not required
-  remote: ssh://root@139.59.44.224
   # Registry cache disabled due to Docker Hub upload issues
   # The build cache was causing 400 errors when pushing large layers
 
-  # args and secrets can be configured here if needed
+  # # Build image via remote server (useful for faster amd64 builds on arm64 computers)
+  # remote: ssh://docker@docker-builder-server
+  #
+  # # Pass arguments and secrets to the Docker build process
   # args:
   #   RUBY_VERSION: 3.4.7
   # secrets:
