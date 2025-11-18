@@ -10,15 +10,19 @@ class User < ApplicationRecord
   after_create :default_role
   before_create :ensure_user_pass
 
-  # Curated list of common, memorable six-letter English words (lowercase)
+  # Curated list of 120 common, memorable six-letter English words (lowercase)
   WORDLIST = %w[
     planet orange butter summer credit travel flower silver family garden marble
-    pepper castle friend little market monkey guitar kitten rocket canyon valley
-    donkey velvet stream anchor island forest coffee harbor walnut sailor candle
-    bishop museum domain copper sphere fossil ribbon artist grainy cotton marvel
-    rhythm beacon parade wander polish serene gentle bright sunset dawned mellow
-    legend bridge timber orchid simple circle banana better cuddle sunray sentry
-    safely health wonder stable lovely meadow saddle
+    pepper castle people little market monkey guitar kitten rocket canyon valley
+    donkey velvet stream anchor island coffee harbor walnut sailor candle bishop
+    museum domain copper sphere fossil ribbon artist cotton marvel rhythm beacon
+    parade wander polish serene gentle bright sunset dawned mellow legend timber
+    orchid simple circle banana better cuddle sunray sentry safely health wonder
+    stable lovely meadow saddle always beauty action animal breeze choose common
+    memory honest sunlit pastel marina needle quartz maples marine citrus glance
+    humble slogan flight smooth remark vacant groove cobalt floral tender parcel
+    motive salute victor dapper sprout thrive prince angels mingle glassy shaded
+    nectar pocket sparks tigers fellow maroon safari orchard willow ripple
   ].uniq.freeze
 
   def default_role
