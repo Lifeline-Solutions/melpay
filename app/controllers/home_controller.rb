@@ -9,8 +9,6 @@ class HomeController < ApplicationController
 
   def index
     homes_for_list = Home.all.order(created_at: :desc)
-    @accounts_count = Account.count
-    @account_types = Account.distinct.pluck(:account_type)
 
     @per_page = 20
     @page = (params[:page] || 1).to_i

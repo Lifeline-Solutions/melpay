@@ -30,7 +30,6 @@ Rails.application.routes.draw do
       patch :approve_kyc
       patch :reject_kyc
     end
-    resources :accounts, only: [:index, :new, :create]
   end
   resources :roles, only: [:new, :create, :index]
   resources :transactions, only: [:new, :create, :index, :show] do
