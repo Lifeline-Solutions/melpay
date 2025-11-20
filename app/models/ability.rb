@@ -6,10 +6,12 @@ class Ability
 
     if user.has_role? :super_admin
       can :manage, :all
+      can :invite, User
     elsif user.has_role? :admin
       # Admin can only manage resources within their own client
       can :manage, User, client_id: user.client_id, user_id: user.id
       can :manage, Home, client_id: user.client_id, user_id: user.id
+      can :invite, User
     elsif user.has_role? :account_manager
       can :read, User, client_id: user.client_id
       can :manage, Home, client_id: user.client_id
