@@ -18,9 +18,7 @@ class ClientsController < ApplicationController
     @clients = @clients.offset((@page - 1) * @per_page).limit(@per_page)
   end
 
-  def show
-    
-  end
+  def show; end
 
   def new
     @client = Client.new
