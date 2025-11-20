@@ -19,7 +19,7 @@ class ClientsController < ApplicationController
   end
 
   def show
-    @client_accounts = @client.accounts
+    
   end
 
   def new
