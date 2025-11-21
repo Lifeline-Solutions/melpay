@@ -10,36 +10,42 @@
         </p>
         <div class="flex space-x-4">
           <!-- Transfer -->
-          <%= link_to "#", class: "flex items-center space-x-2 px-4 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition relative group" do %>
-            <!-- Transfer Icon -->
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M17 10a1 1 0 01-1 1H7.41l3.3 3.29a1 1 0 01-1.42 1.42l-5-5a1 1 0 010-1.42l5-5a1 1 0 011.42 1.42L7.41 9H16a1 1 0 011 1z"/>
-            </svg>
-            <span class="absolute bottom-full mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
-              Move funds between accounts
-            </span>
+          <% if can?(:manage, Home) %>
+            <%= link_to "#", class: "flex items-center space-x-2 px-4 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition relative group" do %>
+              <!-- Transfer Icon -->
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M17 10a1 1 0 01-1 1H7.41l3.3 3.29a1 1 0 01-1.42 1.42l-5-5a1 1 0 010-1.42l5-5a1 1 0 011.42 1.42L7.41 9H16a1 1 0 011 1z"/>
+              </svg>
+              <span class="absolute bottom-full mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                Move funds between accounts
+              </span>
+            <% end %>
           <% end %>
 
           <!-- TopUp -->
-          <%= link_to "#", class: "flex items-center space-x-2 px-4 py-2 rounded-md bg-green-500 text-white hover:bg-green-600 transition relative group" do %>
-            <!-- TopUp Icon -->
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 9h3a1 1 0 010 2h-3v3a1 1 0 01-2 0v-3H6a1 1 0 010-2h3V6a1 1 0 012 0v3z"/>
-            </svg>
-            <span class="absolute bottom-full mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
-              Add money to your account
-            </span>
+          <% if can?(:manage, User) %>
+            <%= link_to "#", class: "flex items-center space-x-2 px-4 py-2 rounded-md bg-green-500 text-white hover:bg-green-600 transition relative group" do %>
+              <!-- TopUp Icon -->
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 9h3a1 1 0 010 2h-3v3a1 1 0 01-2 0v-3H6a1 1 0 010-2h3V6a1 1 0 012 0v3z"/>
+              </svg>
+              <span class="absolute bottom-full mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                Add money to your account
+              </span>
+            <% end %>
           <% end %>
 
           <!-- Bulk -->
-          <%= link_to "#", class: "flex items-center space-x-2 px-4 py-2 rounded-md bg-purple-500 text-white hover:bg-purple-600 transition relative group" do %>
-            <!-- Bulk Icon -->
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M4 3h12a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1zm0 6h12a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3a1 1 0 011-1zm0 6h12a1 1 0 011 1v1a1 1 0 01-1 1H4a1 1 0 01-1-1v-1a1 1 0 011-1z"/>
-            </svg>
-            <span class="absolute bottom-full mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
-              Perform multiple transactions at once
-            </span>
+          <% if can?(:manage, Home) %>
+            <%= link_to "#", class: "flex items-center space-x-2 px-4 py-2 rounded-md bg-purple-500 text-white hover:bg-purple-600 transition relative group" do %>
+              <!-- Bulk Icon -->
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M4 3h12a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1zm0 6h12a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3a1 1 0 011-1zm0 6h12a1 1 0 011 1v1a1 1 0 01-1 1H4a1 1 0 01-1-1v-1a1 1 0 011-1z"/>
+              </svg>
+              <span class="absolute bottom-full mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                Perform multiple transactions at once
+              </span>
+            <% end %>
           <% end %>
         </div>
       </div>
@@ -65,40 +71,46 @@
       </p>
 
       <div class="w-full h-full">
-        <%= line_chart @chart_series,
-          library: {
-            title: {
-              text: "Financial Overview Over Time",
-              style: { fontSize: "16px", fontWeight: "bold" }
-            },
-            xAxis: {
-              type: "datetime",
+        <% if can?(:read, Home) %>
+          <%= line_chart @chart_series,
+            library: {
               title: {
-                text: "Upload Date",
-                style: { fontSize: "14px", fontWeight: "bold", color: "#333" }
+                text: "Financial Overview Over Time",
+                style: { fontSize: "16px", fontWeight: "bold" }
               },
-              labels: { format: "{value:%Y-%m-%d}" }
-            },
-            yAxis: {
-              title: {
-                text: "Amount (USD)",
-                style: { fontSize: "14px", fontWeight: "bold", color: "#333" }
+              xAxis: {
+                type: "datetime",
+                title: {
+                  text: "Upload Date",
+                  style: { fontSize: "14px", fontWeight: "bold", color: "#333" }
+                },
+                labels: { format: "{value:%Y-%m-%d}" }
               },
-              labels: { format: "${value}" }
-            },
-            legend: { enabled: true },
-            tooltip: { valuePrefix: "$" },
-            plotOptions: {
-              series: {
-                marker: { enabled: true, radius: 3 },
-                lineWidth: 2,
-                states: { hover: { lineWidth: 3 } }
+              yAxis: {
+                title: {
+                  text: "Amount (USD)",
+                  style: { fontSize: "14px", fontWeight: "bold", color: "#333" }
+                },
+                labels: { format: "${value}" }
+              },
+              legend: { enabled: true },
+              tooltip: { valuePrefix: "$" },
+              plotOptions: {
+                series: {
+                  marker: { enabled: true, radius: 3 },
+                  lineWidth: 2,
+                  states: { hover: { lineWidth: 3 } }
+                }
               }
-            }
-          },
-          points: true,
-          discrete: false
-        %>
+            },
+            points: true,
+            discrete: false
+          %>
+        <% else %>
+          <div class="flex items-center justify-center h-64 bg-gray-100 dark:bg-gray-700 rounded-lg">
+            <p class="text-gray-500 dark:text-gray-400">No access to view statistics</p>
+          </div>
+        <% end %>
       </div>
     </div>
   </div>

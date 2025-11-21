@@ -8,7 +8,8 @@ class HomeController < ApplicationController
   before_action :set_home, only: %i[show edit update destroy pay_single_deposit pay_all_deposits]
 
   def index
-    homes_for_list = Home.all.order(created_at: :desc)
+    # Use accessible_by to scope homes based on user abilities
+    homes_for_list = Home.accessible_by(current_ability).order(created_at: :desc)
 
     @per_page = 20
     @page = (params[:page] || 1).to_i
@@ -30,9 +31,21 @@ class HomeController < ApplicationController
     credits_over_time = Hash.new(0)
     transaction_costs_over_time = Hash.new(0)
 
-    # Initialize success and failed transaction counts
-    @success_count = Transaction.where(status: 'success').count
-    @failed_count = Transaction.where(status: 'failed').count
+    # Initialize success and failed transaction counts with authorization and client scoping
+    if can?(:read, Transaction)
+      transaction_scope = Transaction.accessible_by(current_ability)
+      
+      # For non-super admins, scope to their client
+      unless current_user.has_role?(:super_admin)
+        transaction_scope = transaction_scope.where(client_id: current_user.client_id)
+      end
+      
+      @success_count = transaction_scope.where(status: 'success').count
+      @failed_count = transaction_scope.where(status: 'failed').count
+    else
+      @success_count = 0
+      @failed_count = 0
+    end
 
     # parse_spreadsheet is implemented as a private method below
 
@@ -54,17 +67,30 @@ class HomeController < ApplicationController
       totals_deposits_over_time[date] += result[:deposit_sum]
 
       # Add client credits to credits_over_time
-      client = home.client
-      credits_over_time[date] += client.credit.to_f if client&.credit
+      if can?(:read, Client)
+        client = home.client
+        # Only include client credit if super admin or if client matches user's client
+        if current_user.has_role?(:super_admin) || client&.id == current_user.client_id
+          credits_over_time[date] += client.credit.to_f if client&.credit
+        end
+      end
     end
 
     @total_deposits_sum = @totals_deposits.values.sum.to_f
 
     # Calculate transaction costs over time from successful transactions
-    successful_transactions = Transaction.where(status: 'success', is_latest: true)
-    successful_transactions.each do |transaction|
-      date = transaction.created_at.to_date
-      transaction_costs_over_time[date] += transaction.total_cost.to_f
+    if can?(:read, Transaction)
+      transaction_scope = Transaction.accessible_by(current_ability).where(status: 'success', is_latest: true)
+      
+      # For non-super admins, scope to their client
+      unless current_user.has_role?(:super_admin)
+        transaction_scope = transaction_scope.where(client_id: current_user.client_id)
+      end
+      
+      transaction_scope.each do |transaction|
+        date = transaction.created_at.to_date
+        transaction_costs_over_time[date] += transaction.total_cost.to_f
+      end
     end
 
     # Build time-series for chart
@@ -84,20 +110,31 @@ class HomeController < ApplicationController
       @transaction_costs_over_time = date_range.to_h { |d| [d.strftime('%Y-%m-%d'), transaction_costs_over_time[d].to_f] }
     end
 
-    # Collect recent deposits (limit 5)
-    @recent_deposits = Transaction.order(created_at: :desc).limit(5).map do |transaction|
-      {
-        date: transaction.created_at,
-        amount: transaction.amount,
-        transaction_id: transaction.transaction_id,
-        transaction_cost: transaction.transaction_cost,
-        interest_rate: transaction.interest_rate || 0.0,
-        total_cost: transaction.total_cost,
-        status: transaction.status
-      }
+    # Collect recent deposits (limit 5) with authorization and client scoping
+    if can?(:read, Transaction)
+      transaction_scope = Transaction.accessible_by(current_ability).order(created_at: :desc)
+      
+      # For non-super admins, scope to their client
+      unless current_user.has_role?(:super_admin)
+        transaction_scope = transaction_scope.where(client_id: current_user.client_id)
+      end
+      
+      @recent_deposits = transaction_scope.limit(5).map do |transaction|
+        {
+          date: transaction.created_at,
+          amount: transaction.amount,
+          transaction_id: transaction.transaction_id,
+          transaction_cost: transaction.transaction_cost,
+          interest_rate: transaction.interest_rate || 0.0,
+          total_cost: transaction.total_cost,
+          status: transaction.status
+        }
+      end
+    else
+      @recent_deposits = []
     end
 
-    # Chart series with all three metrics (Money in, MOney out, Deposits)
+    # Chart series with all three metrics (Money in, Money out, Deposits)
     @chart_series = [
       { name: 'Deposits', data: @totals_deposits_over_time },
       { name: 'Money In (Credits)', data: @credits_over_time },
