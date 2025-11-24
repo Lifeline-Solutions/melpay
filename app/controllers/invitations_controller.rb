@@ -1,6 +1,6 @@
 class InvitationsController < Devise::InvitationsController
   before_action :authenticate_user!
-  before_action :authorize_invitation, only: [:new, :create]
+  before_action :authorize_invitation, only: %i[new create]
 
   def new
     @user = User.new
@@ -55,6 +55,7 @@ class InvitationsController < Devise::InvitationsController
 
   def assign_role(user)
     return unless params[:role].present?
+
     role = params[:role]
 
     if current_user.has_role?(:admin)
