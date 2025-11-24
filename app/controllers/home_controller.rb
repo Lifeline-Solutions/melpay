@@ -34,12 +34,10 @@ class HomeController < ApplicationController
     # Initialize success and failed transaction counts with authorization and client scoping
     if can?(:read, Transaction)
       transaction_scope = Transaction.accessible_by(current_ability)
-      
+
       # For non-super admins, scope to their client
-      unless current_user.has_role?(:super_admin)
-        transaction_scope = transaction_scope.where(client_id: current_user.client_id)
-      end
-      
+      transaction_scope = transaction_scope.where(client_id: current_user.client_id) unless current_user.has_role?(:super_admin)
+
       @success_count = transaction_scope.where(status: 'success').count
       @failed_count = transaction_scope.where(status: 'failed').count
     else
@@ -51,6 +49,9 @@ class HomeController < ApplicationController
 
     # Compute per-home and per-date totals
     @homes.each do |home|
+      # Ensure user can read this specific home
+      authorize! :read, home
+
       result = parse_spreadsheet(home)
       @totals_deposits[home.id] = result[:deposit_sum]
       @total_deposit_count[home.id] = result[:deposit_count]
@@ -67,12 +68,18 @@ class HomeController < ApplicationController
       totals_deposits_over_time[date] += result[:deposit_sum]
 
       # Add client credits to credits_over_time
-      if can?(:read, Client)
-        client = home.client
-        # Only include client credit if super admin or if client matches user's client
-        if current_user.has_role?(:super_admin) || client&.id == current_user.client_id
-          credits_over_time[date] += client.credit.to_f if client&.credit
-        end
+      next unless can?(:read, Client)
+
+      client = home.client
+      # Only include client credit if super admin or if client matches user's client
+      # Proper authorization check
+      next unless current_user.has_role?(:super_admin) || (client && client.id == current_user.client_id)
+
+      begin
+        authorize! :read, client if client
+        credits_over_time[date] += client.credit.to_f if client&.credit
+      rescue CanCan::AccessDenied
+        # Skip if user cannot read this client
       end
     end
 
@@ -81,12 +88,10 @@ class HomeController < ApplicationController
     # Calculate transaction costs over time from successful transactions
     if can?(:read, Transaction)
       transaction_scope = Transaction.accessible_by(current_ability).where(status: 'success', is_latest: true)
-      
+
       # For non-super admins, scope to their client
-      unless current_user.has_role?(:super_admin)
-        transaction_scope = transaction_scope.where(client_id: current_user.client_id)
-      end
-      
+      transaction_scope = transaction_scope.where(client_id: current_user.client_id) unless current_user.has_role?(:super_admin)
+
       transaction_scope.each do |transaction|
         date = transaction.created_at.to_date
         transaction_costs_over_time[date] += transaction.total_cost.to_f
@@ -113,12 +118,10 @@ class HomeController < ApplicationController
     # Collect recent deposits (limit 5) with authorization and client scoping
     if can?(:read, Transaction)
       transaction_scope = Transaction.accessible_by(current_ability).order(created_at: :desc)
-      
+
       # For non-super admins, scope to their client
-      unless current_user.has_role?(:super_admin)
-        transaction_scope = transaction_scope.where(client_id: current_user.client_id)
-      end
-      
+      transaction_scope = transaction_scope.where(client_id: current_user.client_id) unless current_user.has_role?(:super_admin)
+
       @recent_deposits = transaction_scope.limit(5).map do |transaction|
         {
           date: transaction.created_at,
@@ -164,6 +167,10 @@ class HomeController < ApplicationController
 
   def show
     @file = @home
+
+    # Authorize access to this specific home
+    authorize! :read, @home
+
     return unless @file.document.attached?
 
     # Check if this file has already been processed
@@ -176,7 +183,15 @@ class HomeController < ApplicationController
       @total_deposit_count = @deposits.count
 
       client = @home.client || current_user.client
-      interest_rate = client&.applied_interest_rate.to_f
+
+      # Authorize access to client if present
+      if client && can?(:read, Client)
+        authorize! :read, client
+        interest_rate = client.applied_interest_rate.to_f
+      else
+        interest_rate = 0.0
+      end
+
       @deposit_interest = @total_deposits * (interest_rate / 100.0)
       @total_cost = @total_deposits + @deposit_interest
 
@@ -200,6 +215,9 @@ class HomeController < ApplicationController
 
       # Get client and generate prefix for transaction IDs
       client = @home.client || current_user.client
+
+      # Authorize access to client if present
+      authorize! :read, client if client && can?(:read, Client)
 
       (2..spreadsheet.last_row).each do |i|
         row = [header, spreadsheet.row(i)].transpose.to_h
@@ -238,7 +256,10 @@ class HomeController < ApplicationController
 
       # Find the highest existing transaction ID number for this client
       max_number = 0
-      Home.where(client_id: client&.id).find_each do |home|
+
+      # Scope homes by user ability when searching for existing transaction IDs
+      home_scope = Home.accessible_by(current_ability).where(client_id: client&.id)
+      home_scope.find_each do |home|
         next unless home.processed_deposits.is_a?(Array)
 
         home.processed_deposits.each do |deposit|
@@ -275,6 +296,10 @@ class HomeController < ApplicationController
       # Total cost of the transaction will be the totals deposits + interest
       @total_cost = @total_deposits + @deposit_interest
     end
+  rescue CanCan::AccessDenied
+    flash.now[:alert] = 'You are not authorized to access this resource.'
+    redirect_to homes_path
+    nil
   rescue StandardError => e
     flash.now[:alert] = "Error processing file: #{e.message}"
     @deposits = []
