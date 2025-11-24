@@ -45,14 +45,13 @@ class HomeController < ApplicationController
       @failed_count = 0
     end
 
-    # parse_spreadsheet is implemented as a private method below
-
     # Compute per-home and per-date totals
     @homes.each do |home|
       # Ensure user can read this specific home
       authorize! :read, home
 
-      result = parse_spreadsheet(home)
+      # Use ALL rows from the spreadsheet, not just those matching current_user.user_pass
+      result = parse_spreadsheet_for_dashboard(home)
       @totals_deposits[home.id] = result[:deposit_sum]
       @total_deposit_count[home.id] = result[:deposit_count]
       @deposit_interest[home.id] = result[:interest]
@@ -667,6 +666,58 @@ class HomeController < ApplicationController
   end
 
   private
+
+  # This method will Parse spreadsheet for dashboard display (shows ALL rows for users in the same client)
+  def parse_spreadsheet_for_dashboard(home)
+    return { deposits: [], deposit_sum: 0, deposit_count: 0, interest: 0 } unless home.document.attached?
+
+    Tempfile.create(['uploaded_file', ".#{home.document.filename.extension}"]) do |tempfile|
+      content = home.document.download.force_encoding('UTF-8')
+      tempfile.write(content)
+      tempfile.rewind
+      spreadsheet = case home.document.filename.extension
+                    when 'csv' then Roo::CSV.new(tempfile.path)
+                    when 'xls' then Roo::Excel.new(tempfile.path)
+                    when 'xlsx' then Roo::Excelx.new(tempfile.path)
+                    end
+      return { deposits: [], deposit_sum: 0, deposit_count: 0, interest: 0 } unless spreadsheet
+
+      header = spreadsheet.row(1).map(&:to_s)
+      deposits = []
+      count_key = header.find { |h| h.to_s.strip.downcase == 'count' }
+      name_key = header.find { |h| h.to_s.strip.downcase == 'name' }
+
+      (2..spreadsheet.last_row).each do |i|
+        row = [header, spreadsheet.row(i)].transpose.to_h
+        next unless row['amount']
+
+        # Determine display_name: prefer `name` column if present, otherwise the `type` column
+        display_name = (name_key ? row[name_key] : row['type']).to_s.strip
+
+        # FIXED: Include ALL rows for dashboard display, not filtered by user_pass
+        # Only filter out rows with blank display names
+        next unless display_name.present?
+
+        # Set type to the display_name
+        row['type'] = display_name
+        deposits << row
+      end
+
+      deposit_sum = deposits.sum { |d| d['amount'].to_f }
+      deposit_count = if count_key
+                        deposits.map { |d| d[count_key].to_i }.uniq.sum
+                      else
+                        deposits.size
+                      end
+
+      client = home.client
+      interest_rate = client&.applied_interest_rate.to_f
+      interest = deposit_sum * (interest_rate / 100.0)
+      { deposits: deposits, deposit_sum: deposit_sum, deposit_count: deposit_count, interest: interest }
+    end
+  rescue StandardError
+    { deposits: [], deposit_sum: 0, deposit_count: 0, interest: 0 }
+  end
 
   def set_home
     @home = Home.find(params[:id])
