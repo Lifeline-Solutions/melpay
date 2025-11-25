@@ -1,59 +1,83 @@
 <section class="mx-auto p-4 sm:ml-64 w-full">
-
   <div class="w-full h-screen bg-white rounded-lg shadow dark:border md:mt-0 xl:p-0 dark:bg-gray-800 dark:border-gray-700">
     <div class="p-6">
       <div class="flex items-center mb-6 gap-2">
         <h2 class="text-xl font-bold text-gray-900 dark:text-white">Users List</h2>
-        <%= link_to 'Invite Users', new_user_invitation_path,
-            class: "border border-gray-900 dark:border-gray-100 bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-2 py-2 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800" %>
+        <% if can?(:invite, User) %>
+          <%= link_to 'Invite Users', new_user_invitation_path,
+              class: "border border-gray-900 dark:border-gray-100 bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-2 py-2 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800" %>
+        <% end %>
       </div>
 
-      <table class="w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <thead>
-          <tr>
-            <th class="px-4 py-2 text-left text-sm font-medium text-gray-900 dark:text-white">First Name</th>
-            <th class="px-4 py-2 text-left text-sm font-medium text-gray-900 dark:text-white">Last Name</th>
-            <th class="px-4 py-2 text-left text-sm font-medium text-gray-900 dark:text-white">Email</th>
-            <th class="px-4 py-2 text-left text-sm font-medium text-gray-900 dark:text-white">Phone</th>
-            <th class="px-4 py-2 text-left text-sm font-medium text-gray-900 dark:text-white">Sign in Count</th>
-            <th class="px-4 py-2 text-left text-sm font-medium text-gray-900 dark:text-white">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @users.each do |user| %>
+      <% if can?(:read, User) %>
+        <table class="w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead>
             <tr>
-              <td class="px-4 py-2 text-gray-700 dark:text-gray-200"><%= user.first_name %></td>
-              <td class="px-4 py-2 text-gray-700 dark:text-gray-200"><%= user.last_name %></td>
-              <td class="px-4 py-2 text-gray-700 dark:text-gray-200"><%= user.email %></td>
-              <td class="px-4 py-2 text-gray-700 dark:text-gray-200"><%= user.phone_number %></td>
-              <td class="px-4 py-2 text-gray-700 dark:text-gray-200"><%= user.sign_in_count %></td>
-              <td class="px-4 py-2 text-gray-700 dark:text-gray-200 flex gap-2">
-                <%= link_to 'Show', user_path(user), class: "text-blue-600 hover:underline" %>
-                <%= link_to 'Edit', edit_user_path(user), class: "text-yellow-600 hover:underline" %>
-              </td>
+              <th class="px-4 py-2 text-left text-sm font-medium text-gray-900 dark:text-white">First Name</th>
+              <th class="px-4 py-2 text-left text-sm font-medium text-gray-900 dark:text-white">Last Name</th>
+              <th class="px-4 py-2 text-left text-sm font-medium text-gray-900 dark:text-white">Email</th>
+              <th class="px-4 py-2 text-left text-sm font-medium text-gray-900 dark:text-white">Phone</th>
+              <th class="px-4 py-2 text-left text-sm font-medium text-gray-900 dark:text-white">Sign in Count</th>
+              <th class="px-4 py-2 text-left text-sm font-medium text-gray-900 dark:text-white">Actions</th>
             </tr>
+          </thead>
+          <tbody>
+            <% @users.each do |user| %>
+              <tr>
+                <td class="px-4 py-2 text-gray-700 dark:text-gray-200"><%= user.first_name %></td>
+                <td class="px-4 py-2 text-gray-700 dark:text-gray-200"><%= user.last_name %></td>
+                <td class="px-4 py-2 text-gray-700 dark:text-gray-200"><%= user.email %></td>
+                <td class="px-4 py-2 text-gray-700 dark:text-gray-200"><%= user.phone_number %></td>
+                <td class="px-4 py-2 text-gray-700 dark:text-gray-200"><%= user.sign_in_count %></td>
+                <td class="px-4 py-2 text-gray-700 dark:text-gray-200 flex gap-2">
+                  <% if can?(:read, user) %>
+                    <%= link_to 'Show', user_path(user), class: "text-blue-600 hover:underline" %>
+                  <% else %>
+                    <span class="text-gray-400 cursor-not-allowed">Show</span>
+                  <% end %>
+                  
+                  <% if can?(:update, user) %>
+                    <%= link_to 'Edit', edit_user_path(user), class: "text-yellow-600 hover:underline" %>
+                  <% else %>
+                    <span class="text-gray-400 cursor-not-allowed">Edit</span>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+
+        <% if @users.empty? %>
+          <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+            No users found
+          </div>
+        <% end %>
+      <% else %>
+        <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+          <p class="text-lg">You don't have permission to view users</p>
+        </div>
+      <% end %>
+    </div>
+
+    <% if can?(:read, User) && @users.any? %>
+      <div class="flex gap-10 mt-5">
+        <!-- Pagination Controls -->
+        <div class="pagination">
+          <% if @page > 1 %>
+            <%= link_to 'Previous',
+                        users_path(page: @page - 1, query: params[:query], status: params[:status]),
+                        class: 'mb-4 h-12 bg-[#3F8CFF] hover:bg-[#3A81EB] p-3 rounded font-bold rounded-lg text-slate-100' %>
           <% end %>
-        </tbody>
-      </table>
-    </div>
 
-    <div class="flex gap-10 mt-5">
-      <!-- Pagination Controls -->
-      <div class="pagination">
-        <% if @page > 1 %>
-          <%= link_to 'Previous',
-                      users_path(page: @page - 1, query: params[:query], status: params[:status]),
-                      class: 'mb-4 h-12 bg-[#3F8CFF] hover:bg-[#3A81EB] p-3 rounded font-bold rounded-lg text-slate-100' %>
-        <% end %>
+          <span>Page <%= @page %> of <%= @total_pages %></span>
 
-        <span>Page <%= @page %> of <%= @total_pages %></span>
-
-        <% if @page < @total_pages %>
-          <%= link_to 'Next',
-                      users_path(page: @page + 1, query: params[:query], status: params[:status]),
-                      class: 'mb-4 h-12 bg-[#3F8CFF] hover:bg-[#3A81EB] p-3 rounded font-bold rounded-lg text-slate-100' %>
-        <% end %>
+          <% if @page < @total_pages %>
+            <%= link_to 'Next',
+                        users_path(page: @page + 1, query: params[:query], status: params[:status]),
+                        class: 'mb-4 h-12 bg-[#3F8CFF] hover:bg-[#3A81EB] p-3 rounded font-bold rounded-lg text-slate-100' %>
+          <% end %>
+        </div>
       </div>
-    </div>
+    <% end %>
   </div>
 </section>

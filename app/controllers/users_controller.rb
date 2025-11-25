@@ -1,17 +1,21 @@
 class UsersController < ApplicationController
   before_action :authenticate_user!
   load_and_authorize_resource
+
   def index
     @per_page = 10
     @page = (params[:page] || 1).to_i
 
+    # Start with users accessible by current ability
+    users_scope = User.accessible_by(current_ability)
+
     @users = if params[:query].present?
-               User.left_joins(:client, :roles)
+               users_scope.left_joins(:client, :roles)
                  .where('users.email ILIKE :query OR users.first_name ILIKE :query OR
                          users.last_name ILIKE :query OR clients.name ILIKE :query OR roles.name ILIKE :query',
                         query: "%#{params[:query]}%").distinct
              else
-               User.order('created_at DESC').distinct
+               users_scope.order('created_at DESC').distinct
              end
     @total_pages = (@users.count / @per_page.to_f).ceil
     @users = @users.offset((@page - 1) * @per_page).limit(@per_page)

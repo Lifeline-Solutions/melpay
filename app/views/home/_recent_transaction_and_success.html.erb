@@ -1,12 +1,23 @@
- <div class="grid grid-cols-7 gap-4 mb-4 items-stretch">
+<div class="grid grid-cols-7 gap-4 mb-4 items-stretch">
   <!-- Left side -->
   <div class="col-span-5">
-    <%= render partial: "home/transactions_show" %>
+    <% if can?(:read, Home) %>
+      <%= render partial: "home/transactions_show" %>
+    <% else %>
+      <div class="flex items-center justify-center h-full bg-gray-50 dark:bg-gray-800 rounded-lg">
+        <p class="text-gray-500 dark:text-gray-400">No access to view transactions</p>
+      </div>
+    <% end %>
   </div>
 
   <!-- Right side -->
    <div class="col-span-2">
-     <%= render partial: "home/success_chart" %>
+     <% if can?(:read, Transaction) %>
+       <%= render partial: "home/success_chart" %>
+     <% else %>
+       <div class="flex items-center justify-center h-full bg-gray-50 dark:bg-gray-800 rounded-lg">
+         <p class="text-gray-500 dark:text-gray-400">No access to view charts</p>
+       </div>
+     <% end %>
    </div>
-
-   </div>
+</div>

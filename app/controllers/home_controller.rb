@@ -8,7 +8,9 @@ class HomeController < ApplicationController
   before_action :set_home, only: %i[show edit update destroy pay_single_deposit pay_all_deposits]
 
   def index
-    homes_for_list = Home.all.order(created_at: :desc)
+    # Use accessible_by to scope homes based on user abilities
+    # Eager load the associated clients to avoid N+1 queries
+    homes_for_list = Home.accessible_by(current_ability).includes(:client).order(created_at: :desc)
 
     @per_page = 20
     @page = (params[:page] || 1).to_i
@@ -30,15 +32,27 @@ class HomeController < ApplicationController
     credits_over_time = Hash.new(0)
     transaction_costs_over_time = Hash.new(0)
 
-    # Initialize success and failed transaction counts
-    @success_count = Transaction.where(status: 'success').count
-    @failed_count = Transaction.where(status: 'failed').count
+    # Initialize success and failed transaction counts with authorization and client scoping
+    if can?(:read, Transaction)
+      transaction_scope = Transaction.accessible_by(current_ability)
 
-    # parse_spreadsheet is implemented as a private method below
+      # For non-super admins, scope to their client
+      transaction_scope = transaction_scope.where(client_id: current_user.client_id) unless current_user.has_role?(:super_admin)
+
+      @success_count = transaction_scope.where(status: 'success').count
+      @failed_count = transaction_scope.where(status: 'failed').count
+    else
+      @success_count = 0
+      @failed_count = 0
+    end
 
     # Compute per-home and per-date totals
     @homes.each do |home|
-      result = parse_spreadsheet(home)
+      # Ensure user can read this specific home
+      authorize! :read, home
+
+      # Use ALL rows from the spreadsheet, not just those matching current_user.user_pass
+      result = parse_spreadsheet_for_dashboard(home)
       @totals_deposits[home.id] = result[:deposit_sum]
       @total_deposit_count[home.id] = result[:deposit_count]
       @deposit_interest[home.id] = result[:interest]
@@ -54,17 +68,34 @@ class HomeController < ApplicationController
       totals_deposits_over_time[date] += result[:deposit_sum]
 
       # Add client credits to credits_over_time
+      next unless can?(:read, Client)
+
       client = home.client
-      credits_over_time[date] += client.credit.to_f if client&.credit
+      # Only include client credit if super admin or if client matches user's client
+      # Proper authorization check
+      next unless current_user.has_role?(:super_admin) || (client && client.id == current_user.client_id)
+
+      begin
+        authorize! :read, client if client
+        credits_over_time[date] += client.credit.to_f if client&.credit
+      rescue CanCan::AccessDenied
+        # Skip if user cannot read this client
+      end
     end
 
     @total_deposits_sum = @totals_deposits.values.sum.to_f
 
     # Calculate transaction costs over time from successful transactions
-    successful_transactions = Transaction.where(status: 'success', is_latest: true)
-    successful_transactions.each do |transaction|
-      date = transaction.created_at.to_date
-      transaction_costs_over_time[date] += transaction.total_cost.to_f
+    if can?(:read, Transaction)
+      transaction_scope = Transaction.accessible_by(current_ability).where(status: 'success', is_latest: true)
+
+      # For non-super admins, scope to their client
+      transaction_scope = transaction_scope.where(client_id: current_user.client_id) unless current_user.has_role?(:super_admin)
+
+      transaction_scope.each do |transaction|
+        date = transaction.created_at.to_date
+        transaction_costs_over_time[date] += transaction.total_cost.to_f
+      end
     end
 
     # Build time-series for chart
@@ -84,20 +115,29 @@ class HomeController < ApplicationController
       @transaction_costs_over_time = date_range.to_h { |d| [d.strftime('%Y-%m-%d'), transaction_costs_over_time[d].to_f] }
     end
 
-    # Collect recent deposits (limit 5)
-    @recent_deposits = Transaction.order(created_at: :desc).limit(5).map do |transaction|
-      {
-        date: transaction.created_at,
-        amount: transaction.amount,
-        transaction_id: transaction.transaction_id,
-        transaction_cost: transaction.transaction_cost,
-        interest_rate: transaction.interest_rate || 0.0,
-        total_cost: transaction.total_cost,
-        status: transaction.status
-      }
+    # Collect recent deposits (limit 5) with authorization and client scoping
+    if can?(:read, Transaction)
+      transaction_scope = Transaction.accessible_by(current_ability).order(created_at: :desc)
+
+      # For non-super admins, scope to their client
+      transaction_scope = transaction_scope.where(client_id: current_user.client_id) unless current_user.has_role?(:super_admin)
+
+      @recent_deposits = transaction_scope.limit(5).map do |transaction|
+        {
+          date: transaction.created_at,
+          amount: transaction.amount,
+          transaction_id: transaction.transaction_id,
+          transaction_cost: transaction.transaction_cost,
+          interest_rate: transaction.interest_rate || 0.0,
+          total_cost: transaction.total_cost,
+          status: transaction.status
+        }
+      end
+    else
+      @recent_deposits = []
     end
 
-    # Chart series with all three metrics (Money in, MOney out, Deposits)
+    # Chart series with all three metrics (Money in, Money out, Deposits)
     @chart_series = [
       { name: 'Deposits', data: @totals_deposits_over_time },
       { name: 'Money In (Credits)', data: @credits_over_time },
@@ -127,6 +167,10 @@ class HomeController < ApplicationController
 
   def show
     @file = @home
+
+    # Authorize access to this specific home
+    authorize! :read, @home
+
     return unless @file.document.attached?
 
     # Check if this file has already been processed
@@ -139,7 +183,15 @@ class HomeController < ApplicationController
       @total_deposit_count = @deposits.count
 
       client = @home.client || current_user.client
-      interest_rate = client&.applied_interest_rate.to_f
+
+      # Authorize access to client if present
+      if client && can?(:read, Client)
+        authorize! :read, client
+        interest_rate = client.applied_interest_rate.to_f
+      else
+        interest_rate = 0.0
+      end
+
       @deposit_interest = @total_deposits * (interest_rate / 100.0)
       @total_cost = @total_deposits + @deposit_interest
 
@@ -163,6 +215,9 @@ class HomeController < ApplicationController
 
       # Get client and generate prefix for transaction IDs
       client = @home.client || current_user.client
+
+      # Authorize access to client if present
+      authorize! :read, client if client && can?(:read, Client)
 
       (2..spreadsheet.last_row).each do |i|
         row = [header, spreadsheet.row(i)].transpose.to_h
@@ -201,7 +256,10 @@ class HomeController < ApplicationController
 
       # Find the highest existing transaction ID number for this client
       max_number = 0
-      Home.where(client_id: client&.id).find_each do |home|
+
+      # Scope homes by user ability when searching for existing transaction IDs
+      home_scope = Home.accessible_by(current_ability).where(client_id: client&.id)
+      home_scope.find_each do |home|
         next unless home.processed_deposits.is_a?(Array)
 
         home.processed_deposits.each do |deposit|
@@ -238,6 +296,10 @@ class HomeController < ApplicationController
       # Total cost of the transaction will be the totals deposits + interest
       @total_cost = @total_deposits + @deposit_interest
     end
+  rescue CanCan::AccessDenied
+    flash.now[:alert] = 'You are not authorized to access this resource.'
+    redirect_to homes_path
+    nil
   rescue StandardError => e
     flash.now[:alert] = "Error processing file: #{e.message}"
     @deposits = []
@@ -605,6 +667,58 @@ class HomeController < ApplicationController
   end
 
   private
+
+  # This method will Parse spreadsheet for dashboard display (shows ALL rows for users in the same client)
+  def parse_spreadsheet_for_dashboard(home)
+    return { deposits: [], deposit_sum: 0, deposit_count: 0, interest: 0 } unless home.document.attached?
+
+    Tempfile.create(['uploaded_file', ".#{home.document.filename.extension}"]) do |tempfile|
+      content = home.document.download.force_encoding('UTF-8')
+      tempfile.write(content)
+      tempfile.rewind
+      spreadsheet = case home.document.filename.extension
+                    when 'csv' then Roo::CSV.new(tempfile.path)
+                    when 'xls' then Roo::Excel.new(tempfile.path)
+                    when 'xlsx' then Roo::Excelx.new(tempfile.path)
+                    end
+      return { deposits: [], deposit_sum: 0, deposit_count: 0, interest: 0 } unless spreadsheet
+
+      header = spreadsheet.row(1).map(&:to_s)
+      deposits = []
+      count_key = header.find { |h| h.to_s.strip.downcase == 'count' }
+      name_key = header.find { |h| h.to_s.strip.downcase == 'name' }
+
+      (2..spreadsheet.last_row).each do |i|
+        row = [header, spreadsheet.row(i)].transpose.to_h
+        next unless row['amount']
+
+        # Determine display_name: prefer `name` column if present, otherwise the `type` column
+        display_name = (name_key ? row[name_key] : row['type']).to_s.strip
+
+        # FIXED: Include ALL rows for dashboard display, not filtered by user_pass
+        # Only filter out rows with blank display names
+        next unless display_name.present?
+
+        # Set type to the display_name
+        row['type'] = display_name
+        deposits << row
+      end
+
+      deposit_sum = deposits.sum { |d| d['amount'].to_f }
+      deposit_count = if count_key
+                        deposits.map { |d| d[count_key].to_i }.uniq.sum
+                      else
+                        deposits.size
+                      end
+
+      client = home.client
+      interest_rate = client&.applied_interest_rate.to_f
+      interest = deposit_sum * (interest_rate / 100.0)
+      { deposits: deposits, deposit_sum: deposit_sum, deposit_count: deposit_count, interest: interest }
+    end
+  rescue StandardError
+    { deposits: [], deposit_sum: 0, deposit_count: 0, interest: 0 }
+  end
 
   def set_home
     @home = Home.find(params[:id])

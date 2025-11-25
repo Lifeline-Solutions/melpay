@@ -16,46 +16,54 @@
       </tr>
       </thead>
       <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
-      <% @recent_deposits.each do |deposit| %>
-        <tr>
-          <td class="px-4 py-2 text-left whitespace-nowrap text-gray-600 dark:text-gray-300">
-            <% date_val =
-                 if deposit[:date].is_a?(String)
-                   begin
-                     DateTime.parse(deposit[:date])
-                   rescue
-                     Time.zone.now
+      <% if can?(:read, Transaction) %>
+        <% @recent_deposits.each do |deposit| %>
+          <tr>
+            <td class="px-4 py-2 text-left whitespace-nowrap text-gray-600 dark:text-gray-300">
+              <% date_val =
+                   if deposit[:date].is_a?(String)
+                     begin
+                       DateTime.parse(deposit[:date])
+                     rescue
+                       Time.zone.now
+                     end
+                   else
+                     deposit[:date]
                    end
-                 else
-                   deposit[:date]
-                 end
-            %>
-            <%= date_val.strftime("%I:%M %p - %B %d, %Y") %>
-          </td>
-          <td class="px-4 py-2 whitespace-nowrap text-left text-gray-600 dark:text-gray-300">
-            <%= deposit[:transaction_id].presence || 'N/A' %>
-          </td>
-          <td class="px-4 py-2 text-left text-blue-600 font-semibold">
-            <%= number_to_percentage(deposit[:interest_rate].to_f, precision: 2) %>
-          </td>
-          <td class="px-4 py-2 text-left text-green-600 font-semibold">
-            <%= number_to_currency(deposit[:amount].to_f) %>
-          </td>
-          <td class="px-4 py-2 text-left text-yellow-600 font-semibold">
-            <%= number_to_currency(deposit[:transaction_cost].to_f) %>
-          </td>
-          <td class="px-4 py-2 text-left text-blue-600 font-semibold">
-            <%= number_to_currency(deposit[:total_cost].to_f) %>
-          </td>
-          <td class="px-6 py-3 text-left">
-            <% current_status = deposit[:status].to_s.strip %>
-            <% if current_status.present? %>
-                <span class="px-2 py-1 text-xs font-semibold rounded-full <%= current_status.downcase == 'success' ? 'bg-green-100 text-green-800' : current_status.downcase == 'pending' ? 'bg-yellow-100 text-yellow-800' : current_status.downcase == 'failed' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800' %>">
-                  <%= current_status.capitalize %>
-                </span>
-            <% else %>
-              <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Pending</span>
-            <% end %>
+              %>
+              <%= date_val.strftime("%I:%M %p - %B %d, %Y") %>
+            </td>
+            <td class="px-4 py-2 whitespace-nowrap text-left text-gray-600 dark:text-gray-300">
+              <%= deposit[:transaction_id].presence || 'N/A' %>
+            </td>
+            <td class="px-4 py-2 text-left text-blue-600 font-semibold">
+              <%= number_to_percentage(deposit[:interest_rate].to_f, precision: 2) %>
+            </td>
+            <td class="px-4 py-2 text-left text-green-600 font-semibold">
+              <%= number_to_currency(deposit[:amount].to_f) %>
+            </td>
+            <td class="px-4 py-2 text-left text-yellow-600 font-semibold">
+              <%= number_to_currency(deposit[:transaction_cost].to_f) %>
+            </td>
+            <td class="px-4 py-2 text-left text-blue-600 font-semibold">
+              <%= number_to_currency(deposit[:total_cost].to_f) %>
+            </td>
+            <td class="px-6 py-3 text-left">
+              <% current_status = deposit[:status].to_s.strip %>
+              <% if current_status.present? %>
+                  <span class="px-2 py-1 text-xs font-semibold rounded-full <%= current_status.downcase == 'success' ? 'bg-green-100 text-green-800' : current_status.downcase == 'pending' ? 'bg-yellow-100 text-yellow-800' : current_status.downcase == 'failed' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800' %>">
+                    <%= current_status.capitalize %>
+                  </span>
+              <% else %>
+                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Pending</span>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      <% else %>
+        <tr>
+          <td colspan="7" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+            No permission to view transactions
           </td>
         </tr>
       <% end %>
@@ -65,7 +73,11 @@
 
   <!-- Button -->
   <div class="mt-4 flex justify-end">
-  <%= link_to "View All Transactions", transactions_path,
-                class: "px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition" %>
+    <% if can?(:read, Transaction) %>
+      <%= link_to "View All Transactions", transactions_path,
+                  class: "px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition" %>
+    <% else %>
+      <span class="px-4 py-2 bg-gray-400 text-white rounded-md cursor-not-allowed">View All Transactions</span>
+    <% end %>
   </div>
 </div>

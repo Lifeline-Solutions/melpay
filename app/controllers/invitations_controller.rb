@@ -1,21 +1,19 @@
 class InvitationsController < Devise::InvitationsController
-  # Ensure the user is authenticated before any action
   before_action :authenticate_user!
+  before_action :authorize_invitation, only: %i[new create]
 
-  # Renders the invitation form
   def new
-    @user = User.new # Initialize a new User object
-    self.resource = @user # Set Devise resource for the form
-    @resource_name = :user # Set resource name for Devise views
+    @user = User.new
+    self.resource = @user
+    @resource_name = :user
   end
 
-  # Handles the invitation creation
   def create
     # Check if the email is blank
     if invite_params[:email].blank?
-      flash.now[:alert] = 'Email cannot be blank.' # Show alert
-      render :new # Re-render the form
-      return # Stop further execution
+      flash.now[:alert] = 'Email cannot be blank.'
+      render :new
+      return
     end
 
     # Check if a user with the same details already exists
@@ -27,45 +25,59 @@ class InvitationsController < Devise::InvitationsController
     )
 
     if existing_user
-      flash[:alert] = 'User already exists.' # Show alert
-      redirect_to new_user_invitation_path # Redirect to invitation form
+      flash[:alert] = 'User already exists.'
+      redirect_to new_user_invitation_path
     else
-      invited_user = nil # Placeholder for the invited user
-      # Invite the user and assign a role
+      invited_user = nil
       User.invite!(invite_params, current_user) do |u|
-        assign_role(u) # Assign role to the invited user
-        invited_user = u # Store the invited user
+        assign_role(u)
+        invited_user = u
       end
 
-      # Check if invitation was successful
       if invited_user.present? && invited_user.errors.blank?
-        redirect_to users_path, notice: 'User has been invited successfully.' # Success redirect
+        redirect_to users_path, notice: 'User has been invited successfully.'
       else
-        flash[:alert] = 'There was an error inviting the user.' # Show error
-        redirect_to new_user_invitation_path # Redirect to invitation form
+        flash[:alert] = 'There was an error inviting the user.'
+        redirect_to new_user_invitation_path
       end
     end
   end
 
   private
 
-  # Strong parameters for invitation (user_pass is generated server-side)
-  def invite_params
-    params.require(:user).permit(:email, :first_name, :last_name, :client_id, roles: [])
+  def authorize_invitation
+    authorize! :invite, User
   end
 
-  # Assigns a role to the user based on the current user's role
+  def invite_params
+    params.require(:user).permit(:email, :first_name, :last_name, :client_id)
+  end
+
   def assign_role(user)
-    return unless params[:role].present? # Skip if no role provided
+    # Get the role from the select_tag :role parameter (root level, not nested under user)
+    role = params[:role]
 
-    role = params[:role] # Get the role from params
-
-    if current_user.has_role?(:admin)
-      user.add_role(role) # Admin can assign any role
-    elsif current_user.has_role?(:project_manager)
-      user.add_role(role) unless role == 'admin' # Project manager can't assign admin
+    if role.present?
+      # Only super_admin can assign super_admin role
+      if role == 'super_admin'
+        if current_user.has_role?(:super_admin)
+          user.add_role(role)
+        else
+          # Downgrade to admin if current user doesn't have permission
+          user.add_role(:admin)
+          Rails.logger.warn "User #{current_user.email} attempted to assign super_admin role without permission"
+        end
+      # Admin can assign admin, auditor, and account_manager roles
+      elsif current_user.has_role?(:admin) || current_user.has_role?(:super_admin)
+        user.add_role(role)
+      else
+        # Default to account_manager if user doesn't have permission for other roles
+        user.add_role(:account_manager)
+        Rails.logger.warn "User #{current_user.email} attempted to assign #{role} role without permission"
+      end
     else
-      user.add_role(role) unless %w[admin project_manager].include?(role) # Others can't assign admin or project_manager
+      # Assign a default role if none is selected
+      user.add_role(:account_manager)
     end
   end
 end
