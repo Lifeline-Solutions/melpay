@@ -70,9 +70,6 @@ class InvitationsController < Devise::InvitationsController
       # Admin can assign admin, auditor, and account_manager roles
       elsif current_user.has_role?(:admin) || current_user.has_role?(:super_admin)
         user.add_role(role)
-      # Regular users can only assign account_manager role
-      elsif role == 'account_manager'
-        user.add_role(role)
       else
         # Default to account_manager if user doesn't have permission for other roles
         user.add_role(:account_manager)
