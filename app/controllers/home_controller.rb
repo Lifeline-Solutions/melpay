@@ -9,7 +9,8 @@ class HomeController < ApplicationController
 
   def index
     # Use accessible_by to scope homes based on user abilities
-    homes_for_list = Home.accessible_by(current_ability).order(created_at: :desc)
+    # Eager load the associated clients to avoid N+1 queries
+    homes_for_list = Home.accessible_by(current_ability).includes(:client).order(created_at: :desc)
 
     @per_page = 20
     @page = (params[:page] || 1).to_i
