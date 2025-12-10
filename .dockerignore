@@ -19,16 +19,12 @@
 /tmp/*
 !/log/.keep
 !/tmp/.keep
-
-# Ignore pidfiles, but keep the directory.
-/tmp/pids/*
 !/tmp/pids/.keep
+!/tmp/storage/.keep
 
 # Ignore storage (uploaded files in development and any SQLite databases).
 /storage/*
 !/storage/.keep
-/tmp/storage/*
-!/tmp/storage/.keep
 
 # Ignore assets.
 /node_modules/
@@ -49,3 +45,17 @@
 # Ignore Docker-related files
 /.dockerignore
 /Dockerfile*
+
+# Ignore test files
+/test/
+/spec/
+
+# Ignore documentation and Excel files
+*.xlsx
+*.md
+!README.md
+
+# Ignore SQL dumps
+*.sql
+
+

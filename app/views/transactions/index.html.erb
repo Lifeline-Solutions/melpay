@@ -1,130 +1,147 @@
 <div class="p-4 sm:ml-64 w-full">
-<h2 class="text-lg font-semibold mb-3">
-    All Transactions
-  </h2>
-  <div class="overflow-x-auto flex-grow">
-    <table class="w-full text-sm text-left">
-      <thead class="bg-gray-200 dark:bg-gray-700">
-      <tr>
-        <th class="px-4 py-2 font-medium">Date</th>
-        <th class="px-4 py-2 font-medium">Document ID</th>
-        <th class="px-4 py-2 font-medium">Transaction ID</th>
-        <th class="px-4 py-2 font-medium">Status</th>
-        <th class="px-4 py-2 font-medium">Commission Type</th>
-        <th class="px-4 py-2 font-medium">Rates</th>
-        <th class="px-4 py-2 font-medium">Transaction Fee</th>
-        <th class="px-4 py-2 font-medium">Amount</th>
-        <th class="px-4 py-2 font-medium">Total Cost</th>
-      </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
-      <% @transactions.each do |transaction| %>
-        <tr>
-          <td class="px-4 py-2">
-            <%= transaction.created_at.strftime("%I:%M:%S %p - %B %d, %Y") %>
-          </td>
-          <td class="px-4 py-2">
-            <%= transaction.home.unique_id %>
-          </td>
-          <td class="px-4 py-2">
-            <%= transaction.transaction_id %>
-          </td>
-          <td class="px-4 py-2">
-            <% current_status = transaction.status.to_s.strip %>
-            <% if current_status.present? %>
-                <span class="px-2 py-1 text-xs font-semibold rounded-full <%= current_status.downcase == 'success' ? 'bg-green-100 text-green-800' : current_status.downcase == 'pending' ? 'bg-yellow-100 text-yellow-800' : current_status.downcase == 'failed' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800' %>">
-                  <%= current_status.capitalize %>
-                </span>
-            <% else %>
-              <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Pending</span>
-            <% end %>
-          </td>
-          <td class="px-4 py-2 capitalize text-center">
-            <% if transaction.applied_commission_type.present?  %>
-              <%= transaction.applied_commission_type %>
-            <% end %>
-          </td>
-          <td class="px-4 py-2 text-green-600 font-semibold">
-            <% if transaction.interest_rate.present? && transaction.interest_rate.to_f != 0 %>
-              <%= number_to_percentage(transaction.interest_rate.to_f, precision: 2) %>
-            <% elsif transaction.applied_commission_value.present? %>
-              <%= number_to_currency(transaction.applied_commission_value) %>
-            <% else %>
-              <span class="text-gray-500">&mdash;</span>
-            <% end %>
-          </td>
-          <td class="px-4 py-2 font-semibold">
-            <%= number_to_currency(transaction.transaction_cost.to_f) %>
-          </td>
-          <td class="px-4 py-2  font-semibold">
-            <%= number_to_currency(transaction.amount.to_f) %>
-          </td>
-          <td class="px-4 py-2  font-semibold">
-            <%= number_to_currency(transaction.total_cost.to_f) %>
-          </td>
-        </tr>
-      <% end %>
-      </tbody>
-    </table>
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-lg font-semibold">
+      All Transactions
+    </h2>
+    <% if can?(:create, Transaction) %>
+      <%= link_to "New Transaction", new_transaction_path, class: "px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition" %>
+    <% end %>
   </div>
 
-  <% if defined?(@total_pages) && @total_pages.to_i > 1 %>
-    <nav class="mt-4 flex items-center justify-end gap-2" aria-label="Pagination">
-      <% prev_disabled = @page.to_i <= 1 %>
-      <% next_disabled = @page.to_i >= @total_pages.to_i %>
-
-      <%# Previous button %>
-      <% if prev_disabled %>
-        <span class="px-3 py-1.5 rounded border border-gray-300 text-gray-400 bg-white dark:bg-gray-800 dark:border-gray-700 cursor-not-allowed">Previous</span>
-      <% else %>
-        <%= link_to 'Previous', transactions_path(page: @page - 1), class: 'px-3 py-1.5 rounded border border-gray-300 bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700' %>
-      <% end %>
-
-      <%# Page number window: show first, last, and a small window around current %>
-      <% window = 1 %>
-      <% first_page = 1 %>
-      <% last_page  = @total_pages.to_i %>
-      <% start_page = [@page.to_i - window, first_page].max %>
-      <% end_page   = [@page.to_i + window, last_page].min %>
-
-      <%# Ensure at least a small set when near edges %>
-      <% start_page = [start_page, last_page - (window * 2)].min if last_page > (window * 2) %>
-      <% start_page = [start_page, first_page].max %>
-      <% end_page   = [end_page, start_page + (window * 2)].min %>
-
-      <%# Always show first page %>
-      <% if start_page > first_page %>
-        <%= link_to first_page, transactions_path(page: first_page), class: 'px-3 py-1.5 rounded border border-gray-300 bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700' %>
-        <% if start_page > first_page + 1 %>
-          <span class="px-2 text-gray-500">&hellip;</span>
+  <% if can?(:read, Transaction) %>
+    <div class="overflow-x-auto flex-grow">
+      <table class="w-full text-sm text-left">
+        <thead class="bg-gray-200 dark:bg-gray-700">
+        <tr>
+          <th class="px-4 py-2 font-medium">Date</th>
+          <th class="px-4 py-2 font-medium">Document ID</th>
+          <th class="px-4 py-2 font-medium">Transaction ID</th>
+          <th class="px-4 py-2 font-medium">Status</th>
+          <th class="px-4 py-2 font-medium">Commission Type</th>
+          <th class="px-4 py-2 font-medium">Rates</th>
+          <th class="px-4 py-2 font-medium">Transaction Fee</th>
+          <th class="px-4 py-2 font-medium">Amount</th>
+          <th class="px-4 py-2 font-medium">Total Cost</th>
+        </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+        <% @transactions.each do |transaction| %>
+          <tr>
+            <td class="px-4 py-2">
+              <%= transaction.created_at.strftime("%I:%M:%S %p - %B %d, %Y") %>
+            </td>
+            <td class="px-4 py-2">
+              <%= transaction.home&.unique_id || 'N/A' %>
+            </td>
+            <td class="px-4 py-2">
+              <%= transaction.transaction_id %>
+            </td>
+            <td class="px-4 py-2">
+              <% current_status = transaction.status.to_s.strip %>
+              <% if current_status.present? %>
+                  <span class="px-2 py-1 text-xs font-semibold rounded-full <%= current_status.downcase == 'success' ? 'bg-green-100 text-green-800' : current_status.downcase == 'pending' ? 'bg-yellow-100 text-yellow-800' : current_status.downcase == 'failed' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800' %>">
+                    <%= current_status.capitalize %>
+                  </span>
+              <% else %>
+                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Pending</span>
+              <% end %>
+            </td>
+            <td class="px-4 py-2 capitalize text-center">
+              <% if transaction.applied_commission_type.present?  %>
+                <%= transaction.applied_commission_type %>
+              <% end %>
+            </td>
+            <td class="px-4 py-2 text-green-600 font-semibold">
+              <% if transaction.interest_rate.present? && transaction.interest_rate.to_f != 0 %>
+                <%= number_to_percentage(transaction.interest_rate.to_f, precision: 2) %>
+              <% elsif transaction.applied_commission_value.present? %>
+                <%= number_to_currency(transaction.applied_commission_value) %>
+              <% else %>
+                <span class="text-gray-500">&mdash;</span>
+              <% end %>
+            </td>
+            <td class="px-4 py-2 font-semibold">
+              <%= number_to_currency(transaction.transaction_cost.to_f) %>
+            </td>
+            <td class="px-4 py-2  font-semibold">
+              <%= number_to_currency(transaction.amount.to_f) %>
+            </td>
+            <td class="px-4 py-2  font-semibold">
+              <%= number_to_currency(transaction.total_cost.to_f) %>
+            </td>
+          </tr>
         <% end %>
-      <% end %>
+        </tbody>
+      </table>
+    </div>
 
-      <% (start_page..end_page).each do |p| %>
-        <% if p == @page.to_i %>
-          <span class="px-3 py-1.5 rounded border border-blue-600 bg-blue-600 text-white"> <%= p %> </span>
+    <% if @transactions.empty? %>
+      <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+        No transactions found
+      </div>
+    <% end %>
+
+    <% if defined?(@total_pages) && @total_pages.to_i > 1 %>
+      <nav class="mt-4 flex items-center justify-end gap-2" aria-label="Pagination">
+        <% prev_disabled = @page.to_i <= 1 %>
+        <% next_disabled = @page.to_i >= @total_pages.to_i %>
+
+        <%# Previous button %>
+        <% if prev_disabled %>
+          <span class="px-3 py-1.5 rounded border border-gray-300 text-gray-400 bg-white dark:bg-gray-800 dark:border-gray-700 cursor-not-allowed">Previous</span>
         <% else %>
-          <%= link_to p, transactions_path(page: p), class: 'px-3 py-1.5 rounded border border-gray-300 bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700' %>
+          <%= link_to 'Previous', transactions_path(page: @page - 1), class: 'px-3 py-1.5 rounded border border-gray-300 bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700' %>
         <% end %>
-      <% end %>
 
-      <%# Always show last page %>
-      <% if end_page < last_page %>
-        <% if end_page < last_page - 1 %>
-          <span class="px-2 text-gray-500">&hellip;</span>
+        <%# Page number window: show first, last, and a small window around current %>
+        <% window = 1 %>
+        <% first_page = 1 %>
+        <% last_page  = @total_pages.to_i %>
+        <% start_page = [@page.to_i - window, first_page].max %>
+        <% end_page   = [@page.to_i + window, last_page].min %>
+
+        <%# Ensure at least a small set when near edges %>
+        <% start_page = [start_page, last_page - (window * 2)].min if last_page > (window * 2) %>
+        <% start_page = [start_page, first_page].max %>
+        <% end_page   = [end_page, start_page + (window * 2)].min %>
+
+        <%# Always show first page %>
+        <% if start_page > first_page %>
+          <%= link_to first_page, transactions_path(page: first_page), class: 'px-3 py-1.5 rounded border border-gray-300 bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700' %>
+          <% if start_page > first_page + 1 %>
+            <span class="px-2 text-gray-500">&hellip;</span>
+          <% end %>
         <% end %>
-        <%= link_to last_page, transactions_path(page: last_page), class: 'px-3 py-1.5 rounded border border-gray-300 bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700' %>
-      <% end %>
 
-      <%# Next button %>
-      <% if next_disabled %>
-        <span class="px-3 py-1.5 rounded border border-gray-300 text-gray-400 bg-white dark:bg-gray-800 dark:border-gray-700 cursor-not-allowed">Next</span>
-      <% else %>
-        <%= link_to 'Next', transactions_path(page: @page + 1), class: 'px-3 py-1.5 rounded border border-gray-300 bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700' %>
-      <% end %>
+        <% (start_page..end_page).each do |p| %>
+          <% if p == @page.to_i %>
+            <span class="px-3 py-1.5 rounded border border-blue-600 bg-blue-600 text-white"> <%= p %> </span>
+          <% else %>
+            <%= link_to p, transactions_path(page: p), class: 'px-3 py-1.5 rounded border border-gray-300 bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700' %>
+          <% end %>
+        <% end %>
 
-      <span class="ml-2 text-sm text-gray-500">Page <%= @page %> of <%= @total_pages %></span>
-    </nav>
+        <%# Always show last page %>
+        <% if end_page < last_page %>
+          <% if end_page < last_page - 1 %>
+            <span class="px-2 text-gray-500">&hellip;</span>
+          <% end %>
+          <%= link_to last_page, transactions_path(page: last_page), class: 'px-3 py-1.5 rounded border border-gray-300 bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700' %>
+        <% end %>
+
+        <%# Next button %>
+        <% if next_disabled %>
+          <span class="px-3 py-1.5 rounded border border-gray-300 text-gray-400 bg-white dark:bg-gray-800 dark:border-gray-700 cursor-not-allowed">Next</span>
+        <% else %>
+          <%= link_to 'Next', transactions_path(page: @page + 1), class: 'px-3 py-1.5 rounded border border-gray-300 bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700' %>
+        <% end %>
+
+        <span class="ml-2 text-sm text-gray-500">Page <%= @page %> of <%= @total_pages %></span>
+      </nav>
+    <% end %>
+  <% else %>
+    <div class="flex items-center justify-center h-48 bg-gray-50 dark:bg-gray-800 rounded-lg">
+      <p class="text-gray-500 dark:text-gray-400">You don't have permission to view transactions</p>
+    </div>
   <% end %>
-
 </div>

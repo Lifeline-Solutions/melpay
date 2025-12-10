@@ -33,7 +33,7 @@ Rails.application.configure do
   config.force_ssl = true
 
   # Skip http-to-https redirect for the default health check endpoint.
-  # config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
+  config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
 
   # Log to STDOUT with the current request id as a default log tag.
   config.log_tags = [ :request_id ]
@@ -54,6 +54,28 @@ Rails.application.configure do
   # Replace the default in-process and non-durable queuing backend for Active Job.
   config.active_job.queue_adapter = :solid_queue
   config.solid_queue.connects_to = { database: { writing: :queue } }
+
+  # Fallback: if the 'cache' database isn't configured (which would raise during Solid Cache initialization),
+  # remap Solid Cache to use the primary database to allow the app to boot. This prevents health check failures.
+  begin
+    cache_db_config = ActiveRecord::Base.configurations.configs_for(env_name: Rails.env, name: 'cache')
+    if cache_db_config.blank?
+      config.after_initialize do
+        Rails.logger.warn("[startup] 'cache' database config missing; falling back to :primary for Solid Cache")
+        SolidCache::Record.connects_to database: { writing: :primary } if defined?(SolidCache::Record)
+      end
+    else
+      # Normal mapping (SolidCache defaults to :cache). Explicit reinforcement for clarity.
+      config.after_initialize do
+        SolidCache::Record.connects_to database: { writing: :cache } if defined?(SolidCache::Record)
+      end
+    end
+  rescue StandardError => e
+    config.after_initialize do
+      Rails.logger.warn("[startup] Failed evaluating cache DB config (#{e.class}: #{e.message}); using :primary fallback for Solid Cache")
+      SolidCache::Record.connects_to database: { writing: :primary } if defined?(SolidCache::Record)
+    end
+  end
 
   # Ignore bad email addresses and do not raise email delivery errors.
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.

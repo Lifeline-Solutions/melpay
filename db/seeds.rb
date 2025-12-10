@@ -17,15 +17,21 @@ Role.find_or_create_by!(name: 'admin')
 Role.find_or_create_by!(name: 'auditor')
 Role.find_or_create_by!(name: 'account_manager')
 
-client = Client.find_or_create_by!(name: 'Solidus', email: 'admin@solidus.com', credit: 10000)
+client = Client.find_or_create_by!(name: 'Solidus') do |c|
+  c.email = 'admin@solidus.com'
+  c.credit = 10000
+end
 
-user = User.create!(
-  email: 'abolger254@gmail.com',
-  password: 'password',
-  confirmed_at: DateTime.now,
-  confirmation_sent_at: DateTime.now,
-  first_name: 'Jay',
-  last_name: 'Admin',
-  client: client
+user = User.find_or_initialize_by(email: 'abolger254@gmail.com')
+user.assign_attributes(
+  password: user.encrypted_password.present? ? user.password : 'password',
+  confirmed_at: user.confirmed_at || DateTime.now,
+  confirmation_sent_at: user.confirmation_sent_at || DateTime.now,
+  first_name: user.first_name.presence || 'Jay',
+  last_name: user.last_name.presence || 'Admin',
+  client: user.client || client,
+  user_pass: user.user_pass.presence || 'Great'  # Set user_pass when creating the user
 )
-user.add_role(:super_admin)
+
+user.save!
+user.add_role(:super_admin) unless user.has_role?(:super_admin)

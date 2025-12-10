@@ -10,19 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_10_30_081857) do
+ActiveRecord::Schema[8.1].define(version: 2025_11_20_132253) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
-
-  create_table "accounts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.string "account_number"
-    t.string "account_type"
-    t.decimal "balance"
-    t.uuid "client_id", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["client_id"], name: "index_accounts_on_client_id"
-  end
+  enable_extension "pgcrypto"
 
   create_table "active_storage_attachments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "blob_id", null: false
@@ -55,7 +46,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_10_30_081857) do
   create_table "clients", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "commission_type"
     t.datetime "created_at", null: false
-    t.decimal "credit", precision: 15, scale: 2, default: "0.0", null: false
+    t.float "credit"
     t.decimal "custom_interest_rate", precision: 5, scale: 2
     t.string "email"
     t.decimal "fixed_commission_amount", precision: 10, scale: 2
@@ -88,6 +79,26 @@ ActiveRecord::Schema[8.1].define(version: 2025_10_30_081857) do
     t.datetime "updated_at", null: false
     t.index ["homes_id"], name: "index_homes_transactions_on_homes_id"
     t.index ["transactions_id"], name: "index_homes_transactions_on_transactions_id"
+  end
+
+  create_table "login_events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "ip"
+    t.string "session_id"
+    t.datetime "updated_at", null: false
+    t.string "user_agent"
+    t.uuid "user_id", null: false
+    t.index ["user_id"], name: "index_login_events_on_user_id"
+  end
+
+  create_table "logout_events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "ip"
+    t.string "session_id"
+    t.datetime "updated_at", null: false
+    t.string "user_agent"
+    t.uuid "user_id", null: false
+    t.index ["user_id"], name: "index_logout_events_on_user_id"
   end
 
   create_table "roles", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -167,6 +178,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_10_30_081857) do
     t.string "unconfirmed_email"
     t.string "unlock_token"
     t.datetime "updated_at", null: false
+    t.string "user_pass"
     t.index ["client_id"], name: "index_users_on_client_id"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
@@ -175,6 +187,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_10_30_081857) do
     t.index ["invited_by_type", "invited_by_id"], name: "index_users_on_invited_by"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["unlock_token"], name: "index_users_on_unlock_token", unique: true
+    t.index ["user_pass"], name: "index_users_on_user_pass", unique: true
   end
 
   create_table "users_roles", id: false, force: :cascade do |t|
@@ -185,12 +198,27 @@ ActiveRecord::Schema[8.1].define(version: 2025_10_30_081857) do
     t.index ["user_id"], name: "index_users_roles_on_user_id"
   end
 
-  add_foreign_key "accounts", "clients"
+  create_table "versions", force: :cascade do |t|
+    t.datetime "created_at"
+    t.string "event", null: false
+    t.string "ip"
+    t.string "item_id", null: false
+    t.string "item_type", null: false
+    t.jsonb "object_changes"
+    t.string "request_id"
+    t.string "user_agent"
+    t.string "whodunnit"
+    t.uuid "whodunnit_uuid"
+    t.index ["item_type", "item_id"], name: "index_versions_on_item_type_and_item_id"
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "homes", "clients"
   add_foreign_key "homes", "users"
   add_foreign_key "homes_transactions", "homes", column: "homes_id"
   add_foreign_key "homes_transactions", "transactions", column: "transactions_id"
+  add_foreign_key "login_events", "users"
+  add_foreign_key "logout_events", "users"
   add_foreign_key "users", "clients"
 end

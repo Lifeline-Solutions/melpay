@@ -18,9 +18,7 @@ class ClientsController < ApplicationController
     @clients = @clients.offset((@page - 1) * @per_page).limit(@per_page)
   end
 
-  def show
-    @client_accounts = @client.accounts
-  end
+  def show; end
 
   def new
     @client = Client.new
@@ -53,11 +51,13 @@ class ClientsController < ApplicationController
   end
 
   def approve_kyc
+    authorize! :approve_kyc, @client
     @client.update(kyc_status: 'approved', kyc_verified_at: Time.current)
     redirect_to @client, notice: 'KYC approved.'
   end
 
   def reject_kyc
+    authorize! :reject_kyc, @client
     @client.update(kyc_status: 'rejected')
     redirect_to @client, alert: "Client '#{@client}' KYC rejected."
   end

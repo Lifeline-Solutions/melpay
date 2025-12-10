@@ -8,9 +8,9 @@ class HomeController < ApplicationController
   before_action :set_home, only: %i[show edit update destroy pay_single_deposit pay_all_deposits]
 
   def index
-    homes_for_list = Home.all.order(created_at: :desc)
-    @accounts_count = Account.count
-    @account_types = Account.distinct.pluck(:account_type)
+    # Use accessible_by to scope homes based on user abilities
+    # Eager load the associated clients to avoid N+1 queries
+    homes_for_list = Home.accessible_by(current_ability).includes(:client).order(created_at: :desc)
 
     @per_page = 20
     @page = (params[:page] || 1).to_i
@@ -32,52 +32,27 @@ class HomeController < ApplicationController
     credits_over_time = Hash.new(0)
     transaction_costs_over_time = Hash.new(0)
 
-    # Initialize success and failed transaction counts
-    @success_count = Transaction.where(status: 'success').count
-    @failed_count = Transaction.where(status: 'failed').count
+    # Initialize success and failed transaction counts with authorization and client scoping
+    if can?(:read, Transaction)
+      transaction_scope = Transaction.accessible_by(current_ability)
 
-    # Helper for spreadsheet parsing
-    def parse_spreadsheet(home)
-      return { deposits: [], deposit_sum: 0, deposit_count: 0, interest: 0 } unless home.document.attached?
+      # For non-super admins, scope to their client
+      transaction_scope = transaction_scope.where(client_id: current_user.client_id) unless current_user.has_role?(:super_admin)
 
-      Tempfile.create(['uploaded_file', ".#{home.document.filename.extension}"]) do |tempfile|
-        content = home.document.download.force_encoding('UTF-8')
-        tempfile.write(content)
-        tempfile.rewind
-        spreadsheet = case home.document.filename.extension
-                      when 'csv' then Roo::CSV.new(tempfile.path)
-                      when 'xls' then Roo::Excel.new(tempfile.path)
-                      when 'xlsx' then Roo::Excelx.new(tempfile.path)
-                      end
-        return { deposits: [], deposit_sum: 0, deposit_count: 0, interest: 0 } unless spreadsheet
-
-        header = spreadsheet.row(1).map(&:to_s)
-        deposits = []
-        count_key = header.find { |h| h.to_s.strip.downcase == 'count' }
-        (2..spreadsheet.last_row).each do |i|
-          row = [header, spreadsheet.row(i)].transpose.to_h
-          next unless row['type'] && row['amount']
-
-          deposits << row if row['type'].to_s.strip.downcase == 'deposit'
-        end
-        deposit_sum = deposits.sum { |d| d['amount'].to_f }
-        deposit_count = if count_key
-                          deposits.map { |d| d[count_key].to_i }.uniq.sum
-                        else
-                          deposits.size
-                        end
-        client = home.client
-        interest_rate = client&.applied_interest_rate.to_f
-        interest = deposit_sum * (interest_rate / 100.0)
-        { deposits: deposits, deposit_sum: deposit_sum, deposit_count: deposit_count, interest: interest }
-      end
-    rescue StandardError
-      { deposits: [], deposit_sum: 0, deposit_count: 0, interest: 0 }
+      @success_count = transaction_scope.where(status: 'success').count
+      @failed_count = transaction_scope.where(status: 'failed').count
+    else
+      @success_count = 0
+      @failed_count = 0
     end
 
     # Compute per-home and per-date totals
     @homes.each do |home|
-      result = parse_spreadsheet(home)
+      # Ensure user can read this specific home
+      authorize! :read, home
+
+      # Use ALL rows from the spreadsheet, not just those matching current_user.user_pass
+      result = parse_spreadsheet_for_dashboard(home)
       @totals_deposits[home.id] = result[:deposit_sum]
       @total_deposit_count[home.id] = result[:deposit_count]
       @deposit_interest[home.id] = result[:interest]
@@ -93,17 +68,34 @@ class HomeController < ApplicationController
       totals_deposits_over_time[date] += result[:deposit_sum]
 
       # Add client credits to credits_over_time
+      next unless can?(:read, Client)
+
       client = home.client
-      credits_over_time[date] += client.credit.to_f if client&.credit
+      # Only include client credit if super admin or if client matches user's client
+      # Proper authorization check
+      next unless current_user.has_role?(:super_admin) || (client && client.id == current_user.client_id)
+
+      begin
+        authorize! :read, client if client
+        credits_over_time[date] += client.credit.to_f if client&.credit
+      rescue CanCan::AccessDenied
+        # Skip if user cannot read this client
+      end
     end
 
     @total_deposits_sum = @totals_deposits.values.sum.to_f
 
     # Calculate transaction costs over time from successful transactions
-    successful_transactions = Transaction.where(status: 'success', is_latest: true)
-    successful_transactions.each do |transaction|
-      date = transaction.created_at.to_date
-      transaction_costs_over_time[date] += transaction.total_cost.to_f
+    if can?(:read, Transaction)
+      transaction_scope = Transaction.accessible_by(current_ability).where(status: 'success', is_latest: true)
+
+      # For non-super admins, scope to their client
+      transaction_scope = transaction_scope.where(client_id: current_user.client_id) unless current_user.has_role?(:super_admin)
+
+      transaction_scope.each do |transaction|
+        date = transaction.created_at.to_date
+        transaction_costs_over_time[date] += transaction.total_cost.to_f
+      end
     end
 
     # Build time-series for chart
@@ -123,20 +115,29 @@ class HomeController < ApplicationController
       @transaction_costs_over_time = date_range.to_h { |d| [d.strftime('%Y-%m-%d'), transaction_costs_over_time[d].to_f] }
     end
 
-    # Collect recent deposits (limit 5)
-    @recent_deposits = Transaction.order(created_at: :desc).limit(5).map do |transaction|
-      {
-        date: transaction.created_at,
-        amount: transaction.amount,
-        transaction_id: transaction.transaction_id,
-        transaction_cost: transaction.transaction_cost,
-        interest_rate: transaction.interest_rate || 0.0,
-        total_cost: transaction.total_cost,
-        status: transaction.status
-      }
+    # Collect recent deposits (limit 5) with authorization and client scoping
+    if can?(:read, Transaction)
+      transaction_scope = Transaction.accessible_by(current_ability).order(created_at: :desc)
+
+      # For non-super admins, scope to their client
+      transaction_scope = transaction_scope.where(client_id: current_user.client_id) unless current_user.has_role?(:super_admin)
+
+      @recent_deposits = transaction_scope.limit(5).map do |transaction|
+        {
+          date: transaction.created_at,
+          amount: transaction.amount,
+          transaction_id: transaction.transaction_id,
+          transaction_cost: transaction.transaction_cost,
+          interest_rate: transaction.interest_rate || 0.0,
+          total_cost: transaction.total_cost,
+          status: transaction.status
+        }
+      end
+    else
+      @recent_deposits = []
     end
 
-    # Chart series with all three metrics (Money in, MOney out, Deposits)
+    # Chart series with all three metrics (Money in, Money out, Deposits)
     @chart_series = [
       { name: 'Deposits', data: @totals_deposits_over_time },
       { name: 'Money In (Credits)', data: @credits_over_time },
@@ -166,6 +167,10 @@ class HomeController < ApplicationController
 
   def show
     @file = @home
+
+    # Authorize access to this specific home
+    authorize! :read, @home
+
     return unless @file.document.attached?
 
     # Check if this file has already been processed
@@ -178,7 +183,15 @@ class HomeController < ApplicationController
       @total_deposit_count = @deposits.count
 
       client = @home.client || current_user.client
-      interest_rate = client&.applied_interest_rate.to_f
+
+      # Authorize access to client if present
+      if client && can?(:read, Client)
+        authorize! :read, client
+        interest_rate = client.applied_interest_rate.to_f
+      else
+        interest_rate = 0.0
+      end
+
       @deposit_interest = @total_deposits * (interest_rate / 100.0)
       @total_cost = @total_deposits + @deposit_interest
 
@@ -203,14 +216,29 @@ class HomeController < ApplicationController
       # Get client and generate prefix for transaction IDs
       client = @home.client || current_user.client
 
+      # Authorize access to client if present
+      authorize! :read, client if client && can?(:read, Client)
+
       (2..spreadsheet.last_row).each do |i|
         row = [header, spreadsheet.row(i)].transpose.to_h
-        next unless row['type'] && row['amount'] && row['phone number']
+        # require an amount; skip otherwise
+        next unless row['amount']
 
-        case row['type']&.strip&.downcase
-        when 'deposit'
-          @deposits << row
-        end
+        # Determine display_name: prefer `name` header if present, otherwise the `type` column
+        display_name = if header.map(&:to_s).map(&:strip).map(&:downcase).include?('name')
+                         row['name'].to_s.strip
+                       else
+                         row['type'].to_s.strip
+                       end
+
+        # Only include the row if the spreadsheet's display_name exactly matches current_user.user_pass
+        # (case-insensitive). If not present or not matching, skip the row entirely.
+        next unless current_user.present? && display_name.present? && display_name.downcase == current_user.user_pass.to_s.strip.downcase
+
+        # At this point the row is allowed — set the type to the matched display_name for clarity
+        row['type'] = display_name
+
+        @deposits << row
       end
 
       # Number/count the deposits
@@ -228,7 +256,10 @@ class HomeController < ApplicationController
 
       # Find the highest existing transaction ID number for this client
       max_number = 0
-      Home.where(client_id: client&.id).find_each do |home|
+
+      # Scope homes by user ability when searching for existing transaction IDs
+      home_scope = Home.accessible_by(current_ability).where(client_id: client&.id)
+      home_scope.find_each do |home|
         next unless home.processed_deposits.is_a?(Array)
 
         home.processed_deposits.each do |deposit|
@@ -248,10 +279,12 @@ class HomeController < ApplicationController
       # Save the processed deposits with their unique IDs to prevent re-processing
       @home.update(processed_deposits: @deposits)
 
-      # Total number of deposits in distinct counts, only for type 'deposit'
-      @total_deposit_count = @deposits.select { |d| d['type'].to_s.strip.downcase == 'deposit' }
-        .map { |d| d['count'].to_i }
-        .count
+      # Total number of deposits: prefer distinct-sum of provided 'count' column when available
+      @total_deposit_count = if @deposits.any? && @deposits.first.key?('count')
+                               @deposits.map { |d| d['count'].to_i }.uniq.sum
+                             else
+                               @deposits.size
+                             end
 
       # Calculate total deposits
       @total_deposits = @deposits.sum { |d| d['amount'].to_f }
@@ -263,6 +296,10 @@ class HomeController < ApplicationController
       # Total cost of the transaction will be the totals deposits + interest
       @total_cost = @total_deposits + @deposit_interest
     end
+  rescue CanCan::AccessDenied
+    flash.now[:alert] = 'You are not authorized to access this resource.'
+    redirect_to homes_path
+    nil
   rescue StandardError => e
     flash.now[:alert] = "Error processing file: #{e.message}"
     @deposits = []
@@ -311,6 +348,43 @@ class HomeController < ApplicationController
     # Allow retry if previous is failed, but prevent duplicate OTP triggers for already pending transaction
     existing_pending = Transaction.find_by(home_id: @home.id, transaction_id: deposit_transaction_id, status: 'pending', is_latest: true)
     if existing_pending
+      # Ensure snapshot reflects pending state and reuse the same pending transaction id in session
+      begin
+        client = @home.client || current_user.client
+        deposit_amount = deposit['amount'].to_f
+        interest_rate = client&.applied_interest_rate.to_f
+        transaction_cost = if client&.fixed?
+                             client.effective_commission_value.to_f
+                           else
+                             deposit_amount * (interest_rate / 100.0)
+                           end
+
+        deposit['status'] = 'pending'
+        deposit['transaction_cost'] = transaction_cost
+        deposit['applied_interest_rate'] = interest_rate
+        deposit['applied_commission_type'] = client&.effective_commission_type
+        deposit['applied_commission_value'] = client&.effective_commission_value
+        deposit['transaction_processed_at'] = Time.current.iso8601
+        @home.processed_deposits = deposits
+        @home.save!
+      rescue StandardError => e
+        Rails.logger.warn "Failed to update snapshot for existing pending #{deposit_transaction_id}: #{e.message}"
+      end
+
+      # Reuse the same pending transaction and send OTP again to avoid user being stuck
+      session[:pending_transaction_id] = existing_pending.id
+      session[:pending_transaction_home_id] = @home.id
+
+      current_user.generate_otp!
+      UserMailer.with(user: current_user).send_otp.deliver_later
+      if current_user.phone_number.present?
+        begin
+          SmsSender.send_otp(current_user.phone_number, current_user.otp_code)
+        rescue StandardError => e
+          Rails.logger.warn("Failed to send SMS OTP for transaction #{deposit_transaction_id}: #{e.message}")
+        end
+      end
+
       respond_to do |format|
         format.html { redirect_to verify_otp_path, notice: 'OTP already sent. Please enter the code to confirm this payment.' }
         format.json { render json: { pending: true, message: 'OTP already sent to your email.' }, status: :ok }
@@ -374,6 +448,21 @@ class HomeController < ApplicationController
                            end
 
       transaction_record.save!
+
+      # Update the deposit snapshot to reflect pending state immediately
+      begin
+        deposit['status'] = 'pending'
+        deposit['transaction_cost'] = transaction_record.transaction_cost
+        deposit['applied_interest_rate'] = transaction_record.interest_rate
+        deposit['applied_commission_type'] = transaction_record.applied_commission_type
+        deposit['applied_commission_value'] = transaction_record.applied_commission_value
+        deposit['transaction_processed_at'] = Time.current.iso8601
+        @home.processed_deposits = deposits
+        @home.save!
+      rescue StandardError => e
+        Rails.logger.warn "Failed to update home snapshot for pending #{deposit_transaction_id}: #{e.message}"
+      end
+
       # Store pending transaction id in session so the 2FA verify step can finalize it
       session[:pending_transaction_id] = transaction_record.id
       session[:pending_transaction_home_id] = @home.id
@@ -420,24 +509,54 @@ class HomeController < ApplicationController
 
     pending_ids = []
     recorded_count = 0
+    skipped_invalid = 0
+    skipped_success = 0
 
     @home.processed_deposits.each do |deposit|
+      deposit_amount = deposit['amount'].to_f
+
+      # Count and skip invalid amounts
+      if deposit_amount < 1
+        skipped_invalid += 1
+        next
+      end
+
       # Skip if already successful (completed transactions cannot be changed)
       existing_success = Transaction.where(
         home_id: @home.id,
         transaction_id: deposit['transaction_id'],
         status: 'success'
       ).exists?
-      next if existing_success
+      if existing_success
+        skipped_success += 1
+        next
+      end
 
-      # Prevent duplicate OTP triggers for already pending transaction
+      # If already pending, reuse the same transaction instead of skipping
       existing_pending = Transaction.find_by(home_id: @home.id, transaction_id: deposit['transaction_id'], status: 'pending', is_latest: true)
-      next if existing_pending
+      if existing_pending
+        # Update snapshot to reflect pending state (ensure consistency)
+        begin
+          calc_rate = client&.fixed? ? nil : interest_rate
+          transaction_cost = if client&.fixed?
+                               client.effective_commission_value.to_f
+                             else
+                               (deposit_amount * (calc_rate / 100.0))
+                             end
+          deposit['status'] = 'pending'
+          deposit['transaction_cost'] = transaction_cost
+          deposit['applied_interest_rate'] = (calc_rate || 0.0)
+          deposit['applied_commission_type'] = client&.effective_commission_type
+          deposit['applied_commission_value'] = client&.effective_commission_value
+          deposit['transaction_processed_at'] = Time.current.iso8601
+        rescue StandardError => e
+          Rails.logger.warn "Failed to update snapshot for existing pending #{deposit['transaction_id']}: #{e.message}"
+        end
 
-      deposit_amount = deposit['amount'].to_f
-
-      # Skip invalid (zero or negative) amounts
-      next if deposit_amount <= 0
+        pending_ids << existing_pending.id
+        recorded_count += 1
+        next
+      end
 
       # Compute transaction cost using the exact same logic as pay_single_deposit
       transaction_cost = if client.fixed?
@@ -519,10 +638,21 @@ class HomeController < ApplicationController
         end
       end
     else
+      # Determine appropriate message based on what was skipped
+      error_message = if skipped_success.positive? && skipped_invalid.zero?
+                        'All deposits have already been processed successfully.'
+                      elsif skipped_invalid.positive? && skipped_success.zero?
+                        'No valid transactions available. All deposits have invalid amounts (less than 1).'
+                      elsif skipped_success.positive? && skipped_invalid.positive?
+                        'No transactions to process. All deposits are either completed or have invalid amounts.'
+                      else
+                        'No transactions available to process.'
+                      end
+
       respond_to do |format|
-        format.html { redirect_to home_path(@home), alert: 'No transactions available to process.' }
-        format.json { render json: { error: 'No transactions available' }, status: :unprocessable_entity }
-        format.turbo_stream { render turbo_stream: turbo_stream.replace('twofa-modal', partial: 'home/twofa_modal_error', locals: { error: 'No transactions available' }) }
+        format.html { redirect_to home_path(@home), alert: error_message }
+        format.json { render json: { error: error_message }, status: :unprocessable_entity }
+        format.turbo_stream { render turbo_stream: turbo_stream.replace('twofa-modal', partial: 'home/twofa_modal_error', locals: { error: error_message }) }
       end
     end
   end
@@ -538,6 +668,58 @@ class HomeController < ApplicationController
 
   private
 
+  # This method will Parse spreadsheet for dashboard display (shows ALL rows for users in the same client)
+  def parse_spreadsheet_for_dashboard(home)
+    return { deposits: [], deposit_sum: 0, deposit_count: 0, interest: 0 } unless home.document.attached?
+
+    Tempfile.create(['uploaded_file', ".#{home.document.filename.extension}"]) do |tempfile|
+      content = home.document.download.force_encoding('UTF-8')
+      tempfile.write(content)
+      tempfile.rewind
+      spreadsheet = case home.document.filename.extension
+                    when 'csv' then Roo::CSV.new(tempfile.path)
+                    when 'xls' then Roo::Excel.new(tempfile.path)
+                    when 'xlsx' then Roo::Excelx.new(tempfile.path)
+                    end
+      return { deposits: [], deposit_sum: 0, deposit_count: 0, interest: 0 } unless spreadsheet
+
+      header = spreadsheet.row(1).map(&:to_s)
+      deposits = []
+      count_key = header.find { |h| h.to_s.strip.downcase == 'count' }
+      name_key = header.find { |h| h.to_s.strip.downcase == 'name' }
+
+      (2..spreadsheet.last_row).each do |i|
+        row = [header, spreadsheet.row(i)].transpose.to_h
+        next unless row['amount']
+
+        # Determine display_name: prefer `name` column if present, otherwise the `type` column
+        display_name = (name_key ? row[name_key] : row['type']).to_s.strip
+
+        # FIXED: Include ALL rows for dashboard display, not filtered by user_pass
+        # Only filter out rows with blank display names
+        next unless display_name.present?
+
+        # Set type to the display_name
+        row['type'] = display_name
+        deposits << row
+      end
+
+      deposit_sum = deposits.sum { |d| d['amount'].to_f }
+      deposit_count = if count_key
+                        deposits.map { |d| d[count_key].to_i }.uniq.sum
+                      else
+                        deposits.size
+                      end
+
+      client = home.client
+      interest_rate = client&.applied_interest_rate.to_f
+      interest = deposit_sum * (interest_rate / 100.0)
+      { deposits: deposits, deposit_sum: deposit_sum, deposit_count: deposit_count, interest: interest }
+    end
+  rescue StandardError
+    { deposits: [], deposit_sum: 0, deposit_count: 0, interest: 0 }
+  end
+
   def set_home
     @home = Home.find(params[:id])
   rescue ActiveRecord::RecordNotFound
@@ -546,5 +728,61 @@ class HomeController < ApplicationController
 
   def home_params
     params.require(:home).permit(:name, :credit, :document, :client_id, :user_id, :unique_id)
+  end
+
+  # Parse the attached spreadsheet for a single Home and return deposit rows and aggregates.
+  # Behavior:
+  # - A row is considered a deposit if the spreadsheet's `type` column equals 'deposit' (case-insensitive).
+  # - The displayed `type` value is taken from the spreadsheet `name` column (if present) or the `type` column otherwise.
+  # - That displayed `type` is only kept (not nil'd) when it exactly matches `current_user.user_pass` (case-insensitive).
+  # - Otherwise the `type` value is set to nil (hidden).
+  def parse_spreadsheet(home)
+    return { deposits: [], deposit_sum: 0, deposit_count: 0, interest: 0 } unless home.document.attached?
+
+    Tempfile.create(['uploaded_file', ".#{home.document.filename.extension}"]) do |tempfile|
+      content = home.document.download.force_encoding('UTF-8')
+      tempfile.write(content)
+      tempfile.rewind
+      spreadsheet = case home.document.filename.extension
+                    when 'csv' then Roo::CSV.new(tempfile.path)
+                    when 'xls' then Roo::Excel.new(tempfile.path)
+                    when 'xlsx' then Roo::Excelx.new(tempfile.path)
+                    end
+      return { deposits: [], deposit_sum: 0, deposit_count: 0, interest: 0 } unless spreadsheet
+
+      header = spreadsheet.row(1).map(&:to_s)
+      deposits = []
+      count_key = header.find { |h| h.to_s.strip.downcase == 'count' }
+      name_key = header.find { |h| h.to_s.strip.downcase == 'name' }
+
+      (2..spreadsheet.last_row).each do |i|
+        row = [header, spreadsheet.row(i)].transpose.to_h
+        next unless row['amount']
+
+        # Determine display_name: prefer `name` column if present, otherwise the `type` column
+        display_name = (name_key ? row[name_key] : row['type']).to_s.strip
+
+        # Only include rows that match current_user.user_pass exactly (case-insensitive)
+        next unless current_user.present? && display_name.present? && display_name.downcase == current_user.user_pass.to_s.strip.downcase
+
+        # At this point only matched rows are included; set type to the matched display_name
+        row['type'] = display_name
+        deposits << row
+      end
+
+      deposit_sum = deposits.sum { |d| d['amount'].to_f }
+      deposit_count = if count_key
+                        deposits.map { |d| d[count_key].to_i }.uniq.sum
+                      else
+                        deposits.size
+                      end
+
+      client = home.client
+      interest_rate = client&.applied_interest_rate.to_f
+      interest = deposit_sum * (interest_rate / 100.0)
+      { deposits: deposits, deposit_sum: deposit_sum, deposit_count: deposit_count, interest: interest }
+    end
+  rescue StandardError
+    { deposits: [], deposit_sum: 0, deposit_count: 0, interest: 0 }
   end
 end
