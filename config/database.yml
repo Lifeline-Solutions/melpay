@@ -6,8 +6,8 @@ default: &default
   encoding: unicode
   pool: <%= ENV.fetch("RAILS_MAX_THREADS", 5) %>
   url: <%= ENV['DATABASE_URL'] if ENV['DATABASE_URL'].present? %>
-  username: <%= ENV['PGUSER'] || 'nemwel' %>
-  password: <%= ENV['POSTGRES_PASSWORD'] || ENV['PGPASSWORD'] || 'root' %>
+  username: <%= ENV['PGUSER'] || 'ab' %>
+  password: <%= ENV['POSTGRES_PASSWORD'] || ENV['PGPASSWORD'] || 'abol_ger' %>
   host: <%= ENV['PGHOST'] || 'localhost' %>
   port: <%= ENV['PGPORT'] || 5432 %>
 
@@ -15,8 +15,6 @@ development:
   primary:
     <<: *default
     database: <%= ENV['PG_DATABASE'] || 'melpay_development' %>
-    username: nemwel
-    password: root
 
   queue:
     <<: *default
