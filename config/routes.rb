@@ -1,10 +1,12 @@
 # config/routes.rb
 Rails.application.routes.draw do
-  devise_for :users, controllers: { sessions: 'users/sessions', invitations: 'invitations' }
 
   get "up" => "rails/health#show", as: :rails_health_check
   root "landing#index"
   resources :landing, only: [:index]
+
+  devise_for :users, controllers: { sessions: 'users/sessions', invitations: 'invitations' }
+
 
   get 'two_factor/send_otp', to: 'two_factor#send_otp', as: :send_otp_two_factor
   get 'two_factor/verify', to: 'two_factor#verify', as: :verify_otp
