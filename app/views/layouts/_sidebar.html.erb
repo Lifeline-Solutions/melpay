@@ -10,11 +10,11 @@
     <div class="h-full px-3 py-4 overflow-y-auto bg-gray-50 dark:bg-gray-600">
       <% if session[:two_factor_authenticated] %>
         <div class="flex items-center ps-2.5">
-          <%= link_to (image_tag 'icon.png'), root_path, id: 'logo-top', class: 'h2 w-28 me-3 sm:h4' %>
+          <%= link_to (image_tag 'icon.png'), home_index_path, id: 'logo-top', class: 'h2 w-28 me-3 sm:h4' %>
         </div>
       <% else %>
         <div class="flex items-center ps-2.5">
-          <%= link_to root_path, id: 'logo-top', class: 'h2 w-28 me-3 sm:h4' do %>
+          <%= link_to home_index_path, id: 'logo-top', class: 'h2 w-28 me-3 sm:h4' do %>
             <%= image_tag 'icon.png', class: 'h2 w-28 me-3 sm:h4' %>
           <% end %>
         </div>

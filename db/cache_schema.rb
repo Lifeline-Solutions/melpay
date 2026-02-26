@@ -46,7 +46,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_20_132253) do
   create_table "clients", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "commission_type"
     t.datetime "created_at", null: false
-    t.float "credit"
+    t.decimal "credit", precision: 15, scale: 2, default: "0.0", null: false
     t.decimal "custom_interest_rate", precision: 5, scale: 2
     t.string "email"
     t.decimal "fixed_commission_amount", precision: 10, scale: 2
@@ -198,7 +198,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_20_132253) do
     t.index ["user_id"], name: "index_users_roles_on_user_id"
   end
 
-  create_table "versions", force: :cascade do |t|
+  create_table "versions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at"
     t.string "event", null: false
     t.string "ip"

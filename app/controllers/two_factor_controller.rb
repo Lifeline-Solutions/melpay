@@ -127,7 +127,7 @@ class TwoFactorController < ApplicationController
         if transaction.nil?
           current_user.clear_otp!
           respond_to do |format|
-            format.html { redirect_to root_path, alert: 'Pending transaction not found or already processed.' }
+            format.html { redirect_to home_index_path, alert: 'Pending transaction not found or already processed.' }
             format.json { render json: { success: false, error: 'Pending transaction not found' }, status: :not_found }
           end
           return
@@ -140,7 +140,7 @@ class TwoFactorController < ApplicationController
         unless client && home
           current_user.clear_otp!
           respond_to do |format|
-            format.html { redirect_to root_path, alert: 'Unable to find client/home for pending transaction.' }
+            format.html { redirect_to home_index_path, alert: 'Unable to find client/home for pending transaction.' }
             format.json { render json: { success: false, error: 'Client or home not found' }, status: :unprocessable_entity }
           end
           return
@@ -244,7 +244,7 @@ class TwoFactorController < ApplicationController
       # No pending transaction - normal OTP (e.g., login) flow
       current_user.clear_otp!
       respond_to do |format|
-        format.html { redirect_to root_path, notice: 'OTP verified.' }
+        format.html { redirect_to home_index_path, notice: 'OTP verified.' }
         format.json { render json: { success: true, message: 'OTP verified' }, status: :ok }
       end
     else
