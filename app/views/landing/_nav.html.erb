@@ -1,0 +1,14 @@
+<nav class="nav" id="mainNav">
+  <a href="<%= root_path %>" class="nav-logo">
+    <%= image_tag 'icon.png', class: 'nav-logo-img', alt: 'MAL Payments' %>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#about">About Us</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how-it-works">How it Works</a></li>
+    <li><a href="#security">Security</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="#contact">Contact</a></li>
+    <li><%= link_to "Sign In", new_user_session_path, class: "btn-nav" %></li>
+  </ul>
+</nav>

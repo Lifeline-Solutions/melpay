@@ -1,7 +1,18 @@
-<div class="w-full">
-
-  <%= render partial: 'landing/header' %>
-  <%= render partial: 'landing/landing_image' %>
-  <%= render partial: 'landing/header_base' %>
-  <%= render partial: 'landing/base' %>
+<%= render 'landing/styles' %>
+<%= render 'landing/nav' %>
+<%= render 'landing/hero' %>
+<%= render 'landing/trust_bar' %>
+<%= render 'landing/about' %>
+<%= render 'landing/features' %>
+<%= render 'landing/how_it_works' %>
+<%= render 'landing/security' %>
+<%= render 'landing/pricing' %>
+<div class="cta-contact-section" id="contact">
+<h2 class="contact-title">Let's Talk</h2>
+<div class="cta-contact-row">
+  <%= render 'landing/cta' %>
+  <%= render 'landing/contact' %>
 </div>
+</div>
+</div>
+<%= render 'landing/footer' %>
