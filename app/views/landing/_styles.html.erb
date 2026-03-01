@@ -344,8 +344,9 @@
     background: rgba(0,184,196,0.12);
     display: flex; align-items: center; justify-content: center;
     margin-bottom: 1.25rem;
-    font-size: 1.35rem;
+    flex-shrink: 0;
   }
+  .feature-icon svg { width: 26px; height: 26px; color: var(--teal); }
   .feature-title {
     font-family: 'Figtree', sans-serif;
     font-size: 1.05rem; font-weight: 700;
@@ -364,9 +365,10 @@
   .feature-card.large .feature-title { color: white; font-size: 1.3rem; }
   .feature-card.large .feature-desc { color: rgba(255,255,255,0.6); }
   .feature-card.large .feature-icon {
-    background: rgba(0,184,196,0.2); flex-shrink: 0;
-    width: 64px; height: 64px; border-radius: 16px; font-size: 1.6rem;
+    background: rgba(0,184,196,0.2);
+    width: 64px; height: 64px; border-radius: 16px;
   }
+  .feature-card.large .feature-icon svg { width: 32px; height: 32px; }
 
   /* ─── HOW IT WORKS ────────────────────────────── */
   .how {
@@ -441,7 +443,8 @@
     box-shadow: 0 4px 16px rgba(0,184,196,0.08);
     border: 1px solid rgba(0,184,196,0.12);
   }
-  .security-badge-icon { font-size: 1.4rem; flex-shrink: 0; }
+  .security-badge-icon { display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .security-badge-icon svg { width: 24px; height: 24px; color: var(--teal); }
   .security-badge-label { font-size: 0.8rem; font-weight: 600; color: var(--ink); }
   .security-badge-sub { font-size: 0.7rem; color: var(--ink-soft); }
 
@@ -467,9 +470,10 @@
     animation: spin 30s linear reverse infinite;
   }
   .security-shield {
-    font-size: 3.5rem;
+    display: flex; align-items: center; justify-content: center;
     animation: spin 30s linear infinite;
   }
+  .security-shield svg { width: 60px; height: 60px; color: var(--teal); }
   .orbit-dot {
     position: absolute;
     width: 12px; height: 12px; border-radius: 50%;
