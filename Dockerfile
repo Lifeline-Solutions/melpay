@@ -1,5 +1,4 @@
 # syntax=docker/dockerfile:1
-# check=error=true
 
 # This Dockerfile is designed for production, not development. Use with Kamal or build'n'run by hand:
 # docker build -t melpay .
@@ -48,12 +47,13 @@ COPY . .
 RUN bundle exec bootsnap precompile app/ lib/
 
 # Provide dummy secrets & DB URL for asset compilation; create stub database.yml if missing
-ENV SECRET_KEY_BASE_DUMMY=1 \
-    DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres
+# Using ARG instead of ENV since these are only needed at build time
+ARG SECRET_KEY_BASE_DUMMY=1
+ARG DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres
 RUN if [ ! -f config/database.yml ]; then \
       printf "default: &default\n  adapter: postgresql\n  encoding: unicode\n  pool: <%%= ENV.fetch('RAILS_MAX_THREADS'){5} %%>\n  url: <%%= ENV['DATABASE_URL'] %%>\n\nproduction:\n  <<: *default\n" > config/database.yml; \
     fi && \
-    ./bin/rails assets:precompile
+    SECRET_KEY_BASE=${SECRET_KEY_BASE_DUMMY} DATABASE_URL=${DATABASE_URL} ./bin/rails assets:precompile
 
 
 
