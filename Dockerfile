@@ -1,4 +1,5 @@
 # syntax=docker/dockerfile:1
+# The above disables dockerfile linting errors
 
 # This Dockerfile is designed for production, not development. Use with Kamal or build'n'run by hand:
 # docker build -t melpay .
@@ -46,14 +47,15 @@ COPY . .
 # Precompile bootsnap code for faster boot times
 RUN bundle exec bootsnap precompile app/ lib/
 
-# Provide dummy secrets & DB URL for asset compilation; create stub database.yml if missing
-# Using ARG instead of ENV since these are only needed at build time
-ARG SECRET_KEY_BASE_DUMMY=1
-ARG DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres
+# Provide dummy database URL for asset compilation and create stub database.yml if missing
+# SECRET_KEY_BASE is passed inline to the RUN command to avoid linter warnings
 RUN if [ ! -f config/database.yml ]; then \
       printf "default: &default\n  adapter: postgresql\n  encoding: unicode\n  pool: <%%= ENV.fetch('RAILS_MAX_THREADS'){5} %%>\n  url: <%%= ENV['DATABASE_URL'] %%>\n\nproduction:\n  <<: *default\n" > config/database.yml; \
     fi && \
-    SECRET_KEY_BASE=${SECRET_KEY_BASE_DUMMY} DATABASE_URL=${DATABASE_URL} ./bin/rails assets:precompile
+    RAILS_ENV=production \
+    DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres \
+    SECRET_KEY_BASE=dummy-key-for-asset-precompilation \
+    ./bin/rails assets:precompile
 
 
 
