@@ -24,10 +24,10 @@ class Home < ApplicationRecord
       .where('unique_id LIKE ?', "#{prefix}-%")
       .pluck(:unique_id)
       .each do |uid|
-        if uid =~ /^#{Regexp.escape(prefix)}-(\d+)$/
-          number = Regexp.last_match(1).to_i
-          max_number = number if number > max_number
-        end
+      if uid =~ /^#{Regexp.escape(prefix)}-(\d+)$/
+        number = Regexp.last_match(1).to_i
+        max_number = number if number > max_number
+      end
     end
 
     self.unique_id = "#{prefix}-#{(max_number + 1).to_s.rjust(4, '0')}"
