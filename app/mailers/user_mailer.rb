@@ -1,5 +1,5 @@
 class UserMailer < ApplicationMailer
-  default from: 'from@example.com'
+  default from: 'noreply@malpayments.com'
 
   def send_otp
     @user = params[:user]
