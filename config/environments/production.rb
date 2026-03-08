@@ -111,4 +111,19 @@ Rails.application.configure do
   #
   # Skip DNS rebinding protection for the default health check endpoint.
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.smtp_settings = {
+    address: 'lim108.truehost.cloud',
+    port: 465, # Port 465 uses implicit SSL/TLS (SMTPS)
+    domain: 'malpayments.com',
+    user_name: 'noreply@malpayments.com',
+    password: 'Aw3$0m3@2026#',
+    authentication: :plain,
+    ssl: true, # Use implicit SSL for port 465 (SMTPS)
+    # NOTE: Do NOT set enable_starttls_auto with ssl: true - they are mutually exclusive
+    # Port 465 = implicit SSL (use ssl: true)
+    # Port 587 = explicit STARTTLS (use enable_starttls_auto: true)
+    openssl_verify_mode: 'none'
+  }
+
 end
