@@ -13,5 +13,8 @@
 
 <p> This is your secret word you should never share <strong><%= @user.user_pass %></strong></p>
 
+<p> Regards</p>
+
+<p><%= [@resource.invited_by&.first_name, @resource.invited_by&.last_name].compact.join(' ').presence || 'Someone' %></p>
 
 <p><%= t("devise.mailer.invitation_instructions.ignore") %></p>
