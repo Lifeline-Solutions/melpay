@@ -112,7 +112,7 @@ Rails.application.configure do
   # Skip DNS rebinding protection for the default health check endpoint.
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
   # Raise error when a before_action's only/except options reference missing actions
-  config.action_mailer.default_url_options = { host: 'malpayments.com', protocol: 'http' }
+  config.action_mailer.default_url_options = { host: 'malpayments.com', protocol: 'https' }
   config.action_controller.raise_on_missing_callback_actions = true
   config.active_storage.variant_processor = :mini_magick
   config.action_mailer.raise_delivery_errors = true
