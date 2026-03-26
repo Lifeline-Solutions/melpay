@@ -40,4 +40,8 @@ Rails.application.routes.draw do
       patch :update_status
     end
   end
+
+  # M-Pesa B2C async callbacks
+  post 'mpesa/b2c/result',  to: 'mpesa_callbacks#b2c_result',  as: :mpesa_b2c_result
+  post 'mpesa/b2c/timeout', to: 'mpesa_callbacks#b2c_timeout', as: :mpesa_b2c_timeout
 end

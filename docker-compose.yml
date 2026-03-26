@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${PGUSER:-melpay}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${PG_DATABASE:-melpay_development}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER:-melpay} -d ${PG_DATABASE:-melpay_development}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      RAILS_ENV: ${RAILS_ENV:-production}
+      RAILS_MASTER_KEY: ${RAILS_MASTER_KEY}
+      PGHOST: db
+      PGPORT: 5432
+      PGUSER: ${PGUSER:-melpay}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      PG_DATABASE: ${PG_DATABASE:-melpay_development}
+      RAILS_MAX_THREADS: ${RAILS_MAX_THREADS:-5}
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-2}
+      RAILS_ASSUME_SSL: "false"
+      RAILS_FORCE_SSL: "false"
+      MPESA_CONSUMER_KEY: ${MPESA_CONSUMER_KEY}
+      MPESA_CONSUMER_SECRET: ${MPESA_CONSUMER_SECRET}
+      MPESA_INITIATOR_NAME: ${MPESA_INITIATOR_NAME}
+      MPESA_PARTY_A: ${MPESA_PARTY_A}
+      MPESA_PASSKEY: ${MPESA_PASSKEY}
+      MPESA_ENVIRONMENT: ${MPESA_ENVIRONMENT}
+      MPESA_CALLBACK_BASE_URL: ${MPESA_CALLBACK_BASE_URL}
+    ports:
+      - "8000:80"
+    volumes:
+      - storage:/rails/storage
+
+volumes:
+  postgres_data:
+  storage:
