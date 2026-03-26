@@ -3,17 +3,17 @@ require 'base64'
 require 'json'
 
 class MpesaB2cService
-  SANDBOX_BASE_URL    = 'https://sandbox.safaricom.co.ke'
-  PRODUCTION_BASE_URL = 'https://api.safaricom.co.ke'
+  SANDBOX_BASE_URL = 'https://sandbox.safaricom.co.ke'.freeze
+  PRODUCTION_BASE_URL = 'https://api.safaricom.co.ke'.freeze
 
   def initialize
-    @consumer_key    = ENV.fetch('MPESA_CONSUMER_KEY')
+    @consumer_key = ENV.fetch('MPESA_CONSUMER_KEY')
     @consumer_secret = ENV.fetch('MPESA_CONSUMER_SECRET')
-    @initiator_name  = ENV.fetch('MPESA_INITIATOR_NAME', 'testapi')
-    @passkey         = ENV.fetch('MPESA_PASSKEY')
-    @party_a         = ENV.fetch('MPESA_PARTY_A', '600984')   # B2C shortcode
-    @callback_base   = ENV.fetch('MPESA_CALLBACK_BASE_URL')   # e.g. https://abc123.ngrok.io
-    @environment     = ENV.fetch('MPESA_ENVIRONMENT', 'sandbox')
+    @initiator_name = ENV.fetch('MPESA_INITIATOR_NAME', 'testapi')
+    @passkey = ENV.fetch('MPESA_PASSKEY')
+    @party_a = ENV.fetch('MPESA_PARTY_A', '600984') # B2C shortcode
+    @callback_base = ENV.fetch('MPESA_CALLBACK_BASE_URL') # e.g. https://abc123.ngrok.io
+    @environment = ENV.fetch('MPESA_ENVIRONMENT', 'sandbox')
   end
 
   # Initiate a B2C payment.
@@ -30,39 +30,39 @@ class MpesaB2cService
     token = fetch_access_token
     return { success: false, error: 'Failed to obtain M-Pesa access token' } unless token
 
-    phone         = normalize_phone(phone_number)
-    timestamp     = generate_timestamp
+    phone = normalize_phone(phone_number)
+    timestamp = generate_timestamp
     originator_id = "MELPAY-#{transaction_id}-#{Time.now.to_i}"
 
     payload = {
       OriginatorConversationID: originator_id,
-      InitiatorName:            @initiator_name,
-      SecurityCredential:       generate_password(timestamp),
-      CommandID:                'BusinessPayment',
-      Amount:                   amount.to_i,
-      PartyA:                   @party_a,
-      PartyB:                   phone,
-      Remarks:                  remarks.to_s.truncate(100),
-      Timestamp:                timestamp,
-      QueueTimeOutURL:          "#{@callback_base}/mpesa/b2c/timeout",
-      ResultURL:                "#{@callback_base}/mpesa/b2c/result",
-      Occasion:                 occasion.to_s.truncate(100)
+      InitiatorName: @initiator_name,
+      SecurityCredential: generate_password(timestamp),
+      CommandID: 'BusinessPayment',
+      Amount: amount.to_i,
+      PartyA: @party_a,
+      PartyB: phone,
+      Remarks: remarks.to_s.truncate(100),
+      Timestamp: timestamp,
+      QueueTimeOutURL: "#{@callback_base}/mpesa/b2c/timeout",
+      ResultURL: "#{@callback_base}/mpesa/b2c/result",
+      Occasion: occasion.to_s.truncate(100)
     }
 
     response = post_json("#{base_url}/mpesa/b2c/v1/paymentrequest", payload, token)
 
     if response['ResponseCode'] == '0'
       {
-        success:                    true,
-        conversation_id:            response['ConversationID'],
+        success: true,
+        conversation_id: response['ConversationID'],
         originator_conversation_id: response['OriginatorConversationID'],
-        response_description:       response['ResponseDescription']
+        response_description: response['ResponseDescription']
       }
     else
       {
         success: false,
-        error:   response['ResponseDescription'] || response['errorMessage'] || 'Unknown M-Pesa error',
-        raw:     response
+        error: response['ResponseDescription'] || response['errorMessage'] || 'Unknown M-Pesa error',
+        raw: response
       }
     end
   rescue KeyError => e
@@ -104,9 +104,9 @@ class MpesaB2cService
   # ── HTTP helpers ──────────────────────────────────────────────────────────
 
   def post_json(url, payload, token)
-    uri  = URI(url)
-    req  = Net::HTTP::Post.new(uri, 'Content-Type' => 'application/json',
-                                    'Authorization' => "Bearer #{token}")
+    uri = URI(url)
+    req = Net::HTTP::Post.new(uri, 'Content-Type' => 'application/json',
+                                   'Authorization' => "Bearer #{token}")
     req.body = payload.to_json
     resp = http(uri).request(req)
     JSON.parse(resp.body)
@@ -114,7 +114,7 @@ class MpesaB2cService
 
   def http(uri)
     Net::HTTP.new(uri.host, uri.port).tap do |h|
-      h.use_ssl      = true
+      h.use_ssl = true
       h.read_timeout = 30
       h.open_timeout = 10
     end

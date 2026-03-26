@@ -10,10 +10,10 @@ class MpesaCallbacksController < ApplicationController
     result = parsed_result
     return head :bad_request if result.nil?
 
-    conversation_id            = result.dig('ConversationID')
-    originator_conversation_id = result.dig('OriginatorConversationID')
-    result_code                = result.dig('ResultCode').to_i
-    result_desc                = result.dig('ResultDesc').to_s
+    conversation_id = result['ConversationID']
+    originator_conversation_id = result['OriginatorConversationID']
+    result_code = result['ResultCode'].to_i
+    result_desc = result['ResultDesc'].to_s
 
     receipt = extract_result_param(result, 'TransactionReceipt')
 
@@ -21,12 +21,12 @@ class MpesaCallbacksController < ApplicationController
 
     if transaction
       transaction.update_columns(
-        mpesa_result_code:       result_code,
-        mpesa_result_desc:       result_desc,
+        mpesa_result_code: result_code,
+        mpesa_result_desc: result_desc,
         mpesa_transaction_receipt: receipt
       )
 
-      if result_code == 0
+      if result_code.zero?
         Rails.logger.info "[MpesaCallback] B2C success — txn #{transaction.transaction_id}, receipt #{receipt}"
       else
         Rails.logger.warn "[MpesaCallback] B2C failed — txn #{transaction.transaction_id}, code #{result_code}: #{result_desc}"
@@ -43,8 +43,8 @@ class MpesaCallbacksController < ApplicationController
     result = parsed_result
     return head :bad_request if result.nil?
 
-    conversation_id            = result.dig('ConversationID')
-    originator_conversation_id = result.dig('OriginatorConversationID')
+    conversation_id = result['ConversationID']
+    originator_conversation_id = result['OriginatorConversationID']
 
     transaction = find_transaction(conversation_id, originator_conversation_id)
 
@@ -64,7 +64,7 @@ class MpesaCallbacksController < ApplicationController
   def parsed_result
     body = request.body.read
     data = JSON.parse(body)
-    data.dig('Result')
+    data['Result']
   rescue JSON::ParserError => e
     Rails.logger.error "[MpesaCallback] Invalid JSON body: #{e.message}"
     nil

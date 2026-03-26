@@ -391,11 +391,12 @@ class TwoFactorController < ApplicationController
   end
 
   private
+
   # Errors are rescued and logged — they must never bubble up and roll back the transaction.
   def initiate_mpesa_b2c(transaction)
     deposit_data = transaction.deposit_data || {}
     phone_number = deposit_data['phone number'].to_s.strip
-    remarks      = deposit_data['description'].to_s.strip.presence || 'Payment'
+    remarks = deposit_data['description'].to_s.strip.presence || 'Payment'
 
     if phone_number.blank?
       Rails.logger.warn "[MpesaB2c] No phone number on txn #{transaction.transaction_id} — skipping B2C"
@@ -403,15 +404,15 @@ class TwoFactorController < ApplicationController
     end
 
     result = MpesaB2cService.new.pay(
-      amount:         transaction.amount.to_f,
-      phone_number:   phone_number,
+      amount: transaction.amount.to_f,
+      phone_number: phone_number,
       transaction_id: transaction.transaction_id,
-      remarks:        remarks
+      remarks: remarks
     )
 
     if result[:success]
       transaction.update_columns(
-        mpesa_conversation_id:            result[:conversation_id],
+        mpesa_conversation_id: result[:conversation_id],
         mpesa_originator_conversation_id: result[:originator_conversation_id]
       )
       Rails.logger.info "[MpesaB2c] Initiated — txn #{transaction.transaction_id}, conversation #{result[:conversation_id]}"
