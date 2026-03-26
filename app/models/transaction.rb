@@ -7,6 +7,13 @@ class Transaction < ApplicationRecord
   has_many :revised_transactions, class_name: 'Transaction', foreign_key: 'previous_transaction_id', dependent: :nullify
 
   STATUSES = %w[pending success failed].freeze
+  MPESA_TRACKING_COLUMNS = %w[
+    mpesa_conversation_id
+    mpesa_originator_conversation_id
+    mpesa_result_code
+    mpesa_result_desc
+    mpesa_transaction_receipt
+  ].freeze
 
   validates :status, inclusion: { in: STATUSES }
 
@@ -51,14 +58,6 @@ class Transaction < ApplicationRecord
   def set_default_status
     self.status ||= 'pending'
   end
-
-  MPESA_TRACKING_COLUMNS = %w[
-    mpesa_conversation_id
-    mpesa_originator_conversation_id
-    mpesa_result_code
-    mpesa_result_desc
-    mpesa_transaction_receipt
-  ].freeze
 
   def prevent_direct_updates
     # Allow updating the audit-trail flag and M-Pesa tracking columns (written by callbacks)
