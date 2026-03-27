@@ -44,6 +44,8 @@ node_modules
 # Ignore key files for decrypting credentials and more.
 /config/credentials/*.key
 
+.env
 .env.local
 .docker_registry_token
 .kamal/secrets
+.claude

@@ -7,6 +7,13 @@ class Transaction < ApplicationRecord
   has_many :revised_transactions, class_name: 'Transaction', foreign_key: 'previous_transaction_id', dependent: :nullify
 
   STATUSES = %w[pending success failed].freeze
+  MPESA_TRACKING_COLUMNS = %w[
+    mpesa_conversation_id
+    mpesa_originator_conversation_id
+    mpesa_result_code
+    mpesa_result_desc
+    mpesa_transaction_receipt
+  ].freeze
 
   validates :status, inclusion: { in: STATUSES }
 
@@ -53,8 +60,9 @@ class Transaction < ApplicationRecord
   end
 
   def prevent_direct_updates
-    # Allow updating only the is_latest flag for audit trail
-    return true if changes.keys == ['is_latest']
+    # Allow updating the audit-trail flag and M-Pesa tracking columns (written by callbacks)
+    allowed = %w[is_latest] + MPESA_TRACKING_COLUMNS
+    return true if (changes.keys - allowed).empty?
 
     errors.add(:base, 'Transactions cannot be edited directly. Create a new revision instead.')
     throw(:abort)
