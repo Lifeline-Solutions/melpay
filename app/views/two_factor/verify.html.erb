@@ -16,7 +16,6 @@
             Please enter the 6-digit verification code sent to your email.
           </h1>
           <div class="space-y-4 md:space-y-6">
-            <p>Here is the sample OTP code for demo <b><%= current_user.otp_code %></b></p>
             <div class="flex gap-2 justify-center">
               <% 6.times do |i| %>
                 <%= text_field_tag "otp_digit_#{i}", nil, autocomplete: (i == 0 ? 'one-time-code' : nil), inputmode: 'numeric', pattern: '\\d', maxlength: 1, placeholder: '•', class: "border border-gray-300 rounded-lg focus:ring-primary-600 focus:border-primary-600 w-10 h-12 text-center mx-1 text-xl dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 otp-digit", required: true, id: "otp_digit_#{i}" %>
