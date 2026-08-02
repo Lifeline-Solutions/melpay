@@ -24,7 +24,6 @@ class User < ApplicationRecord
     motive salute victor dapper sprout thrive prince angels mingle glassy shaded
     nectar pocket sparks tigers fellow maroon safari orchard willow ripple
   ].uniq.freeze
-
   def default_role
     return if invited_by_id.present?
 
