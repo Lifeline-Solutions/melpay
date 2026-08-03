@@ -75,7 +75,7 @@ Rails.application.configure do
   config.action_mailer.default_url_options = { host: 'localhost', port: 3000 }
 
   # Raise error when a before_action's only/except options reference missing actions
-  config.action_mailer.default_url_options = { host: 'malpayments.com', protocol: 'http' }
+  config.action_mailer.default_url_options = { host: 'malpayment.com', protocol: 'http' }
   config.action_controller.raise_on_missing_callback_actions = true
   config.action_mailer.default_url_options = { host: 'localhost', port: 3000 }
   config.active_storage.variant_processor = :mini_magick
@@ -85,9 +85,9 @@ Rails.application.configure do
   config.action_mailer.smtp_settings = {
     address: 'lim108.truehost.cloud',
     port: 465, # Port 465 uses implicit SSL/TLS (SMTPS)
-    domain: 'malpayments.com',
-    user_name: 'noreply@malpayments.com',
-    password: 'Aw3$0m3@2026#',
+    domain: 'malpayment.com',
+    user_name: 'noreply@malpayment.com',
+    password: 'Aw1}Pj&sjFxT)uc8',
     authentication: :plain,
     ssl: true, # Use implicit SSL for port 465 (SMTPS)
     # NOTE: Do NOT set enable_starttls_auto with ssl: true - they are mutually exclusive
