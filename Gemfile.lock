@@ -86,7 +86,7 @@ GEM
     bcrypt_pbkdf (1.1.2)
     bigdecimal (4.0.1)
     bindex (0.8.1)
-    bootsnap (1.21.1)
+    bootsnap (1.24.6)
       msgpack (~> 1.2)
     brakeman (7.1.2)
       racc
@@ -199,7 +199,7 @@ GEM
     mini_mime (1.1.5)
     minitest (6.0.1)
       prism (~> 1.5)
-    msgpack (1.8.0)
+    msgpack (1.8.4)
     multipart-post (2.4.1)
     net-http (0.9.1)
       uri (>= 0.11.1)
