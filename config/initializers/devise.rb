@@ -24,7 +24,7 @@ Devise.setup do |config|
   # Configure the e-mail address which will be shown in Devise::Mailer,
   # note that it will be overwritten if you use your own mailer class
   # with default "from" parameter.
-  config.mailer_sender = 'noreply@malpaymants.com'
+  config.mailer_sender = 'noreply@malpayment.com'
 
   # Configure the class responsible to send e-mails.
   # config.mailer = 'Devise::Mailer'
@@ -162,7 +162,7 @@ Devise.setup do |config|
 
   # Resend invitation if user with invited status is invited again
   # Default: true
-  # config.resend_invitation = false
+  config.resend_invitation = true
 
   # The class name of the inviting model. If this is nil,
   # the #invited_by association is declared to be polymorphic.
