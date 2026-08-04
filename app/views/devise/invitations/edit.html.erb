@@ -1,41 +1,115 @@
 <% provide(:title, "Enter Password") %>
 
 <div class="min-h-screen w-full flex flex-col md:flex-row bg-gray-50 dark:bg-gray-900">
-  <!-- Left side image/logo (always visible, on top for mobile, left for desktop) -->
-  <div class="hidden md:flex w-full md:w-1/2 items-center justify-center bg-gray-100 dark:bg-gray-600 min-h-[200px] md:min-h-screen py-8 md:py-0">
-    <div class="flex flex-col items-center w-full px-6">
-      <%= image_tag 'icon.png', class: 'object-contain hidden dark:block mx-auto transition-all duration-300' %>
-      <%= image_tag 'icon.png', class: 'object-contain block dark:hidden mx-auto transition-all duration-300' %>
-      <h2><%= t "devise.invitations.edit.header" %></h2>
+
+  <!-- Left panel: brand / logo (desktop only) -->
+  <div class="hidden md:flex md:w-1/2 items-center justify-center bg-gradient-to-br from-[#31adaf]/10 to-gray-100 dark:from-[#31adaf]/10 dark:to-gray-800 min-h-screen">
+    <div class="flex flex-col items-center px-10 text-center">
+      <%= image_tag 'icon.png', class: 'w-40 h-40 object-contain hidden dark:block' %>
+      <%= image_tag 'icon.png', class: 'w-40 h-40 object-contain block dark:hidden' %>
+      <h2 class="mt-6 text-2xl font-bold text-gray-900 dark:text-white">
+        <%= t "devise.invitations.edit.header" %>
+      </h2>
+      <p class="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-xs">
+        You've been invited to join. Set a password below to activate your account.
+      </p>
     </div>
   </div>
-  <!-- Right side form -->
-  <div class="w-full md:w-1/2 flex items-center justify-center bg-white dark:bg-gray-800 min-h-[400px] md:min-h-screen py- md:py-0">
-    <%= form_for(resource, as: resource_name, url: invitation_path(resource_name), html: { method: :put }) do |f| %>
-      <div class="w-full max-w-7xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 sm:p-8">
-        <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
+
+  <!-- Right panel: form -->
+  <div class="w-full md:w-1/2 flex items-center justify-center px-4 py-10 md:py-0 min-h-screen">
+    <div class="w-full max-w-md">
+
+      <!-- Mobile-only compact branding -->
+      <div class="flex md:hidden flex-col items-center mb-6">
+        <%= image_tag 'icon.png', class: 'w-16 h-16 object-contain hidden dark:block' %>
+        <%= image_tag 'icon.png', class: 'w-16 h-16 object-contain block dark:hidden' %>
+      </div>
+
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg ring-1 ring-gray-100 dark:ring-gray-700 p-6 sm:p-8">
+        <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-1 text-center">
           <%= t "devise.invitations.edit.header" %>
         </h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">
+          Choose a password to finish setting up your account.
+        </p>
+
         <%= render "devise/shared/error_messages", resource: resource %>
-        <%= f.hidden_field :invitation_token, readonly: true %>
 
-        <% if f.object.class.require_password_on_accepting %>
+        <%= form_for(resource, as: resource_name, url: invitation_path(resource_name), html: { method: :put }) do |f| %>
+          <%= f.hidden_field :invitation_token, readonly: true %>
 
-          <div class="mb-4">
-            <label for="password" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">Password</label>
-              <%= f.password_field :password, autocomplete: "current-password", placeholder: '••••••••', class: "h-12 border border-gray-300 focus:border-blue-500 rounded-lg w-full px-3", required: true %>
-          </div>
+          <% if f.object.class.require_password_on_accepting %>
 
-          <div class="mb-4">
-            <label for="password" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">Password Confirmation</label>
-            <%= f.password_field :password_confirmation, autocomplete: "current-password", placeholder: '••••••••', class: "h-12 border border-gray-300 focus:border-blue-500 rounded-lg w-full px-3", required: true %>
-          </div>
+            <div class="mb-4">
+              <%= f.label :password, "Password",
+                          class: "block mb-2 text-sm font-medium text-gray-700 dark:text-gray-200" %>
+              <div class="relative">
+                <%= f.password_field :password,
+                                     autocomplete: "new-password",
+                                     placeholder: "••••••••",
+                                     required: true,
+                                     class: "h-12 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:border-[#31adaf] focus:ring-1 focus:ring-[#31adaf] outline-none rounded-lg w-full px-3 pr-11 transition-colors" %>
+                <button type="button"
+                        data-toggle-password
+                        aria-label="Show password"
+                        class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                  <!-- eye icon -->
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                </button>
+              </div>
+              <% if f.object.class.password_length %>
+                <p class="mt-1.5 text-xs text-gray-400 dark:text-gray-500">
+                  <%= @minimum_password_length ? "Minimum #{@minimum_password_length} characters." : nil %>
+                </p>
+              <% end %>
+            </div>
 
-      <% end %>
+            <div class="mb-6">
+              <%= f.label :password_confirmation, "Confirm Password",
+                          class: "block mb-2 text-sm font-medium text-gray-700 dark:text-gray-200" %>
+              <div class="relative">
+                <%= f.password_field :password_confirmation,
+                                     autocomplete: "new-password",
+                                     placeholder: "••••••••",
+                                     required: true,
+                                     class: "h-12 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:border-[#31adaf] focus:ring-1 focus:ring-[#31adaf] outline-none rounded-lg w-full px-3 pr-11 transition-colors" %>
+                <button type="button"
+                        data-toggle-password
+                        aria-label="Show password"
+                        class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
 
-          <%= f.submit t("devise.invitations.edit.submit_button"), class: 'h-12  border-2 hover:border-[#31adaf] hover:text-[#31adaf] p-3 rounded-lg font-bold w-full mb-4' %>
+          <% end %>
+
+          <%= f.submit t("devise.invitations.edit.submit_button"),
+                       class: "h-12 w-full rounded-lg font-bold bg-[#31adaf] text-white hover:bg-[#2a9799] transition-colors cursor-pointer" %>
+        <% end %>
+
+        <div class="mt-6 text-center text-sm text-gray-500 dark:text-gray-400 space-y-1">
+          <%= render "devise/shared/links" %>
+        </div>
       </div>
-    <% end %>
+    </div>
   </div>
 </div>
 
+<script>
+    document.querySelectorAll('[data-toggle-password]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var input = btn.previousElementSibling;
+            var showing = input.type === 'text';
+            input.type = showing ? 'password' : 'text';
+            btn.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+        });
+    });
+</script>
