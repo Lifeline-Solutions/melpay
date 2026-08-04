@@ -9,37 +9,42 @@ class InvitationsController < Devise::InvitationsController
   end
 
   def create
-    # Check if the email is blank
     if invite_params[:email].blank?
-      flash.now[:alert] = 'Email cannot be blank.'
+      flash.now[:alert] = "Email cannot be blank."
       render :new
       return
     end
 
-    # Check if a user with the same details already exists
-    existing_user = User.find_by(
-      email: invite_params[:email],
-      first_name: invite_params[:first_name],
-      last_name: invite_params[:last_name],
-      client_id: invite_params[:client_id]
-    )
+    existing_user = User.find_by(email: invite_params[:email])
 
-    if existing_user
-      flash[:alert] = 'User already exists.'
-      redirect_to new_user_invitation_path
-    else
-      invited_user = nil
-      User.invite!(invite_params, current_user) do |u|
-        assign_role(u)
-        invited_user = u
-      end
+    if existing_user.present?
+      if existing_user.invitation_accepted_at.nil?
+        # Resend invitation with a new token
+        existing_user.invite!
 
-      if invited_user.present? && invited_user.errors.blank?
-        redirect_to users_path, notice: 'User has been invited successfully.'
+        redirect_to users_path,
+                    notice: "Invitation has been resent successfully."
       else
-        flash[:alert] = 'There was an error inviting the user.'
-        redirect_to new_user_invitation_path
+        redirect_to new_user_invitation_path,
+                    alert: "This user has already accepted their invitation."
       end
+
+      return
+    end
+
+    invited_user = nil
+
+    User.invite!(invite_params, current_user) do |u|
+      assign_role(u)
+      invited_user = u
+    end
+
+    if invited_user.errors.empty?
+      redirect_to users_path,
+                  notice: "User has been invited successfully."
+    else
+      flash.now[:alert] = invited_user.errors.full_messages.to_sentence
+      render :new
     end
   end
 
