@@ -122,7 +122,7 @@ class TwoFactorController < ApplicationController
 
       # Existing single pending id flow follows
       pending_id = session.delete(:pending_transaction_id)
-      pending_home_id = session.delete(:pending_transaction_home_id)
+      # pending_home_id was already read (and removed from session) above
 
       if pending_id.present?
         transaction = Transaction.find_by(id: pending_id, user_id: current_user.id)
