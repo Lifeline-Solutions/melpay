@@ -10,7 +10,7 @@ class InvitationsController < Devise::InvitationsController
 
   def create
     if invite_params[:email].blank?
-      flash.now[:alert] = "Email cannot be blank."
+      flash.now[:alert] = 'Email cannot be blank.'
       render :new
       return
     end
@@ -23,10 +23,10 @@ class InvitationsController < Devise::InvitationsController
         existing_user.invite!
 
         redirect_to users_path,
-                    notice: "Invitation has been resent successfully."
+                    notice: 'Invitation has been resent successfully.'
       else
         redirect_to new_user_invitation_path,
-                    alert: "This user has already accepted their invitation."
+                    alert: 'This user has already accepted their invitation.'
       end
 
       return
@@ -41,7 +41,7 @@ class InvitationsController < Devise::InvitationsController
 
     if invited_user.errors.empty?
       redirect_to users_path,
-                  notice: "User has been invited successfully."
+                  notice: 'User has been invited successfully.'
     else
       flash.now[:alert] = invited_user.errors.full_messages.to_sentence
       render :new
