@@ -4,7 +4,7 @@ class TwoFactorController < ApplicationController
   def send_otp
     current_user.generate_otp!
     # For Emails
-    UserMailer.with(user: current_user).send_otp.deliver_later
+    UserMailer.with(user: current_user).send_otp.deliver_now
 
     # For SMS (optional)
     if current_user.phone_number.present?
