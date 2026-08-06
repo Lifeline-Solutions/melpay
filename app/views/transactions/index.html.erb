@@ -1,15 +1,13 @@
-<div class="p-4 sm:ml-64 w-full">
-  <div class="flex justify-between items-center mb-6">
+<div class="p-4 sm:ml-64 sm:mx-auto sm:px-6 lg:px-8 mx-auto">
+<div class="flex justify-between items-center mb-6">
     <h2 class="text-lg font-semibold">
       All Transactions
     </h2>
-    <% if can?(:create, Transaction) %>
-      <%= link_to "New Transaction", new_transaction_path, class: "px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition" %>
-    <% end %>
+
   </div>
 
   <% if can?(:read, Transaction) %>
-    <div class="overflow-x-auto flex-grow">
+    <div class="overflow-x-auto grow">
       <table class="w-full text-sm text-left">
         <thead class="bg-gray-200 dark:bg-gray-700">
         <tr>

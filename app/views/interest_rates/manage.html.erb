@@ -1,5 +1,5 @@
-<div class="max-w-4xl mx-auto p-6">
-  <% if flash[:notice] %>
+<div class="p-4 sm:ml-64 sm:mx-auto sm:mt-16 sm:px-6 lg:px-8 mx-auto">
+<% if flash[:notice] %>
     <div class="mb-4 p-3 rounded bg-green-50 border border-green-200 text-green-800">
       <%= flash[:notice] %>
     </div>
@@ -21,18 +21,18 @@
         <span class="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
         Global Commission
       </h2>
-      
+
       <%= form_with model: @system_setting, url: update_global_interest_rates_path, method: :put, local: true do |f| %>
         <div class="space-y-4">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <%= f.label :commission_type, "Commission Type", class: "block text-sm font-medium text-gray-700 mb-1" %>
-              <%= f.select :commission_type, 
+              <%= f.select :commission_type,
                     options_for_select([['Percentage', 'percentage'], ['Fixed Amount', 'fixed']], @system_setting.commission_type),
-                    {}, 
+                    {},
                     class: "mt-1 block w-full border rounded p-2" %>
             </div>
-            
+
             <div id="global-percentage-field" class="<%= @system_setting.percentage? ? 'block' : 'hidden' %>">
               <%= f.label :global_interest_rate, "Rate (%)", class: "block text-sm font-medium text-gray-700 mb-1" %>
               <div class="flex items-center">
@@ -40,7 +40,7 @@
                 <span class="ml-2 text-gray-600">%</span>
               </div>
             </div>
-            
+
             <div id="global-fixed-field" class="<%= @system_setting.fixed? ? 'block' : 'hidden' %>">
               <%= f.label :fixed_commission_amount, "Fixed Amount", class: "block text-sm font-medium text-gray-700 mb-1" %>
               <div class="flex items-center">
@@ -49,7 +49,7 @@
               </div>
             </div>
           </div>
-          
+
           <%= f.submit "Update Global Rate", class: "px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" %>
           <p class="text-sm text-gray-500">
             This rate applies to all clients who don't have a custom rate set.
@@ -69,17 +69,17 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <%= label_tag :client_id, "Select Client", class: "block text-sm font-medium text-gray-700 mb-1" %>
-            <%= select_tag "client[id]", 
-                  options_from_collection_for_select(@clients, :id, :name_with_current_rate), 
-                  include_blank: "Choose a client...", 
+            <%= select_tag "client[id]",
+                  options_from_collection_for_select(@clients, :id, :name_with_current_rate),
+                  include_blank: "Choose a client...",
                   class: "mt-1 block w-full border rounded p-2",
                   id: "client-select" %>
           </div>
 
           <div>
             <%= label_tag :commission_type, "Commission Type", class: "block text-sm font-medium text-gray-700 mb-1" %>
-            <%= select_tag "client[commission_type]", 
-                  options_for_select([['Use Global', ''], ['Percentage', 'percentage'], ['Fixed Amount', 'fixed']]), 
+            <%= select_tag "client[commission_type]",
+                  options_for_select([['Use Global', ''], ['Percentage', 'percentage'], ['Fixed Amount', 'fixed']]),
                   class: "mt-1 block w-full border rounded p-2",
                   id: "commission-type-select" %>
           </div>
@@ -92,7 +92,7 @@
                 <span class="ml-2 text-gray-600">%</span>
               </div>
             </div>
-            
+
             <div id="client-fixed-field" class="hidden">
               <%= label_tag :fixed_commission_amount, "Fixed Amount", class: "block text-sm font-medium text-gray-700 mb-1" %>
               <div class="flex items-center">
@@ -100,7 +100,7 @@
                 <%= number_field_tag "client[fixed_commission_amount]", nil, step: 0.01, class: "w-32 block border rounded p-2" %>
               </div>
             </div>
-            
+
             <div id="client-global-field" class="hidden">
               <p class="text-sm text-gray-500 mt-2">
                 Client will use global settings
@@ -120,30 +120,30 @@
 <script>
 document.addEventListener('turbo:load', function() {
   console.log('Commission management JS loaded');
-  
+
   // Global commission type toggle - multiple selector options
-  const globalCommissionTypeSelect = 
+  const globalCommissionTypeSelect =
     document.getElementById('system_setting_commission_type') ||
     document.querySelector('select[name="system_setting[commission_type]"]');
-  
+
   const globalPercentageField = document.getElementById('global-percentage-field');
   const globalFixedField = document.getElementById('global-fixed-field');
-  
+
   console.log('Global elements:', {
     select: globalCommissionTypeSelect,
     percentage: globalPercentageField,
     fixed: globalFixedField
   });
-  
+
   function toggleGlobalFields() {
     if (!globalCommissionTypeSelect || !globalPercentageField || !globalFixedField) {
       console.error('Global commission fields not found');
       return;
     }
-    
+
     const selectedType = globalCommissionTypeSelect.value;
     console.log('Global commission type changed to:', selectedType);
-    
+
     if (selectedType === 'percentage') {
       globalPercentageField.classList.remove('hidden');
       globalFixedField.classList.add('hidden');
@@ -152,30 +152,30 @@ document.addEventListener('turbo:load', function() {
       globalFixedField.classList.remove('hidden');
     }
   }
-  
+
   if (globalCommissionTypeSelect) {
     globalCommissionTypeSelect.addEventListener('change', toggleGlobalFields);
     toggleGlobalFields(); // Initial call
   } else {
     console.error('Global commission type select not found');
   }
-  
+
   // Client commission type toggle (this should be working)
   const commissionTypeSelect = document.getElementById('commission-type-select');
   const clientPercentageField = document.getElementById('client-percentage-field');
   const clientFixedField = document.getElementById('client-fixed-field');
   const clientGlobalField = document.getElementById('client-global-field');
-  
+
   function toggleClientFields() {
     if (!commissionTypeSelect) return;
-    
+
     const selectedType = commissionTypeSelect.value;
-    
+
     // Hide all fields first
     clientPercentageField.classList.add('hidden');
     clientFixedField.classList.add('hidden');
     clientGlobalField.classList.add('hidden');
-    
+
     // Show relevant field
     if (selectedType === 'percentage') {
       clientPercentageField.classList.remove('hidden');
@@ -185,7 +185,7 @@ document.addEventListener('turbo:load', function() {
       clientGlobalField.classList.remove('hidden');
     }
   }
-  
+
   if (commissionTypeSelect) {
     commissionTypeSelect.addEventListener('change', toggleClientFields);
     toggleClientFields(); // Initial call

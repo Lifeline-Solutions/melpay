@@ -1,44 +1,146 @@
-<div class="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg shadow mx-auto sm:ml-64 w-full">
-  <h1 class="text-2xl font-bold mb-4">My Profile</h1>
+<div class="p-4 sm:p-6 sm:ml-64">
+  <div class="mx-auto">
 
-  <% if can?(:read, @user) %>
-    <div class="space-y-2">
-      <p><strong>First Name:</strong> <%= @user&.first_name.presence || 'Not Present' %></p>
-      <p><strong>Last Name:</strong> <%= @user&.last_name.presence || 'Not Present' %></p>
-      <p><strong>Email:</strong> <%= @user&.email.presence || 'Not Present' %></p>
-      <p><strong>Phone Number:</strong> <%= @user&.phone_number.presence || 'Not Present' %></p>
-      <p><strong>Role(s):</strong> <%= @user.roles.distinct.pluck(:name).join(', ') %></p>
-      <p><strong>Sign in Count:</strong> <%= @user.sign_in_count %></p>
-      
+    <% if can?(:read, @user) %>
+
+      <!-- Profile header card -->
+      <div class="bg-gray-50 dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        <div class="bg-gradient-to-r from-indigo-600 to-blue-600 h-20 sm:h-24 lg:h-28"></div>
+
+        <div class="px-4 sm:px-8 pb-6">
+          <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between -mt-10 sm:-mt-12 lg:-mt-14 gap-4">
+
+            <div class="flex flex-col sm:flex-row sm:items-end gap-4">
+              <!-- Avatar -->
+              <div class="shrink-0">
+                <% initials = [@user&.first_name&.first, @user&.last_name&.first].compact.join.upcase %>
+                <% if @user.respond_to?(:avatar) && @user.avatar.attached? %>
+                  <%= image_tag @user.avatar, class: "w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-full object-cover border-4 border-white dark:border-gray-800 shadow" %>
+                <% else %>
+                  <div class="w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-full border-4 border-white dark:border-gray-800 shadow bg-indigo-500 flex items-center justify-center">
+                    <span class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white"><%= initials.presence || "?" %></span>
+                  </div>
+                <% end %>
+              </div>
+
+              <!-- Name & roles -->
+              <div class="pb-1">
+                <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+                  <%= [@user&.first_name, @user&.last_name].compact.join(' ').presence || 'Unnamed User' %>
+                </h1>
+                <div class="flex flex-wrap gap-1.5 mt-1.5">
+                  <% @user.roles.distinct.pluck(:name).each do |role| %>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs lg:text-sm font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200">
+                      <%= role.titleize %>
+                    </span>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+
+            <!-- Actions (desktop: top right, mobile: below, full width) -->
+            <div class="flex gap-2 sm:pb-1">
+              <% if can?(:update, @user) %>
+                <%= link_to "Edit Profile", edit_user_path(@user),
+                            class: "flex-1 sm:flex-none text-center px-4 py-2 lg:px-5 lg:py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-md shadow-sm" %>
+              <% else %>
+                <span class="flex-1 sm:flex-none text-center px-4 py-2 lg:px-5 lg:py-2.5 bg-gray-400 text-white text-sm font-semibold rounded-md cursor-not-allowed">Edit Profile</span>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contact & Activity: stacked on mobile, side-by-side on large screens -->
+      <div class="mt-4 sm:mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <div class="bg-gray-50 dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
+          <h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4">Contact Information</h2>
+          <dl class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-x-6 gap-y-4">
+            <div>
+              <dt class="text-xs text-gray-500 dark:text-gray-400">Email</dt>
+              <dd class="text-sm font-medium text-gray-900 dark:text-gray-100 break-all"><%= @user&.email.presence || 'Not Present' %></dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500 dark:text-gray-400">Phone Number</dt>
+              <dd class="text-sm font-medium text-gray-900 dark:text-gray-100"><%= @user&.phone_number.presence || 'Not Present' %></dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500 dark:text-gray-400">First Name</dt>
+              <dd class="text-sm font-medium text-gray-900 dark:text-gray-100"><%= @user&.first_name.presence || 'Not Present' %></dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500 dark:text-gray-400">Last Name</dt>
+              <dd class="text-sm font-medium text-gray-900 dark:text-gray-100"><%= @user&.last_name.presence || 'Not Present' %></dd>
+            </div>
+          </dl>
+        </div>
+
+        <div class="bg-gray-50 dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
+          <h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4">Account Activity</h2>
+          <dl class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-x-6 gap-y-4">
+            <div>
+              <dt class="text-xs text-gray-500 dark:text-gray-400">Sign in Count</dt>
+              <dd class="text-sm font-medium text-gray-900 dark:text-gray-100"><%= @user.sign_in_count %></dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500 dark:text-gray-400">Created At</dt>
+              <dd class="text-sm font-medium text-gray-900 dark:text-gray-100"><%= @user.created_at.strftime("%B %d, %Y %H:%M") %></dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500 dark:text-gray-400">Updated At</dt>
+              <dd class="text-sm font-medium text-gray-900 dark:text-gray-100"><%= @user.updated_at.strftime("%B %d, %Y %H:%M") %></dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+
+      <!-- Sensitive info (restricted) -->
       <% if can?(:read_sensitive_info, @user) || @user == current_user %>
-        <p><strong>Current Sign in IP:</strong> <%= @user.current_sign_in_ip %></p>
-        <p><strong>Last Sign in IP:</strong> <%= @user.last_sign_in_ip %></p>
-        <p><strong>Last Sign in At:</strong> <%= @user.last_sign_in_at %></p>
-        <p><strong>Confirmed At:</strong> <%= @user.confirmed_at %></p>
+        <div class="mt-4 sm:mt-6 bg-gray-50 dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 border border-amber-200 dark:border-amber-900">
+          <h2 class="text-sm font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wide mb-4 flex items-center gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+            </svg>
+            Sensitive Information
+          </h2>
+          <dl class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-4">
+            <div>
+              <dt class="text-xs text-gray-500 dark:text-gray-400">Current Sign in IP</dt>
+              <dd class="text-sm font-medium text-gray-900 dark:text-gray-100"><%= @user.current_sign_in_ip %></dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500 dark:text-gray-400">Last Sign in IP</dt>
+              <dd class="text-sm font-medium text-gray-900 dark:text-gray-100"><%= @user.last_sign_in_ip %></dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500 dark:text-gray-400">Last Sign in At</dt>
+              <dd class="text-sm font-medium text-gray-900 dark:text-gray-100"><%= @user.last_sign_in_at %></dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500 dark:text-gray-400">Confirmed At</dt>
+              <dd class="text-sm font-medium text-gray-900 dark:text-gray-100"><%= @user.confirmed_at %></dd>
+            </div>
+          </dl>
+        </div>
       <% end %>
-      
-      <p><strong>Created At:</strong> <%= @user.created_at.strftime("%B %d, %Y %H:%M") %></p>
-      <p><strong>Updated At:</strong> <%= @user.updated_at.strftime("%B %d, %Y %H:%M") %></p>
-    </div>
 
-    <div class="mt-6 flex gap-3">
-      <% if can?(:update, @user) %>
-        <%= link_to "Edit Profile", edit_user_path(@user),
-                    class: "px-4 py-2 bg-blue-600 text-white rounded" %>
-      <% else %>
-        <span class="px-4 py-2 bg-gray-400 text-white rounded cursor-not-allowed">Edit Profile</span>
-      <% end %>
+      <!-- Bottom navigation -->
+      <div class="mt-6 flex flex-col sm:flex-row gap-3">
+        <% if can?(:read, User) %>
+          <%= link_to "Back to Users", users_path,
+                      class: "text-center px-4 py-2 lg:px-5 lg:py-2.5 bg-gray-600 hover:bg-gray-700 text-white text-sm font-semibold rounded-md" %>
+        <% else %>
+          <span class="text-center px-4 py-2 lg:px-5 lg:py-2.5 bg-gray-400 text-white text-sm font-semibold rounded-md cursor-not-allowed">Back to Users</span>
+        <% end %>
+      </div>
 
-      <% if can?(:read, User) %>
-        <%= link_to "Back to Users", users_path,
-                    class: "px-4 py-2 bg-gray-600 text-white rounded" %>
-      <% else %>
-        <span class="px-4 py-2 bg-gray-400 text-white rounded cursor-not-allowed">Back to Users</span>
-      <% end %>
-    </div>
-  <% else %>
-    <div class="text-center py-8 text-gray-500 dark:text-gray-400">
-      <p class="text-lg">You don't have permission to view this profile</p>
-    </div>
-  <% end %>
+    <% else %>
+      <div class="text-center py-12 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-lg shadow">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-10 h-10 mx-auto mb-3 text-gray-400">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+        </svg>
+        <p class="text-lg">You don't have permission to view this profile</p>
+      </div>
+    <% end %>
+  </div>
 </div>
