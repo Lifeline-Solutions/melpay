@@ -1,18 +1,22 @@
 <% if current_user && user_signed_in? %>
-  <!-- Hamburger button (mobile only) -->
-  <button id="sidebar-toggle-btn" type="button"
-          class="fixed top-2 left-3 z-50 inline-flex items-center p-2 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600 bg-white dark:bg-gray-800 shadow">
-    <span class="sr-only">Open sidebar</span>
-    <svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-      <path clip-rule="evenodd" fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z"></path>
-    </svg>
-  </button>
+  <!-- Mobile topbar (hamburger lives here now, full-width bar instead of floating button) -->
+  <div id="mobile-topbar"
+       class="fixed top-0 left-0 right-0 z-40 h-14 flex items-center px-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sm:hidden">
+    <button id="sidebar-toggle-btn" type="button"
+            class="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600">
+      <span class="sr-only">Open sidebar</span>
+      <svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+        <path clip-rule="evenodd" fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z"></path>
+      </svg>
+    </button>
+    <%= image_tag 'icon.png', class: 'h-8 ms-3' %>
+  </div>
 
   <!-- Backdrop overlay (mobile only, shown when sidebar is open) -->
   <div id="sidebar-backdrop" class="fixed inset-0 z-30 bg-gray-900/50 hidden sm:hidden"></div>
 
   <aside id="logo-sidebar"
-         class="fixed top-0 left-0 z-40 w-64 h-screen -translate-x-full transition-transform duration-300 ease-in-out sm:translate-x-0"
+         class="fixed top-0 left-0 z-50 w-64 h-screen -translate-x-full transition-transform duration-300 ease-in-out sm:translate-x-0"
          aria-label="Sidebar">
     <div class="h-full px-3 py-4 overflow-y-auto bg-gray-50 dark:bg-gray-600">
 

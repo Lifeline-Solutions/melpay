@@ -20,8 +20,11 @@
     <%= Sentry.get_trace_propagation_meta.html_safe %>
   </head>
 
-  <body class=" flex text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900">
-      <%= render "layouts/sidebar" %>
-      <%= yield %>
+  <body class="flex flex-col sm:flex-row text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900">
+  <%= render "layouts/sidebar" %>
+
+  <div class="flex-1 w-full pt-14 sm:pt-0 min-h-screen">
+    <%= yield %>
+  </div>
   </body>
 </html>
