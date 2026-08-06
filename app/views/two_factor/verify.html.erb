@@ -1,69 +1,79 @@
-<div class="p-4 sm:ml-64 w-full">
+<div class="p-4 pt-16 sm:pt-4 sm:ml-64 w-full">
   <section class="mx-auto md:min-w-md">
-  <div class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
-    <%= form_with url: check_otp_path, local: true, html: { id: 'otp-form' } do |f| %>
-      <div class="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
-        <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
-          <h1 class="text-md font-bold leading-tight tracking-tight">
-            <% if flash[:notice] %>
-              <p class="notice"><%= flash[:notice] %></p>
-            <% end %>
-            <% if flash[:alert] %>
-              <p class="alert"><%= flash[:alert] %></p>
-            <% end %>
-          </h1>
-          <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
-            Please enter the 6-digit verification code sent to your email.
-          </h1>
-          <div class="space-y-4 md:space-y-6">
-            <%= current_user&.otp_code %>
+    <div class="flex flex-col items-center justify-center px-4 sm:px-6 py-6 sm:py-8 mx-auto md:h-screen lg:py-0">
+      <%= form_with url: check_otp_path, local: true, html: { id: 'otp-form' } do |f| %>
+        <div class="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
+          <div class="p-5 space-y-4 sm:p-8 md:space-y-6">
 
-            <div class="flex gap-2 justify-center">
-              <% 6.times do |i| %>
-                <%= text_field_tag "otp_digit_#{i}", nil, autocomplete: (i == 0 ? 'one-time-code' : nil), inputmode: 'numeric', pattern: '\\d', maxlength: 1, placeholder: '•', class: "border border-gray-300 rounded-lg focus:ring-primary-600 focus:border-primary-600 w-10 h-12 text-center mx-1 text-xl dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 otp-digit", required: true, id: "otp_digit_#{i}" %>
-              <% end %>
-              <%= hidden_field_tag :otp_code, '', id: 'otp_code' %>
-            </div>
-            <%= f.submit 'VERIFY', class: 'h-12  border-2 hover:border-[#31adaf] hover:text-[#31adaf] p-3 rounded-lg font-bold w-full mb-4' %>
+            <% if flash[:notice] || flash[:alert] %>
+              <div>
+                <% if flash[:notice] %>
+                  <p class="notice text-sm"><%= flash[:notice] %></p>
+                <% end %>
+                <% if flash[:alert] %>
+                  <p class="alert text-sm"><%= flash[:alert] %></p>
+                <% end %>
+              </div>
+            <% end %>
 
-            <p class="text-sm font-light gap-4">
-              Didn't receive a code?
-              <span>
+            <h1 class="text-lg sm:text-xl md:text-2xl font-bold leading-tight tracking-tight text-gray-900 dark:text-white text-center sm:text-left">
+              Enter the 6-digit code sent to your email
+            </h1>
+
+            <div class="space-y-4 md:space-y-6">
+              <%= current_user&.otp_code %>
+
+              <div class="flex gap-1.5 sm:gap-2 justify-center">
+                <% 6.times do |i| %>
+                  <%= text_field_tag "otp_digit_#{i}", nil,
+                                     autocomplete: (i == 0 ? 'one-time-code' : nil),
+                                     inputmode: 'numeric',
+                                     pattern: '\\d',
+                                     maxlength: 1,
+                                     placeholder: '•',
+                                     class: "border border-gray-300 rounded-lg focus:ring-primary-600 focus:border-primary-600 w-9 h-11 sm:w-10 sm:h-12 text-center text-lg sm:text-xl dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 otp-digit",
+                                     required: true,
+                                     id: "otp_digit_#{i}" %>
+                <% end %>
+                <%= hidden_field_tag :otp_code, '', id: 'otp_code' %>
+              </div>
+
+              <%= f.submit 'VERIFY', class: 'h-12 border-2 hover:border-[#31adaf] hover:text-[#31adaf] p-3 rounded-lg font-bold w-full mb-2 sm:mb-4' %>
+
+              <p class="text-sm font-light text-center sm:text-left">
+                Didn't receive a code?
                 <%= link_to 'Resend code', send_otp_two_factor_path, method: :get, class: "font-medium text-primary-600 hover:underline dark:text-primary-500" %>
-              </span>
-            </p>
+              </p>
+            </div>
           </div>
         </div>
-      </div>
-    <% end %>
-  </div>
-</section>
+      <% end %>
+    </div>
+  </section>
 </div>
 
 <script>
-document.addEventListener('turbo:load', function() {
-  const inputs = Array.from(document.querySelectorAll('.otp-digit'));
-  const hiddenOtp = document.getElementById('otp_code');
-  // Auto-advance and backspace
-  inputs.forEach((input, idx) => {
-    input.addEventListener('input', function(e) {
-      if (this.value.length === 1 && idx < inputs.length - 1) {
-        inputs[idx + 1].focus();
-      }
-      updateHiddenOtp();
+    document.addEventListener('turbo:load', function() {
+        const inputs = Array.from(document.querySelectorAll('.otp-digit'));
+        const hiddenOtp = document.getElementById('otp_code');
+        inputs.forEach((input, idx) => {
+            input.addEventListener('input', function() {
+                if (this.value.length === 1 && idx < inputs.length - 1) {
+                    inputs[idx + 1].focus();
+                }
+                updateHiddenOtp();
+            });
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace' && this.value === '' && idx > 0) {
+                    inputs[idx - 1].focus();
+                }
+            });
+        });
+        function updateHiddenOtp() {
+            hiddenOtp.value = inputs.map(i => i.value).join('');
+        }
+        document.getElementById('otp-form').addEventListener('submit', function() {
+            updateHiddenOtp();
+        });
     });
-    input.addEventListener('keydown', function(e) {
-      if (e.key === 'Backspace' && this.value === '' && idx > 0) {
-        inputs[idx - 1].focus();
-      }
-    });
-  });
-  function updateHiddenOtp() {
-    hiddenOtp.value = inputs.map(i => i.value).join('');
-  }
-  // On form submit, ensure hidden field is updated
-  document.getElementById('otp-form').addEventListener('submit', function(e) {
-    updateHiddenOtp();
-  });
-});
 </script>

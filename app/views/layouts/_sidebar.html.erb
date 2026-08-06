@@ -1,13 +1,30 @@
 <% if current_user && user_signed_in? %>
-  <button data-drawer-target="logo-sidebar" data-drawer-toggle="logo-sidebar" aria-controls="logo-sidebar" type="button" class="inline-flex items-center p-2 mt-2 ms-3 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600">
+  <!-- Hamburger button (mobile only) -->
+  <button id="sidebar-toggle-btn" type="button"
+          class="fixed top-2 left-3 z-50 inline-flex items-center p-2 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600 bg-white dark:bg-gray-800 shadow">
     <span class="sr-only">Open sidebar</span>
     <svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
       <path clip-rule="evenodd" fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z"></path>
     </svg>
   </button>
 
-  <aside id="logo-sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen transition-transform -translate-x-full sm:translate-x-0" aria-label="Sidebar">
+  <!-- Backdrop overlay (mobile only, shown when sidebar is open) -->
+  <div id="sidebar-backdrop" class="fixed inset-0 z-30 bg-gray-900/50 hidden sm:hidden"></div>
+
+  <aside id="logo-sidebar"
+         class="fixed top-0 left-0 z-40 w-64 h-screen -translate-x-full transition-transform duration-300 ease-in-out sm:translate-x-0"
+         aria-label="Sidebar">
     <div class="h-full px-3 py-4 overflow-y-auto bg-gray-50 dark:bg-gray-600">
+
+      <!-- Close button (mobile only) -->
+      <button id="sidebar-close-btn" type="button"
+              class="absolute top-3 right-3 sm:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700">
+        <span class="sr-only">Close sidebar</span>
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
       <% if session[:two_factor_authenticated] %>
         <div class="flex items-center ps-2.5">
           <%= link_to (image_tag 'icon.png'), home_index_path, id: 'logo-top', class: 'h2 w-28 me-3 sm:h4' %>
@@ -139,7 +156,6 @@
 
           <!-- Admin & Account Manager Sections -->
           <% if can?(:manage, User) && cannot?(:manage, :all) %>
-            <!-- User Management for Admin role (non-super_admin) -->
             <%= link_to users_path do %>
               <li>
                 <div class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
@@ -154,7 +170,6 @@
 
           <!-- Auditor Sections -->
           <% if can?(:read, User) && cannot?([:manage, :create], User) %>
-            <!-- Read-only access for Auditors -->
             <%= link_to users_path do %>
               <li>
                 <div class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
@@ -182,4 +197,40 @@
       </ul>
     </div>
   </aside>
+
+  <script>
+      (function () {
+          const toggleBtn = document.getElementById('sidebar-toggle-btn');
+          const closeBtn = document.getElementById('sidebar-close-btn');
+          const sidebar = document.getElementById('logo-sidebar');
+          const backdrop = document.getElementById('sidebar-backdrop');
+
+          function openSidebar() {
+              sidebar.classList.remove('-translate-x-full');
+              sidebar.classList.add('translate-x-0');
+              backdrop.classList.remove('hidden');
+              toggleBtn.setAttribute('aria-expanded', 'true');
+          }
+
+          function closeSidebar() {
+              sidebar.classList.add('-translate-x-full');
+              sidebar.classList.remove('translate-x-0');
+              backdrop.classList.add('hidden');
+              toggleBtn.setAttribute('aria-expanded', 'false');
+          }
+
+          if (toggleBtn && sidebar && backdrop) {
+              toggleBtn.addEventListener('click', openSidebar);
+              closeBtn && closeBtn.addEventListener('click', closeSidebar);
+              backdrop.addEventListener('click', closeSidebar);
+
+              // Reset state on resize back to desktop so it doesn't stay "open" oddly
+              window.addEventListener('resize', function () {
+                  if (window.innerWidth >= 640) {
+                      backdrop.classList.add('hidden');
+                  }
+              });
+          }
+      })();
+  </script>
 <% end %>
