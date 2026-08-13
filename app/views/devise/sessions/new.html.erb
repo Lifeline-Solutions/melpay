@@ -1,38 +1,160 @@
 <% provide(:title, "Sign In") %>
-<div class="min-h-screen w-full flex flex-col md:flex-row bg-gray-50 dark:bg-gray-900">
-  <!-- Left side image/logo (always visible, on top for mobile, left for desktop) -->
-  <div class="flex w-full md:w-1/2 items-center justify-center bg-gray-100 dark:bg-gray-600 min-h-[200px] md:min-h-screen py-8 md:py-0">
-    <div class="flex flex-col items-center w-full px-6">
-      <%= image_tag 'icon.png', class: 'object-contain hidden dark:block mx-auto transition-all duration-300' %>
-      <%= image_tag 'icon.png', class: 'object-contain block dark:hidden mx-auto transition-all duration-300' %>
-      <h4 class="text-base font-bold text-7xl text-center">Welcome to Mal Payments</h4>
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
+
+    .font-display { font-family: 'Space Grotesk', sans-serif; }
+    .font-body { font-family: 'Inter', sans-serif; }
+
+    /* drifting color blobs behind the content */
+    @keyframes blob-drift-a {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        33%      { transform: translate(30px, -20px) scale(1.08); }
+        66%      { transform: translate(-15px, 15px) scale(0.96); }
+    }
+    @keyframes blob-drift-b {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        33%      { transform: translate(-25px, 20px) scale(1.1); }
+        66%      { transform: translate(20px, -15px) scale(0.94); }
+    }
+    @keyframes blob-drift-c {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50%      { transform: translate(18px, 22px) scale(1.06); }
+    }
+    .blob-a { animation: blob-drift-a 16s ease-in-out infinite; }
+    .blob-b { animation: blob-drift-b 19s ease-in-out infinite; }
+    .blob-c { animation: blob-drift-c 13s ease-in-out infinite; }
+
+    /* floating particles */
+    @keyframes float-up {
+        0%   { transform: translateY(0) scale(1); opacity: 0; }
+        12%  { opacity: 0.85; }
+        88%  { opacity: 0.5; }
+        100% { transform: translateY(-150px) scale(1.2); opacity: 0; }
+    }
+    .particle {
+        position: absolute;
+        border-radius: 9999px;
+        animation: float-up 7s ease-in-out infinite;
+    }
+
+    /* transaction flow line */
+    @keyframes flow-travel {
+        0%   { offset-distance: 0%;   opacity: 0; }
+        10%  { opacity: 1; }
+        90%  { opacity: 1; }
+        100% { offset-distance: 100%; opacity: 0; }
+    }
+    .flow-dot {
+        offset-path: path('M10,30 L290,30');
+        animation: flow-travel 2.2s ease-in-out infinite;
+    }
+    .flow-dot.d1 { animation-delay: 0s;   filter: drop-shadow(0 0 6px rgba(31,200,196,0.7)); }
+    .flow-dot.d2 { animation-delay: 0.7s; filter: drop-shadow(0 0 6px rgba(255,122,89,0.7)); }
+    .flow-dot.d3 { animation-delay: 1.4s; filter: drop-shadow(0 0 6px rgba(124,111,240,0.7)); }
+
+    @keyframes pulse-ring {
+        0%, 100% { r: 4; opacity: 0.9; }
+        50%      { r: 6.5; opacity: 0.4; }
+    }
+    .pulse-node { animation: pulse-ring 2.2s ease-in-out infinite; }
+
+    @media (prefers-reduced-motion: reduce) {
+        .blob-a, .blob-b, .blob-c { animation: none; }
+        .particle { animation: none; opacity: 0.4; }
+        .flow-dot { animation: none; opacity: 1; }
+        .pulse-node { animation: none; }
+    }
+</style>
+
+<div class="min-h-screen w-full flex flex-col md:flex-row font-body bg-white dark:bg-[#0F1A22] overflow-x-hidden">
+
+  <!-- Left: brand panel (60%) -->
+  <div class="hidden md:flex relative w-full md:w-[60%] flex-col justify-center md:justify-between overflow-hidden bg-white px-6 sm:px-10 md:px-14 py-10 md:py-14 gap-10 md:gap-0">
+
+    <!-- colorful blurred blobs -->
+    <div class="blob-a pointer-events-none absolute -top-20 -left-16 w-72 h-72 rounded-full bg-[#1FC8C4]/25 blur-3xl"></div>
+    <div class="blob-b pointer-events-none absolute top-1/3 -right-24 w-80 h-80 rounded-full bg-[#FF7A59]/20 blur-3xl"></div>
+    <div class="blob-c pointer-events-none absolute -bottom-24 left-1/4 w-72 h-72 rounded-full bg-[#7C6FF0]/20 blur-3xl"></div>
+
+    <!-- floating particles -->
+    <div class="particle" style="width:9px;  height:9px;  left:14%; bottom:12%; background:#1FC8C4; animation-delay:0s;"></div>
+    <div class="particle" style="width:6px;  height:6px;  left:30%; bottom:20%; background:#FF7A59; animation-delay:1.2s;"></div>
+    <div class="particle" style="width:12px; height:12px; left:47%; bottom:8%;  background:#7C6FF0; animation-delay:2.4s;"></div>
+    <div class="particle" style="width:7px;  height:7px;  left:64%; bottom:16%; background:#1FC8C4; animation-delay:0.6s;"></div>
+    <div class="particle" style="width:10px; height:10px; left:79%; bottom:24%; background:#FF7A59; animation-delay:3.1s;"></div>
+    <div class="particle" style="width:6px;  height:6px;  left:90%; bottom:10%; background:#7C6FF0; animation-delay:1.8s;"></div>
+
+    <div class="relative flex items-center gap-3">
+      <%= image_tag 'icon.png', class: 'h-12 sm:h-14 md:h-16 w-auto object-contain' %>
     </div>
+
+    <div class="relative">
+      <p class="uppercase tracking-[0.2em] text-xs font-semibold text-white bg-[#122029] inline-block px-2.5 py-1 rounded-full mb-4">Mal Payments</p>
+      <h1 class="font-display text-2xl sm:text-3xl md:text-[2.75rem] leading-[1.15] md:leading-[1.1] font-semibold text-[#122029] max-w-md">
+        Every transaction,<br />moving with purpose.
+      </h1>
+      <p class="mt-4 md:mt-5 text-[#5B6B76] text-sm md:text-base max-w-sm">
+        Sign in to track transfers, reconcile settlements, and keep every payment accountable.
+      </p>
+
+      <!-- signature element: colorful animated transaction flow -->
+      <div class="mt-10 md:mt-12 hidden md:block" aria-hidden="true">
+        <svg viewBox="0 0 320 60" class="w-full max-w-sm" fill="none">
+          <line x1="10" y1="30" x2="290" y2="30" stroke="#D8E4E6" stroke-width="2" stroke-dasharray="4 6" />
+          <circle cx="10" cy="30" r="4" fill="#1FC8C4" class="pulse-node" />
+          <circle cx="290" cy="30" r="4" fill="#7C6FF0" class="pulse-node" style="animation-delay:1.1s;" />
+          <circle r="4.5" fill="#1FC8C4" class="flow-dot d1" />
+          <circle r="4.5" fill="#FF7A59" class="flow-dot d2" />
+          <circle r="4.5" fill="#7C6FF0" class="flow-dot d3" />
+          <text x="10" y="52" fill="#8B98A1" font-size="11" font-family="Inter, sans-serif">Sender</text>
+          <text x="253" y="52" fill="#8B98A1" font-size="11" font-family="Inter, sans-serif">Recipient</text>
+        </svg>
+      </div>
+    </div>
+
+    <p class="relative text-xs text-[#9AA7AE] hidden md:block">© <%= Date.current.year %> Mal Payments. All rights reserved.</p>
   </div>
-  <!-- Right side form -->
-  <div class="w-full md:w-1/2 flex items-center justify-center bg-white dark:bg-gray-800 min-h-[400px] md:min-h-screen py-8 md:py-0">
-    <%= form_for(resource, as: resource_name, url: session_path(resource_name), data: {turbo: false}, html: {class: 'w-full'}) do |f| %>
-      <div class="w-full max-w-sm sm:max-w-md mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 sm:p-8">
-        <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">Sign in to Mal Payments</h1>
+
+  <!-- Right: form (40%) -->
+  <div class="w-full md:w-[40%] flex items-center justify-center bg-white dark:bg-[#0F1A22] px-6 py-10 md:py-0 border-t md:border-t-0 md:border-l border-gray-100 dark:border-gray-800">
+    <%= form_for(resource, as: resource_name, url: session_path(resource_name), data: { turbo: false }, html: { class: 'w-full' }) do |f| %>
+      <div class="w-full max-w-sm mx-auto">
+        <h2 class="font-display text-xl sm:text-2xl font-semibold text-[#122029] dark:text-white mb-1">Welcome back</h2>
+        <p class="text-sm text-[#647079] dark:text-[#8FA2AC] mb-8">Sign in to your Mal Payments account.</p>
+
         <%= render "devise/shared/error_messages", resource: resource %>
-        <div class="mb-4">
-          <label for="email" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">Email</label>
-          <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "h-12 border border-gray-300 focus:border-blue-500 rounded-lg w-full px-3", required: true %>
+
+        <div class="mb-5">
+          <label for="email" class="block mb-2 text-sm font-medium text-[#122029] dark:text-gray-200">Email</label>
+          <%= f.email_field :email,
+                            autofocus: true,
+                            autocomplete: "email",
+                            placeholder: "you@company.com",
+                            required: true,
+                            class: "h-12 w-full px-4 rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-[#182631] dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1FC8C4] focus:border-[#1FC8C4] transition" %>
         </div>
-        <div class="mb-4">
-          <label for="password" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">Password</label>
-          <%= f.password_field :password, autocomplete: "current-password", placeholder: '••••••••', class: "h-12 border border-gray-300 focus:border-blue-500 rounded-lg w-full px-3", required: true %>
+
+        <div class="mb-5">
+          <label for="password" class="block mb-2 text-sm font-medium text-[#122029] dark:text-gray-200">Password</label>
+          <%= f.password_field :password,
+                               autocomplete: "current-password",
+                               placeholder: "••••••••",
+                               required: true,
+                               class: "h-12 w-full px-4 rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-[#182631] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#1FC8C4] focus:border-[#1FC8C4] transition" %>
         </div>
-        <div class="flex flex-col sm:flex-row items-center justify-between mb-4 gap-2">
-          <div class="flex items-center">
-            <% if devise_mapping.rememberable? %>
-              <%= f.check_box :remember_me, class: "w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500" %>
-              <label class="ml-2 text-sm text-gray-700 dark:text-gray-200"><%= f.label :remember_me %></label>
-            <% end %>
+
+        <% if devise_mapping.rememberable? %>
+          <div class="flex items-center mb-6">
+            <%= f.check_box :remember_me, class: "w-4 h-4 rounded border-gray-300 text-[#1FC8C4] focus:ring-[#1FC8C4]" %>
+            <label class="ml-2 text-sm text-[#647079] dark:text-[#8FA2AC]"><%= f.label :remember_me %></label>
           </div>
-          <div class="text-sm text-right w-full sm:w-auto">
-          </div>
-        </div>
-        <%= f.submit 'SUBMIT', class: 'h-12  border-2 hover:border-[#31adaf] hover:text-[#31adaf] p-3 rounded-lg font-bold w-full mb-4' %>
+        <% end %>
+
+        <%= f.submit 'Sign in',
+                     class: 'h-12 w-full rounded-lg font-semibold text-white bg-[#122029] hover:bg-[#1FC8C4] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1FC8C4] transition-colors duration-200 cursor-pointer' %>
+
+        <p class="text-xs text-[#9AA7AE] text-center mt-8 md:hidden">© <%= Date.current.year %> Mal Payments. All rights reserved.</p>
       </div>
     <% end %>
   </div>
