@@ -1,408 +1,406 @@
-<div class="container mx-auto px-4 py-8 p-4  ml-64 w-full h-screen">
-  <!-- Summary Cards -->
-  <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-    <div class="bg-green-100 p-6 rounded-lg shadow">
-      <h3 class="text-sm font-semibold text-green-800">Current Balance</h3>
+<div class="p-4 sm:ml-64 min-h-screen bg-white">
+  <div class="max-w-7xl mx-auto">
+
+    <!-- Page Header -->
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-[#1C2B39]">Deposits Overview</h1>
+      <p class="text-sm text-gray-500 mt-1">Track balances, deposits, and transaction costs</p>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+
       <% client = @home.client || current_user.client %>
-      <% if client && can?(:read, client) %>
-        <p class="text-2xl font-bold text-green-600"><%= number_to_currency(client&.credit || 0) %></p>
-      <% else %>
-        <p class="text-2xl font-bold text-green-600"><%= number_to_currency(0) %></p>
-      <% end %>
-    </div>
-    <div class="bg-green-100 p-6 rounded-lg shadow">
-      <h3 class="text-sm font-semibold text-green-800">Total Amount to transfer</h3>
-      <p class="text-2xl font-bold text-green-600"><%= number_to_currency(@total_deposits) %></p>
-      <span class="text-xs text-green-600">Global ID: <%= @home.unique_id %></span>
-    </div>
-    <div class="bg-yellow-100 p-6 rounded-lg shadow">
-      <h3 class="text-sm font-semibold text-yellow-800">Total Deposit Count</h3>
-      <p class="text-2xl font-bold text-yellow-600"><%= @total_deposit_count %></p>
-    </div>
-    <div class="bg-yellow-100 p-6 rounded-lg shadow">
-      <h3 class="text-sm font-semibold text-yellow-800">Transaction Cost</h3>
-      <p class="text-2xl font-bold text-yellow-600"><%= number_to_currency(@deposit_interest) %></p>
-    </div>
-    <div class="bg-blue-100 p-6 rounded-lg shadow">
-      <h3 class="text-sm font-semibold text-blue-800">Total Cost</h3>
-      <p class="text-2xl font-bold text-blue-600"><%= number_to_currency(@total_cost) %></p>
-    </div>
-  </div>
-  <!-- Deposits Table -->
-  <div class="mb-8">
-    <h2 class="text-xl font-bold mb-4">Deposits</h2>
-    <%# Global Payment Buttons - show Pay All only when there is at least one valid (amount >= 1) non-success deposit %>
-    <% has_valid_pending = @deposits.any? do |d|
-      status = d['status'].to_s.strip.downcase
-      amount = (d['amount'] || 0).to_f
-      status != 'success' && amount >= 1
-    end %>
-
-    <% if has_valid_pending && can?(:create, Transaction) %>
-      <div class="mb-4 flex gap-2">
-        <button id="pay-all-btn" data-url="<%= pay_all_deposits_home_path(@home, status: 'success') %>" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Pay All Deposits (Success)</button>
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-9 h-9 rounded-lg bg-[#2FACA6]/10 flex items-center justify-center flex-shrink-0">
+            <svg class="w-4.5 h-4.5 text-[#2FACA6]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>
+          </div>
+          <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Current Balance</h3>
+        </div>
+        <% if client && can?(:read, client) %>
+          <p class="text-2xl font-bold text-[#1C2B39]"><%= number_to_currency(client&.credit || 0) %></p>
+        <% else %>
+          <p class="text-2xl font-bold text-[#1C2B39]"><%= number_to_currency(0) %></p>
+        <% end %>
       </div>
-    <% elsif !has_valid_pending %>
-      <div class="mb-4">
-        <span class="inline-block bg-green-100 text-green-800 text-sm font-semibold px-4 py-2 rounded">
-          ✓ All deposits have been processed successfully
-        </span>
-      </div>
-    <% end %>
 
-    <div class="overflow-x-auto">
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-9 h-9 rounded-lg bg-[#2FACA6]/10 flex items-center justify-center flex-shrink-0">
+            <svg class="w-4.5 h-4.5 text-[#2FACA6]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 8.25V6a2.25 2.25 0 00-2.25-2.25H6A2.25 2.25 0 003.75 6v8.25A2.25 2.25 0 006 16.5h2.25m8.25-8.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-7.5A2.25 2.25 0 018.25 18v-1.5m8.25-8.25h-6a2.25 2.25 0 00-2.25 2.25v6" /></svg>
+          </div>
+          <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">To Transfer</h3>
+        </div>
+        <p class="text-2xl font-bold text-[#1C2B39]"><%= number_to_currency(@total_deposits) %></p>
+        <span class="text-xs text-gray-400">ID: <%= @home.unique_id %></span>
+      </div>
+
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+            <svg class="w-4.5 h-4.5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z" /></svg>
+          </div>
+          <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Deposit Count</h3>
+        </div>
+        <p class="text-2xl font-bold text-[#1C2B39]"><%= @total_deposit_count %></p>
+      </div>
+
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+            <svg class="w-4.5 h-4.5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          </div>
+          <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Transaction Cost</h3>
+        </div>
+        <p class="text-2xl font-bold text-[#1C2B39]"><%= number_to_currency(@deposit_interest) %></p>
+      </div>
+
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-9 h-9 rounded-lg bg-[#1C2B39]/10 flex items-center justify-center flex-shrink-0">
+            <svg class="w-4.5 h-4.5 text-[#1C2B39]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z" /></svg>
+          </div>
+          <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Total Cost</h3>
+        </div>
+        <p class="text-2xl font-bold text-[#1C2B39]"><%= number_to_currency(@total_cost) %></p>
+      </div>
+    </div>
+
+    <!-- Deposits -->
+    <div class="mb-8">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <h2 class="text-lg font-bold text-[#1C2B39]">Deposits</h2>
+
+        <% has_valid_pending = @deposits.any? do |d|
+          status = d['status'].to_s.strip.downcase
+          amount = (d['amount'] || 0).to_f
+          status != 'success' && amount >= 1
+        end %>
+
+        <% if has_valid_pending && can?(:create, Transaction) %>
+          <button id="pay-all-btn" data-url="<%= pay_all_deposits_home_path(@home, status: 'success') %>"
+                  class="inline-flex items-center justify-center gap-2 bg-[#2FACA6] hover:bg-[#279a94] text-white text-sm font-semibold py-2.5 px-4 rounded-lg shadow-sm transition-colors">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            Pay All Deposits
+          </button>
+        <% elsif !has_valid_pending %>
+          <span class="inline-flex items-center gap-1.5 bg-teal-50 text-[#1C2B39] text-sm font-semibold px-4 py-2 rounded-lg border border-[#2FACA6]/30 w-fit">
+            <svg class="w-4 h-4 text-[#2FACA6]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            All deposits processed successfully
+          </span>
+        <% end %>
+      </div>
+
       <% client = @home.client || current_user.client %>
       <% client_current_rate = client&.applied_interest_rate.to_f if client && can?(:read, client) %>
       <% client_current_rate ||= 0.0 %>
-      <table class="min-w-full bg-white dark:bg-gray-700 rounded-lg shadow">
-        <thead class="bg-gray-200 dark:bg-gray-800">
-        <tr>
-          <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Transaction ID</th>
-          <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Phone Number</th>
-          <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Amount</th>
-          <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Transaction Cost</th>
-          <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Percentage</th>
-          <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Total Cost</th>
-          <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Status</th>
-          <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Type</th>
-          <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
-          <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Description</th>
-        </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-200">
-        <% @deposits.each do |deposit| %>
-          <% deposit_amount = deposit['amount'].to_f %>
-          <% current_status = deposit['status'].to_s.strip %>
-          <% is_successful = current_status.downcase == 'success' %>
 
-          <%# Use snapshot values if transaction is successful, otherwise compute with current rate %>
-          <% if is_successful && deposit['transaction_cost'].present? %>
-            <%# Use historical snapshot values for successful transactions %>
-            <% transaction_cost = deposit['transaction_cost'].to_f %>
-            <% interest_rate = deposit['applied_interest_rate'].to_f %>
-            <% fixed_commission_amount = deposit['applied_commission_display'].to_f || 0.0 %>
-          <% else %>
-            <%# Calculate for pending/failed transactions using current rates %>
-            <% if client && can?(:read, client) && client&.fixed? %>
-              <% fixed_commission_amount = client&.effective_commission_value.to_f || 0.0 %>
-              <% transaction_cost = fixed_commission_amount %>
-              <% interest_rate = 0.0 %>
-            <% else %>
-              <% interest_rate = client_current_rate %>
-              <% transaction_cost = (deposit_amount * (interest_rate / 100.0)).round(2) %>
-              <% fixed_commission_amount = 0.0 %>
-            <% end %>
-          <% end %>
-          <% total_cost = (deposit_amount + transaction_cost).round(2) %>
-
-          <tr data-transaction-id="<%= deposit['transaction_id'] %>">
-            <td class="px-6 py-3 whitespace-nowrap font-mono text-sm font-semibold">
-              <%= deposit['transaction_id'] %>
-            </td>
-            <td class="px-6 py-3 whitespace-nowrap">
-              <%= deposit['phone number'] || 'N/A' %>
-            </td>
-            <td class="px-6 py-3 text-green-600 font-semibold">
-              <% if deposit_amount < 1 %>
-                <span class="text-xs text-red-600 flex">Invalid amount</span>
-              <% else %>
-                <%= number_to_currency(deposit_amount) %>
-              <% end %>
-            </td>
-            <td class="px-6 py-3 text-yellow-600 font-semibold">
-              <% if transaction_cost < 1 %>
-                <span class="text-xs text-red-600 flex">Invalid transaction cost</span>
-              <% else %>
-                <%= number_to_currency(transaction_cost) %>
-              <% end %>
-            </td>
-            <td class="px-6 py-3">
-              <%= number_to_percentage(interest_rate, precision: 2) %>
-            </td>
-            <td class="px-6 py-3 text-blue-600 font-semibold">
-              <% if total_cost < 1 %>
-                <span class="text-xs text-red-600 flex">Invalid total cost</span>
-              <% else %>
-                <%= number_to_currency(total_cost) %>
-              <% end %>
-            </td>
-            <td class="px-6 py-3 deposit-status" data-status="<%= current_status.present? ? current_status.downcase : 'pending' %>">
-              <% if current_status.present? %>
-                <span class="px-2 py-1 text-xs font-semibold rounded-full <%= current_status.downcase == 'success' ? 'bg-green-100 text-green-800' : current_status.downcase == 'pending' ? 'bg-yellow-100 text-yellow-800' : current_status.downcase == 'failed' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800' %>">
-                  <%= current_status.capitalize %>
-                </span>
-              <% else %>
-                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Pending</span>
-              <% end %>
-            </td>
-            <td class="px-6 py-3">
-              <%= deposit['type']&.capitalize || 'N/A' %>
-            </td>
-            <td class="px-6 py-3">
-              <% if is_successful %>
-                <span class="text-xs text-gray-500">Completed</span>
-              <% elsif deposit_amount < 1 %>
-                <span class="text-xs text-red-600">Invalid transaction</span>
-              <% elsif can?(:create, Transaction) %>
-                <div class="flex items-center gap-2">
-                  <!-- Success toggle (styled checkbox). Submits deposit_transaction_id and status=success -->
-                  <%= form_with url: pay_single_deposit_home_path(@home), method: :post, local: false, html: { class: 'twofa-deposit-form' }, data: { deposit_id: deposit['transaction_id'] } do %>
-                    <%= hidden_field_tag :deposit_transaction_id, deposit['transaction_id'], class: 'deposit-transaction-id' %>
-                    <%= hidden_field_tag :status, 'success', id: "status_success_#{deposit['transaction_id']}" %>
-                    <label class="relative inline-block w-14 h-7 cursor-pointer" title="Mark as success">
-                      <%= check_box_tag "success_toggle_#{deposit['transaction_id']}", '1', false, class: 'hidden success-toggle', data: { submit_form: true }, onchange: "this.form.dispatchEvent(new Event('submit',{cancelable:true,bubbles:true}))" %>
-                      <span class="absolute top-0 left-0 right-0 bottom-0 bg-gray-300 rounded-full transition-colors duration-200"></span>
-                      <span class="absolute left-1 top-1 bg-white w-5 h-5 rounded-full transition-transform duration-200 transform"></span>
-                    </label>
-                  <% end %>
-                </div>
-              <% else %>
-                <span class="text-xs text-gray-500">No permission</span>
-              <% end %>
-            </td>
-            <td class="px-6 py-3">
-              <%= deposit['description'] || 'N/A' %>
-            </td>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <table class="min-w-full deposits-table">
+          <thead class="bg-[#1C2B39] hidden md:table-header-group">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Transaction ID</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Phone Number</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Amount</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Txn Cost</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Rate</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Total Cost</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Status</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Type</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Actions</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Description</th>
           </tr>
-        <% end %>
-        </tbody>
-      </table>
+          </thead>
+          <tbody class="block md:table-row-group divide-y divide-gray-100">
+          <% @deposits.each do |deposit| %>
+            <% deposit_amount = deposit['amount'].to_f %>
+            <% current_status = deposit['status'].to_s.strip %>
+            <% is_successful = current_status.downcase == 'success' %>
+
+            <% if is_successful && deposit['transaction_cost'].present? %>
+              <% transaction_cost = deposit['transaction_cost'].to_f %>
+              <% interest_rate = deposit['applied_interest_rate'].to_f %>
+              <% fixed_commission_amount = deposit['applied_commission_display'].to_f || 0.0 %>
+            <% else %>
+              <% if client && can?(:read, client) && client&.fixed? %>
+                <% fixed_commission_amount = client&.effective_commission_value.to_f || 0.0 %>
+                <% transaction_cost = fixed_commission_amount %>
+                <% interest_rate = 0.0 %>
+              <% else %>
+                <% interest_rate = client_current_rate %>
+                <% transaction_cost = (deposit_amount * (interest_rate / 100.0)).round(2) %>
+                <% fixed_commission_amount = 0.0 %>
+              <% end %>
+            <% end %>
+            <% total_cost = (deposit_amount + transaction_cost).round(2) %>
+
+            <tr data-transaction-id="<%= deposit['transaction_id'] %>"
+                class="block md:table-row mb-4 md:mb-0 rounded-lg md:rounded-none border md:border-0 border-gray-100 shadow-sm md:shadow-none hover:bg-gray-50 transition-colors">
+
+              <td data-label="Transaction ID" class="deposit-cell px-4 md:px-6 py-2 md:py-3 font-mono text-sm font-semibold text-[#1C2B39]">
+                <%= deposit['transaction_id'] %>
+              </td>
+              <td data-label="Phone Number" class="deposit-cell px-4 md:px-6 py-2 md:py-3 text-gray-700">
+                <%= deposit['phone number'] || 'N/A' %>
+              </td>
+              <td data-label="Amount" class="deposit-cell px-4 md:px-6 py-2 md:py-3 text-green-600 font-semibold">
+                <% if deposit_amount < 1 %>
+                  <span class="text-xs text-red-600">Invalid amount</span>
+                <% else %>
+                  <%= number_to_currency(deposit_amount) %>
+                <% end %>
+              </td>
+              <td data-label="Transaction Cost" class="deposit-cell px-4 md:px-6 py-2 md:py-3 text-amber-600 font-semibold">
+                <% if transaction_cost < 1 %>
+                  <span class="text-xs text-red-600">Invalid cost</span>
+                <% else %>
+                  <%= number_to_currency(transaction_cost) %>
+                <% end %>
+              </td>
+              <td data-label="Percentage" class="deposit-cell px-4 md:px-6 py-2 md:py-3 text-gray-700">
+                <%= number_to_percentage(interest_rate, precision: 2) %>
+              </td>
+              <td data-label="Total Cost" class="deposit-cell px-4 md:px-6 py-2 md:py-3 text-[#2FACA6] font-semibold">
+                <% if total_cost < 1 %>
+                  <span class="text-xs text-red-600">Invalid total</span>
+                <% else %>
+                  <%= number_to_currency(total_cost) %>
+                <% end %>
+              </td>
+              <td data-label="Status" class="deposit-cell deposit-status px-4 md:px-6 py-2 md:py-3" data-status="<%= current_status.present? ? current_status.downcase : 'pending' %>">
+                <% if current_status.present? %>
+                  <span class="px-2.5 py-1 text-xs font-semibold rounded-full <%= current_status.downcase == 'success' ? 'bg-green-100 text-green-800' : current_status.downcase == 'pending' ? 'bg-amber-100 text-amber-800' : current_status.downcase == 'failed' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800' %>">
+                    <%= current_status.capitalize %>
+                  </span>
+                <% else %>
+                  <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800">Pending</span>
+                <% end %>
+              </td>
+              <td data-label="Type" class="deposit-cell px-4 md:px-6 py-2 md:py-3 text-gray-700">
+                <%= deposit['type']&.capitalize || 'N/A' %>
+              </td>
+              <td data-label="Actions" class="deposit-cell px-4 md:px-6 py-2 md:py-3">
+                <% if is_successful %>
+                  <span class="text-xs text-gray-400">Completed</span>
+                <% elsif deposit_amount < 1 %>
+                  <span class="text-xs text-red-600">Invalid transaction</span>
+                <% elsif can?(:create, Transaction) %>
+                  <div class="flex items-center gap-2">
+                    <%= form_with url: pay_single_deposit_home_path(@home), method: :post, local: false, html: { class: 'twofa-deposit-form' }, data: { deposit_id: deposit['transaction_id'] } do %>
+                      <%= hidden_field_tag :deposit_transaction_id, deposit['transaction_id'], class: 'deposit-transaction-id' %>
+                      <%= hidden_field_tag :status, 'success', id: "status_success_#{deposit['transaction_id']}" %>
+                      <label class="relative inline-block w-12 h-6 cursor-pointer" title="Mark as success">
+                        <%= check_box_tag "success_toggle_#{deposit['transaction_id']}", '1', false, class: 'hidden success-toggle', data: { submit_form: true }, onchange: "this.form.dispatchEvent(new Event('submit',{cancelable:true,bubbles:true}))" %>
+                        <span class="toggle-track absolute top-0 left-0 right-0 bottom-0 bg-gray-300 rounded-full transition-colors duration-200"></span>
+                        <span class="toggle-thumb absolute left-1 top-1 bg-white w-4 h-4 rounded-full shadow transition-transform duration-200 transform"></span>
+                      </label>
+                    <% end %>
+                  </div>
+                <% else %>
+                  <span class="text-xs text-gray-400">No permission</span>
+                <% end %>
+              </td>
+              <td data-label="Description" class="deposit-cell px-4 md:px-6 py-2 md:py-3 text-gray-500 text-sm">
+                <%= deposit['description'] || 'N/A' %>
+              </td>
+            </tr>
+          <% end %>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- OTP Modal (hidden by default) -->
-<!-- modal intentionally moved below and consolidated to a single instance -->
+<style>
+    .toggle-track { }
+    .success-toggle:checked + .toggle-track { background-color: #2FACA6; }
+    .success-toggle:checked ~ .toggle-thumb { transform: translateX(1.5rem); }
+
+    @media (max-width: 767px) {
+        .deposits-table tbody { display: block; }
+        .deposits-table tr { display: block; padding: 0.5rem 0; }
+        .deposits-table td.deposit-cell {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: right;
+            border: none;
+        }
+        .deposits-table td.deposit-cell::before {
+            content: attr(data-label);
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #6b7280;
+            text-align: left;
+            padding-right: 1rem;
+        }
+    }
+</style>
+
+<!-- OTP Modal -->
 <div id="twofa-modal" class="fixed inset-0 flex items-center justify-center hidden bg-black/40" style="z-index:99999; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);">
-   <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md border border-gray-900 dark:border-gray-100 shadow-lg" style="z-index:100000; position:relative;">
-     <h3 class="text-lg font-semibold mb-2">Confirm transaction</h3>
-     <p class="text-sm text-gray-600 dark:text-gray-100 mb-4">A one-time code has been sent to your email. Enter it below to confirm the transaction.</p>
-     <form id="twofa-modal-form">
+  <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 border border-gray-100 shadow-xl" style="z-index:100000; position:relative;">
+    <h3 class="text-lg font-semibold mb-2 text-[#1C2B39]">Confirm transaction</h3>
+    <p class="text-sm text-gray-500 mb-4">A one-time code has been sent to your email. Enter it below to confirm the transaction.</p>
+    <form id="twofa-modal-form">
       <div class="flex gap-2 justify-center mb-3">
         <% 6.times do |i| %>
-          <%= text_field_tag "otp_digit_#{i}", nil, autocomplete: (i == 0 ? 'one-time-code' : nil), inputmode: 'numeric', pattern: '\\d', maxlength: 1, placeholder: '•', class: "border border-gray-300 rounded-lg focus:ring-primary-600 focus:border-primary-600 w-10 h-12 text-center mx-1 text-xl dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 otp-digit", required: true, id: "otp_digit_#{i}" %>
+          <%= text_field_tag "otp_digit_#{i}", nil, autocomplete: (i == 0 ? 'one-time-code' : nil), inputmode: 'numeric', pattern: '\\d', maxlength: 1, placeholder: '•', class: "border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2FACA6]/40 focus:border-[#2FACA6] w-10 h-12 text-center mx-1 text-xl text-[#1C2B39] otp-digit", required: true, id: "otp_digit_#{i}" %>
         <% end %>
         <%= hidden_field_tag :otp_code, '', id: 'otp_code' %>
       </div>
-       <div class="flex justify-between items-center">
-         <button type="button" id="twofa-resend" class="text-sm text-blue-600 dark:text-gray-100">Resend code</button>
-         <div class="flex gap-2">
-           <button type="button" id="twofa-cancel" class="px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded">Cancel</button>
-           <button type="submit" id="twofa-submit" class="px-4 py-2 bg-blue-600 text-white rounded">Verify</button>
-         </div>
-       </div>
-     </form>
-     <div id="twofa-error" class="text-red-600 text-sm mt-3 hidden"></div>
-   </div>
- </div>
+      <div class="flex justify-between items-center">
+        <button type="button" id="twofa-resend" class="text-sm font-medium text-[#2FACA6] hover:text-[#279a94]">Resend code</button>
+        <div class="flex gap-2">
+          <button type="button" id="twofa-cancel" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors">Cancel</button>
+          <button type="submit" id="twofa-submit" class="px-4 py-2 bg-[#2FACA6] hover:bg-[#279a94] text-white rounded-lg text-sm font-semibold transition-colors">Verify</button>
+        </div>
+      </div>
+    </form>
+    <div id="twofa-error" class="text-red-600 text-sm mt-3 hidden"></div>
+  </div>
+</div>
 
 <script>
-  document.addEventListener('turbo:load', function() {
-    // Intercept forms with class 'twofa-deposit-form'
-    document.querySelectorAll('.twofa-deposit-form').forEach(function(form) {
-      form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        var depositId = form.querySelector('.deposit-transaction-id').value;
-        var url = form.action;
-        var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
-        // Send request to create pending transaction and send OTP
-        fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': token,
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify({ deposit_transaction_id: depositId, status: 'success' })
-        }).then(function(res) {
-          return res.json();
-        }).then(function(json) {
-          if (json && json.pending) {
-            // Open modal
-            openTwoFAModal(depositId);
-          } else if (json && json.error) {
-            alert(json.error || 'Error initiating transaction');
-          } else {
-            alert('Unexpected response');
-          }
-        }).catch(function(err) {
-          console.error(err);
-          alert('Network error initiating transaction');
+    document.addEventListener('turbo:load', function() {
+        document.querySelectorAll('.twofa-deposit-form').forEach(function(form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var depositId = form.querySelector('.deposit-transaction-id').value;
+                var url = form.action;
+                var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': token, 'Accept': 'application/json' },
+                    body: JSON.stringify({ deposit_transaction_id: depositId, status: 'success' })
+                }).then(function(res) { return res.json(); }).then(function(json) {
+                    if (json && json.pending) { openTwoFAModal(depositId); }
+                    else if (json && json.error) { alert(json.error || 'Error initiating transaction'); }
+                    else { alert('Unexpected response'); }
+                }).catch(function(err) { console.error(err); alert('Network error initiating transaction'); });
+            });
         });
-      });
-    });
 
-    // Pay All Deposits (batch) button handler - creates pending transactions and opens OTP modal
-    var payAllBtn = document.getElementById('pay-all-btn');
-    if (payAllBtn) {
-      payAllBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        var url = payAllBtn.dataset.url;
-        var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': token,
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify({ status: 'success' })
-        }).then(function(res) { return res.json(); }).then(function(json) {
-          if (json && json.pending) {
-            openTwoFAModal('BATCH');
-          } else if (json && json.error) {
-            alert(json.error || 'Error initiating batch transaction');
-          } else {
-            alert('Unexpected response');
-          }
-        }).catch(function(err) { console.error(err); alert('Network error initiating batch'); });
-      });
-    }
-
-    var currentDepositId = null;
-    function openTwoFAModal(depositId) {
-      currentDepositId = depositId;
-      var modal = document.getElementById('twofa-modal');
-      // Move modal to document.body to avoid stacking-context issues (sidebar transform)
-      if (modal && modal.parentNode !== document.body) {
-        document.body.appendChild(modal);
-      }
-      modal.classList.remove('hidden');
-      // lock body scroll while modal is open
-      document.documentElement.classList.add('overflow-hidden');
-      document.body.classList.add('overflow-hidden');
-
-      // Setup 6-digit inputs
-      var inputs = Array.from(document.querySelectorAll('#twofa-modal .otp-digit'));
-      var hiddenOtp = document.querySelector('#twofa-modal #otp_code');
-      var twofaError = document.getElementById('twofa-error');
-
-      function updateHiddenOtp() {
-        if (!hiddenOtp) return;
-        hiddenOtp.value = inputs.map(function(i){ return i.value; }).join('');
-      }
-
-      // clear values and focus first
-      inputs.forEach(function(i){ i.value = ''; });
-      updateHiddenOtp();
-      if (inputs[0]) inputs[0].focus();
-      if (twofaError) twofaError.classList.add('hidden');
-
-      // bind input behaviors (guard to avoid duplicate bindings across opens)
-      inputs.forEach(function(input, idx){
-        if (input.dataset.bound === '1') return;
-        input.dataset.bound = '1';
-        input.addEventListener('input', function(){
-          this.value = this.value.replace(/\D/g, '').slice(0,1);
-          if (this.value && idx < inputs.length - 1) inputs[idx + 1].focus();
-          updateHiddenOtp();
-        });
-        input.addEventListener('keydown', function(e){
-          if (e.key === 'Backspace' && this.value === '' && idx > 0) {
-            inputs[idx - 1].focus();
-          }
-        });
-        input.addEventListener('paste', function(e){
-          e.preventDefault();
-          var paste = (e.clipboardData || window.clipboardData).getData('text') || '';
-          var digitsOnly = paste.replace(/\D/g,'').slice(0, inputs.length - idx);
-          for (var j = 0; j < digitsOnly.length; j++) {
-            if (inputs[idx + j]) inputs[idx + j].value = digitsOnly[j];
-          }
-          var next = idx + digitsOnly.length;
-          if (inputs[next]) inputs[next].focus();
-          updateHiddenOtp();
-        });
-      });
-
-      // On form submit inside modal, ensure hidden field is updated (handler defined below)
-    }
-
-    function closeTwoFAModal() {
-      currentDepositId = null;
-      var modal = document.getElementById('twofa-modal');
-      if (modal) modal.classList.add('hidden');
-      // restore body scroll
-      document.documentElement.classList.remove('overflow-hidden');
-      document.body.classList.remove('overflow-hidden');
-    }
-
-    document.getElementById('twofa-cancel').addEventListener('click', function() {
-      // If user cancels, tell server to cancel the pending transaction and mark it failed
-      var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-      fetch('<%= cancel_pending_two_factor_path %>', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': token,
-          'Accept': 'application/json'
+        var payAllBtn = document.getElementById('pay-all-btn');
+        if (payAllBtn) {
+            payAllBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                var url = payAllBtn.dataset.url;
+                var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': token, 'Accept': 'application/json' },
+                    body: JSON.stringify({ status: 'success' })
+                }).then(function(res) { return res.json(); }).then(function(json) {
+                    if (json && json.pending) { openTwoFAModal('BATCH'); }
+                    else if (json && json.error) { alert(json.error || 'Error initiating batch transaction'); }
+                    else { alert('Unexpected response'); }
+                }).catch(function(err) { console.error(err); alert('Network error initiating batch'); });
+            });
         }
-      }).then(function(res) { return res.json(); }).then(function(json) {
-        if (json && json.success) {
-          // simply reload the page to show latest server-side data
-          closeTwoFAModal();
-          window.location.reload();
-        } else {
-          console.warn('Cancel pending failed');
-          closeTwoFAModal();
+
+        var currentDepositId = null;
+        function openTwoFAModal(depositId) {
+            currentDepositId = depositId;
+            var modal = document.getElementById('twofa-modal');
+            if (modal && modal.parentNode !== document.body) { document.body.appendChild(modal); }
+            modal.classList.remove('hidden');
+            document.documentElement.classList.add('overflow-hidden');
+            document.body.classList.add('overflow-hidden');
+
+            var inputs = Array.from(document.querySelectorAll('#twofa-modal .otp-digit'));
+            var hiddenOtp = document.querySelector('#twofa-modal #otp_code');
+            var twofaError = document.getElementById('twofa-error');
+
+            function updateHiddenOtp() {
+                if (!hiddenOtp) return;
+                hiddenOtp.value = inputs.map(function(i){ return i.value; }).join('');
+            }
+
+            inputs.forEach(function(i){ i.value = ''; });
+            updateHiddenOtp();
+            if (inputs[0]) inputs[0].focus();
+            if (twofaError) twofaError.classList.add('hidden');
+
+            inputs.forEach(function(input, idx){
+                if (input.dataset.bound === '1') return;
+                input.dataset.bound = '1';
+                input.addEventListener('input', function(){
+                    this.value = this.value.replace(/\D/g, '').slice(0,1);
+                    if (this.value && idx < inputs.length - 1) inputs[idx + 1].focus();
+                    updateHiddenOtp();
+                });
+                input.addEventListener('keydown', function(e){
+                    if (e.key === 'Backspace' && this.value === '' && idx > 0) { inputs[idx - 1].focus(); }
+                });
+                input.addEventListener('paste', function(e){
+                    e.preventDefault();
+                    var paste = (e.clipboardData || window.clipboardData).getData('text') || '';
+                    var digitsOnly = paste.replace(/\D/g,'').slice(0, inputs.length - idx);
+                    for (var j = 0; j < digitsOnly.length; j++) { if (inputs[idx + j]) inputs[idx + j].value = digitsOnly[j]; }
+                    var next = idx + digitsOnly.length;
+                    if (inputs[next]) inputs[next].focus();
+                    updateHiddenOtp();
+                });
+            });
         }
-      }).catch(function() { closeTwoFAModal(); });
-    });
 
-    document.getElementById('twofa-resend').addEventListener('click', function() {
-      var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-      fetch('<%= send_otp_two_factor_path %>', {
-        method: 'GET',
-        headers: {
-          'X-CSRF-Token': token,
-          'Accept': 'application/json'
+        function closeTwoFAModal() {
+            currentDepositId = null;
+            var modal = document.getElementById('twofa-modal');
+            if (modal) modal.classList.add('hidden');
+            document.documentElement.classList.remove('overflow-hidden');
+            document.body.classList.remove('overflow-hidden');
         }
-      }).then(function(res) { return res.json(); }).then(function(json) {
-        alert(json && json.message ? json.message : 'OTP resent');
-      }).catch(function() { alert('Error resending OTP'); });
+
+        document.getElementById('twofa-cancel').addEventListener('click', function() {
+            var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            fetch('<%= cancel_pending_two_factor_path %>', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': token, 'Accept': 'application/json' }
+            }).then(function(res) { return res.json(); }).then(function(json) {
+                if (json && json.success) { closeTwoFAModal(); window.location.reload(); }
+                else { console.warn('Cancel pending failed'); closeTwoFAModal(); }
+            }).catch(function() { closeTwoFAModal(); });
+        });
+
+        document.getElementById('twofa-resend').addEventListener('click', function() {
+            var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            fetch('<%= send_otp_two_factor_path %>', {
+                method: 'GET',
+                headers: { 'X-CSRF-Token': token, 'Accept': 'application/json' }
+            }).then(function(res) { return res.json(); }).then(function(json) {
+                alert(json && json.message ? json.message : 'OTP resent');
+            }).catch(function() { alert('Error resending OTP'); });
+        });
+
+        document.getElementById('twofa-modal-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            var hiddenOtp = document.querySelector('#twofa-modal #otp_code');
+            var inputs = Array.from(document.querySelectorAll('#twofa-modal .otp-digit'));
+            var err = document.getElementById('twofa-error');
+            var code = '';
+            if (inputs && inputs.length) { code = inputs.map(function(i){ return i.value; }).join(''); }
+            else if (hiddenOtp) { code = hiddenOtp.value.trim(); }
+            if (!code || code.length < 6) {
+                err.textContent = 'Please enter the 6-digit code';
+                err.classList.remove('hidden');
+                return;
+            }
+            var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            fetch('<%= check_otp_path %>', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': token, 'Accept': 'application/json' },
+                body: JSON.stringify({ otp_code: code })
+            }).then(function(res) { return res.json(); }).then(function(json) {
+                if (json && json.success) { closeTwoFAModal(); window.location.reload(); return; }
+                else { err.textContent = json && json.error ? json.error : 'Invalid or expired code'; err.classList.remove('hidden'); }
+            }).catch(function(err) { console.error(err); alert('Network error verifying code'); });
+        });
     });
-
-    // Handle OTP submit
-    document.getElementById('twofa-modal-form').addEventListener('submit', function(e) {
-      e.preventDefault();
-      var hiddenOtp = document.querySelector('#twofa-modal #otp_code');
-      var inputs = Array.from(document.querySelectorAll('#twofa-modal .otp-digit'));
-      var err = document.getElementById('twofa-error');
-      var code = '';
-      if (inputs && inputs.length) {
-        code = inputs.map(function(i){ return i.value; }).join('');
-      } else if (hiddenOtp) {
-        code = hiddenOtp.value.trim();
-      }
-      if (!code || code.length < 6) {
-        err.textContent = 'Please enter the 6-digit code';
-        err.classList.remove('hidden');
-        return;
-      }
-
-      var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-      fetch('<%= check_otp_path %>', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': token,
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({ otp_code: code })
-      }).then(function(res) { return res.json(); }).then(function(json) {
-        if (json && json.success) {
-          // Finalization succeeded on the server — reload the page so all counts and snapshots are accurate
-          closeTwoFAModal();
-          window.location.reload();
-          return;
-         } else {
-           err.textContent = json && json.error ? json.error : 'Invalid or expired code';
-           err.classList.remove('hidden');
-         }
-       }).catch(function(err) { console.error(err); alert('Network error verifying code'); });
-     });
-   });
- </script>
+</script>
