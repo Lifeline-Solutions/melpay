@@ -7,14 +7,17 @@ class TransactionsController < ApplicationController
     @page = (params[:page] || 1).to_i
     @page = 1 if @page < 1
 
-    # Start with accessible transactions based on user abilities
     scope = Transaction.accessible_by(current_ability).order(created_at: :desc)
-
-    # Apply additional client scoping for non-super admins
     scope = scope.where(client_id: current_user.client_id) unless current_user.has_role?(:super_admin)
 
+    scope = apply_transaction_search(scope, params[:search]) if params[:search].present?
+
     @total_count = scope.count
-    @total_pages = (@total_count / @per_page.to_f).ceil
+    @total_pages = [(@total_count / @per_page.to_f).ceil, 1].max
+
+    # If the current page is now out of range (e.g. a search narrowed the
+    # results while on page 5), clamp back into range instead of returning empty.
+    @page = @total_pages if @page > @total_pages
 
     @transactions = scope.offset((@page - 1) * @per_page).limit(@per_page)
   end
@@ -54,5 +57,25 @@ class TransactionsController < ApplicationController
 
   def transactions_list
     @transactions = Transaction.accessible_by(current_ability).order(created_at: :desc)
+  end
+
+  def apply_transaction_search(scope, term)
+    sanitized = term.to_s.strip
+    return scope if sanitized.blank?
+
+    table = Transaction.arel_table
+    quoted = "%#{sanitized.downcase}%"
+
+    searchable_columns = %w[
+      status amount transaction_cost total_cost interest_rate
+      transaction_id home_id user_id client_id
+      created_at updated_at
+    ]
+
+    conditions = searchable_columns.map do |col|
+      "CAST(#{table.name}.#{ActiveRecord::Base.connection.quote_column_name(col)} AS TEXT) ILIKE :q"
+    end
+
+    scope.where(conditions.join(' OR '), q: quoted)
   end
 end

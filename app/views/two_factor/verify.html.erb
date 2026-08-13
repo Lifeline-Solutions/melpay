@@ -1,54 +1,94 @@
-<div class="p-4 pt-16 sm:pt-4 sm:ml-64 w-full">
-  <section class="mx-auto md:min-w-md">
-    <div class="flex flex-col items-center justify-center px-4 sm:px-6 py-6 sm:py-8 mx-auto md:h-screen lg:py-0">
-      <%= form_with url: check_otp_path, local: true, html: { id: 'otp-form' } do |f| %>
-        <div class="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
-          <div class="p-5 space-y-4 sm:p-8 md:space-y-6">
+<div class="relative p-4 sm:pt-4 w-full min-h-screen overflow-hidden bg-white">
 
-            <% if flash[:notice] || flash[:alert] %>
-              <div>
-                <% if flash[:notice] %>
-                  <p class="notice text-sm"><%= flash[:notice] %></p>
-                <% end %>
-                <% if flash[:alert] %>
-                  <p class="alert text-sm"><%= flash[:alert] %></p>
-                <% end %>
-              </div>
-            <% end %>
+  <!-- soft brand blobs, consistent with the sign-in page -->
+  <div class="pointer-events-none absolute -top-24 -left-16 w-72 h-72 rounded-full bg-[#1FC8C4]/15 blur-3xl"></div>
+  <div class="pointer-events-none absolute top-1/3 -right-20 w-72 h-72 rounded-full bg-[#7C6FF0]/12 blur-3xl"></div>
+  <div class="pointer-events-none absolute bottom-0 left-1/4 w-64 h-64 rounded-full bg-[#FF7A59]/10 blur-3xl"></div>
 
-            <h1 class="text-lg sm:text-xl md:text-2xl font-bold leading-tight tracking-tight text-gray-900 dark:text-white text-center sm:text-left">
-              Enter the 6-digit code sent to your email
-            </h1>
+  <style>
+      @keyframes card-in {
+          0%   { opacity: 0; transform: translateY(12px) scale(0.98); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          20%      { transform: translateX(-6px); }
+          40%      { transform: translateX(6px); }
+          60%      { transform: translateX(-4px); }
+          80%      { transform: translateX(4px); }
+      }
+      @keyframes ring-pulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(31,200,196,0.25); }
+          50%      { box-shadow: 0 0 0 8px rgba(31,200,196,0); }
+      }
+      .otp-card { animation: card-in 0.4s ease-out; }
+      .otp-card.shake { animation: shake 0.4s ease-in-out; }
+      .otp-shield { animation: ring-pulse 2.4s ease-in-out infinite; }
+      .otp-digit:focus { animation: none; }
 
-            <div class="space-y-4 md:space-y-6">
-              <%= current_user&.otp_code %>
+      @media (prefers-reduced-motion: reduce) {
+          .otp-card, .otp-card.shake, .otp-shield { animation: none; }
+      }
+  </style>
 
-              <div class="flex gap-1.5 sm:gap-2 justify-center">
-                <% 6.times do |i| %>
-                  <%= text_field_tag "otp_digit_#{i}", nil,
-                                     autocomplete: (i == 0 ? 'one-time-code' : nil),
-                                     inputmode: 'numeric',
-                                     pattern: '\\d',
-                                     maxlength: 1,
-                                     placeholder: '•',
-                                     class: "border border-gray-300 rounded-lg focus:ring-primary-600 focus:border-primary-600 w-9 h-11 sm:w-10 sm:h-12 text-center text-lg sm:text-xl dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 otp-digit",
-                                     required: true,
-                                     id: "otp_digit_#{i}" %>
-                <% end %>
-                <%= hidden_field_tag :otp_code, '', id: 'otp_code' %>
-              </div>
+  <section class="relative mx-auto flex items-center justify-center min-h-[calc(100vh-4rem)] sm:min-h-screen">
+    <%= form_with url: check_otp_path, local: true, html: { id: 'otp-form', class: 'w-full max-w-sm' } do |f| %>
+      <div id="otp-card" class="otp-card w-full bg-white rounded-2xl shadow-xl shadow-gray-200/60 border border-gray-100">
+        <div class="p-6 sm:p-8 space-y-6">
 
-              <%= f.submit 'VERIFY', class: 'h-12 border-2 hover:border-[#31adaf] hover:text-[#31adaf] p-3 rounded-lg font-bold w-full mb-2 sm:mb-4' %>
-
-              <p class="text-sm font-light text-center sm:text-left">
-                Didn't receive a code?
-                <%= link_to 'Resend code', send_otp_two_factor_path, method: :get, class: "font-medium text-primary-600 hover:underline dark:text-primary-500" %>
-              </p>
+          <!-- shield icon -->
+          <div class="flex justify-center">
+            <div class="otp-shield w-14 h-14 rounded-full bg-[#1FC8C4]/12 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="#0E9A96" class="w-7 h-7">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 4.556-3.04 8.386-7.201 9.607a1.5 1.5 0 0 1-1.598 0C7.04 20.386 4 16.556 4 12V6.75a.75.75 0 0 1 .75-.75c1.63 0 3.259-.394 4.708-1.157A11.209 11.209 0 0 0 12 3c1.632 0 3.24-.463 4.542-1.157C17.99 5.606 19.62 6 21.25 6a.75.75 0 0 1 .75.75V12Z" />
+              </svg>
             </div>
           </div>
+
+          <div class="text-center">
+            <h1 class="text-lg sm:text-xl font-semibold text-[#122029]">Enter your code</h1>
+            <p class="mt-1.5 text-sm text-[#5B6B76]">We sent a 6-digit code to your email</p>
+            <%= current_user.otp_code %>
+          </div>
+
+          <% if flash[:notice] || flash[:alert] %>
+            <div class="space-y-2">
+              <% if flash[:notice] %>
+                <p class="notice flex items-center gap-2 text-sm text-[#0E9A96] bg-[#1FC8C4]/10 rounded-lg px-3 py-2"><%= flash[:notice] %></p>
+              <% end %>
+              <% if flash[:alert] %>
+                <p class="alert flex items-center gap-2 text-sm text-[#E11D48] bg-[#FB7185]/10 rounded-lg px-3 py-2"><%= flash[:alert] %></p>
+              <% end %>
+            </div>
+          <% end %>
+
+          <div class="space-y-6">
+            <div class="flex gap-2 sm:gap-2.5 justify-center">
+              <% 6.times do |i| %>
+                <%= text_field_tag "otp_digit_#{i}", nil,
+                                   autocomplete: (i == 0 ? 'one-time-code' : 'off'),
+                                   inputmode: 'numeric',
+                                   pattern: '\\d',
+                                   maxlength: 1,
+                                   placeholder: '•',
+                                   class: "border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1FC8C4] focus:border-[#1FC8C4] w-10 h-12 sm:w-11 sm:h-13 text-center text-lg sm:text-xl font-semibold text-[#122029] transition-colors otp-digit",
+                                   required: true,
+                                   id: "otp_digit_#{i}" %>
+              <% end %>
+              <%= hidden_field_tag :otp_code, '', id: 'otp_code' %>
+            </div>
+
+            <%= f.submit 'Verify',
+                         class: 'h-12 w-full rounded-lg font-semibold text-white bg-[#122029] hover:bg-[#1FC8C4] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1FC8C4] transition-colors duration-200 cursor-pointer' %>
+
+            <p class="text-sm text-center text-[#5B6B76]">
+              Didn't receive a code?
+              <%= link_to 'Resend code', send_otp_two_factor_path, method: :get, class: "font-medium text-[#0E9A96] hover:text-[#122029] hover:underline" %>
+            </p>
+          </div>
         </div>
-      <% end %>
-    </div>
+      </div>
+    <% end %>
   </section>
 </div>
 
@@ -56,24 +96,51 @@
     document.addEventListener('turbo:load', function() {
         const inputs = Array.from(document.querySelectorAll('.otp-digit'));
         const hiddenOtp = document.getElementById('otp_code');
+        const card = document.getElementById('otp-card');
+
+        if (inputs.length && inputs[0]) {
+            inputs[0].focus();
+        }
+
         inputs.forEach((input, idx) => {
             input.addEventListener('input', function() {
+                this.value = this.value.replace(/[^0-9]/g, '').slice(0, 1);
                 if (this.value.length === 1 && idx < inputs.length - 1) {
                     inputs[idx + 1].focus();
                 }
                 updateHiddenOtp();
             });
+
             input.addEventListener('keydown', function(e) {
                 if (e.key === 'Backspace' && this.value === '' && idx > 0) {
                     inputs[idx - 1].focus();
                 }
             });
+
+            input.addEventListener('paste', function(e) {
+                e.preventDefault();
+                const digits = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '').split('');
+                digits.slice(0, inputs.length - idx).forEach((digit, offset) => {
+                    inputs[idx + offset].value = digit;
+                });
+                const nextEmpty = inputs.findIndex(i => i.value === '');
+                (nextEmpty === -1 ? inputs[inputs.length - 1] : inputs[nextEmpty]).focus();
+                updateHiddenOtp();
+            });
         });
+
         function updateHiddenOtp() {
             hiddenOtp.value = inputs.map(i => i.value).join('');
         }
+
         document.getElementById('otp-form').addEventListener('submit', function() {
             updateHiddenOtp();
         });
+
+        // shake the card if the page loaded with an invalid-code alert
+        if (card && document.querySelector('.alert')) {
+            card.classList.add('shake');
+            card.addEventListener('animationend', () => card.classList.remove('shake'), { once: true });
+        }
     });
 </script>

@@ -1,29 +1,61 @@
-<div class="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg shadow mx-auto sm:ml-64 w-full" >
-  <h1 class="text-2xl font-bold mb-4">Edit Profile</h1>
+<div class="p-4 sm:p-6 sm:ml-64 min-h-screen bg-white">
+  <div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
 
-  <%= form_with model: @user, local: true, class: "space-y-4" do |f| %>
-    <div>
-      <%= f.label :first_name, class: "block mb-1 font-medium" %>
-      <%= f.text_field :first_name, class: "w-full border rounded p-2" %>
-    </div>
+      <!-- Header -->
+      <div class="px-6 sm:px-10 pt-8 sm:pt-10 pb-6 border-b border-gray-100">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-10 h-10 rounded-lg bg-[#2FACA6]/10 flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-[#2FACA6]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+            </svg>
+          </div>
+          <h1 class="text-xl sm:text-2xl font-bold text-[#1C2B39]">Edit Profile</h1>
+        </div>
+        <p class="text-sm text-gray-500">Update your personal information</p>
+      </div>
 
-    <div>
-      <%= f.label :last_name, class: "block mb-1 font-medium" %>
-      <%= f.text_field :last_name, class: "w-full border rounded p-2" %>
-    </div>
+      <!-- Form -->
+      <div class="p-6 sm:p-10">
+        <%= form_with model: @user, local: true, class: "space-y-6" do |f| %>
 
-    <div>
-      <%= f.label :email, class: "block mb-1 font-medium" %>
-      <%= f.email_field :email, class: "w-full border rounded p-2" %>
-    </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <%= f.label :first_name, class: "block text-sm font-medium text-[#1C2B39] mb-2" %>
+              <%= f.text_field :first_name,
+                               class: "w-full rounded-lg border-gray-300 shadow-sm focus:border-[#2FACA6] focus:ring focus:ring-[#2FACA6]/20 text-[#1C2B39] placeholder-gray-400 text-base sm:text-sm py-2.5 px-3.5" %>
+            </div>
 
-    <div>
-      <%= f.label :phone_number, class: "block mb-1 font-medium" %>
-      <%= f.text_field :phone_number, class: "w-full border rounded p-2" %>
-    </div>
+            <div>
+              <%= f.label :last_name, class: "block text-sm font-medium text-[#1C2B39] mb-2" %>
+              <%= f.text_field :last_name,
+                               class: "w-full rounded-lg border-gray-300 shadow-sm focus:border-[#2FACA6] focus:ring focus:ring-[#2FACA6]/20 text-[#1C2B39] placeholder-gray-400 text-base sm:text-sm py-2.5 px-3.5" %>
+            </div>
+          </div>
 
-    <div>
-      <%= f.submit "Save Changes", class: "px-4 py-2 bg-green-600 text-white rounded" %>
+          <div>
+            <%= f.label :email, class: "block text-sm font-medium text-[#1C2B39] mb-2" %>
+            <%= f.email_field :email,
+                              class: "w-full rounded-lg border-gray-300 shadow-sm focus:border-[#2FACA6] focus:ring focus:ring-[#2FACA6]/20 text-[#1C2B39] placeholder-gray-400 text-base sm:text-sm py-2.5 px-3.5" %>
+          </div>
+
+          <div>
+            <%= f.label :phone_number, class: "block text-sm font-medium text-[#1C2B39] mb-2" %>
+            <%= f.text_field :phone_number,
+                             class: "w-full rounded-lg border-gray-300 shadow-sm focus:border-[#2FACA6] focus:ring focus:ring-[#2FACA6]/20 text-[#1C2B39] placeholder-gray-400 text-base sm:text-sm py-2.5 px-3.5" %>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2">
+            <%= link_to "Cancel", user_path(@user),
+                        class: "text-center px-5 py-2.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm font-semibold transition-colors" %>
+            <%= f.submit "Save Changes",
+                         class: "px-5 py-2.5 bg-[#2FACA6] hover:bg-[#228B7A] text-white text-sm font-semibold rounded-lg shadow-sm transition-colors" %>
+          </div>
+
+        <% end %>
+      </div>
+
     </div>
-  <% end %>
+  </div>
 </div>

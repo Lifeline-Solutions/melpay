@@ -1,122 +1,112 @@
 <%= form_for(resource, as: resource_name, url: invitation_path(resource_name), html: { method: :post }) do |f| %>
-  <section class="p-3 pt-16 sm:p-6 sm:pt-6 sm:ml-64 w-full">
-    <div class="flex flex-col px-1 sm:px-6 py-1 sm:py-8 mx-auto lg:px-8">
+  <section class="p-4 sm:p-6 sm:ml-64 min-h-screen bg-white flex items-center justify-center">
+    <div class="w-full max-w-xl py-8">
 
-      <div class="flex items-center mb-2 sm:mb-6 text-base sm:text-2xl font-semibold text-gray-900 dark:text-white">
-        <p>Melpay</p>
+      <!-- Logo -->
+      <div class="flex justify-center mb-6">
+        <%= image_tag "icon.png", alt: "MAL Payments", class: "h-10 sm:h-12 w-auto" %>
       </div>
 
-      <div class=" max-w-md bg-white rounded-lg shadow dark:border md:mt-0 xl:p-0 dark:bg-gray-800 dark:border-gray-700">
-        <div class="p-3 sm:p-8 space-y-3 sm:space-y-6">
-
-          <h2 class="text-sm sm:text-xl md:text-2xl font-bold leading-tight tracking-tight text-gray-900 dark:text-white">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-6 sm:px-10 pt-8 pb-6 border-b border-gray-100 text-center">
+          <h2 class="text-xl sm:text-2xl font-bold text-[#1C2B39]">
             <%= t "devise.invitations.new.header" %>
           </h2>
+          <p class="text-sm text-gray-500 mt-1">Send an invitation to add a new team member</p>
+        </div>
+
+        <div class="p-6 sm:p-10 space-y-5">
 
           <%= render "devise/shared/error_messages", resource: resource %>
 
-          <div class="space-y-2.5 sm:space-y-5">
-
-            <% resource.class.invite_key_fields.each do |field| -%>
-              <div>
-                <%= f.label field, class: "block mb-1 text-xs sm:text-sm font-medium text-gray-900 dark:text-white" %>
-                <%= f.text_field field,
-                                 class: "text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-1.5 sm:p-2.5 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500",
-                                 required: true %>
-              </div>
-            <% end -%>
-
-            <!-- First Name + Last Name side-by-side to save vertical space -->
-            <div class="grid grid-cols-2 gap-2 sm:gap-3">
-              <div>
-                <%= f.label 'First Name*', class: "block mb-1 text-xs sm:text-sm font-medium text-gray-900 dark:text-white" %>
-                <%= f.text_field :first_name,
-                                 class: "text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-1.5 sm:p-2.5 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500",
-                                 placeholder: 'First Name',
-                                 required: true %>
-              </div>
-
-              <div>
-                <%= f.label 'Last Name*', class: "block mb-1 text-xs sm:text-sm font-medium text-gray-900 dark:text-white" %>
-                <%= f.text_field :last_name,
-                                 class: "text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-1.5 sm:p-2.5 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500",
-                                 placeholder: 'Last Name',
-                                 required: true %>
-              </div>
-            </div>
-
-            <!-- Role + Client side-by-side to save another row of vertical space -->
-            <div class="grid grid-cols-2 gap-2 sm:gap-3">
-              <!-- Role -->
-              <div>
-                <%= f.label 'Role*', class: "block mb-1 text-xs sm:text-sm font-medium text-gray-900 dark:text-white" %>
-                <%
-                  # Define available roles based on current user's permissions from Ability class
-                  available_roles = if current_user.has_role?(:super_admin)
-                                      # Super admins can assign any role
-                                      Role.all.pluck(:name)
-                                    elsif current_user.has_role?(:admin)
-                                      # Admins can assign all roles except super_admin (based on your filtered_user_params logic)
-                                      Role.where.not(name: 'super_admin').pluck(:name)
-                                    else
-                                      # Account managers and others cannot invite users (this view shouldn't be accessible to them)
-                                      # But as fallback, only allow account_manager
-                                      ['account_manager']
-                                    end
-                %>
-                <%= select_tag :role, options_for_select(available_roles),
-                               { prompt: 'Select Role',
-                                 class: "text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-1.5 sm:p-2.5 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500",
-                                 required: true } %>
-              </div>
-
-              <!-- Client -->
-              <div>
-                <%= f.label 'Client*', class: "block mb-1 text-xs sm:text-sm font-medium text-gray-900 dark:text-white" %>
-                <%
-                  # Define available clients based on current user's permissions
-                  available_clients = if current_user.has_role?(:super_admin)
-                                        # Super admins can assign to any approved client
-                                        Client.where(kyc_status: 'approved')
-                                      elsif current_user.has_role?(:admin)
-                                        # Admins can only assign to their own client
-                                        Client.where(id: current_user.client_id, kyc_status: 'approved')
-                                      else
-                                        # Account managers and others cannot invite users
-                                        # But as fallback, only allow their own client
-                                        Client.where(id: current_user.client_id, kyc_status: 'approved')
-                                      end
-
-                  # Determine if the field should be disabled and pre-selected for admins
-                  is_admin = current_user.has_role?(:admin)
-                  is_super_admin = current_user.has_role?(:super_admin)
-                  admin_client = current_user.client if is_admin
-                %>
-
-                <% if is_admin && admin_client %>
-                  <!-- For admins: pre-select and disable the client field -->
-                  <%= f.hidden_field :client_id, value: admin_client.id %>
-                  <div class="border border-gray-300 rounded-lg bg-gray-100 dark:bg-gray-700 block w-full p-1.5 sm:p-2.5 text-xs sm:text-sm truncate dark:border-gray-600 dark:text-white">
-                    <%= admin_client.name %>
-                  </div>
-                <% else %>
-                  <!-- For super admins: allow selection of any client -->
-                  <%= f.select :client_id, options_from_collection_for_select(available_clients, :id, :name),
-                               { prompt: 'Select Client' },
-                               class: "text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-1.5 sm:p-2.5 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500",
+          <% resource.class.invite_key_fields.each do |field| -%>
+            <div>
+              <%= f.label field, class: "block mb-2 text-sm font-medium text-[#1C2B39]" %>
+              <%= f.text_field field,
+                               class: "text-base sm:text-sm border border-gray-300 rounded-lg focus:ring focus:ring-[#2FACA6]/20 focus:border-[#2FACA6] block w-full p-2.5 text-[#1C2B39]",
                                required: true %>
-                <% end %>
-              </div>
             </div>
-            <% if is_admin && admin_client %>
-              <p class="text-xs text-gray-500 -mt-1">Admins can only invite users to their own client</p>
-            <% end %>
+          <% end -%>
 
-            <%= f.submit t("devise.invitations.new.submit_button"),
-                         class: "w-full border border-gray-900 dark:border-gray-100 bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2 sm:py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800" %>
+          <!-- First Name + Last Name -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <%= f.label 'First Name*', class: "block mb-2 text-sm font-medium text-[#1C2B39]" %>
+              <%= f.text_field :first_name,
+                               class: "text-base sm:text-sm border border-gray-300 rounded-lg focus:ring focus:ring-[#2FACA6]/20 focus:border-[#2FACA6] block w-full p-2.5 text-[#1C2B39] placeholder-gray-400",
+                               placeholder: 'First Name',
+                               required: true %>
+            </div>
+
+            <div>
+              <%= f.label 'Last Name*', class: "block mb-2 text-sm font-medium text-[#1C2B39]" %>
+              <%= f.text_field :last_name,
+                               class: "text-base sm:text-sm border border-gray-300 rounded-lg focus:ring focus:ring-[#2FACA6]/20 focus:border-[#2FACA6] block w-full p-2.5 text-[#1C2B39] placeholder-gray-400",
+                               placeholder: 'Last Name',
+                               required: true %>
+            </div>
           </div>
+
+          <!-- Role + Client -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Role -->
+            <div>
+              <%= f.label 'Role*', class: "block mb-2 text-sm font-medium text-[#1C2B39]" %>
+              <%
+                available_roles = if current_user.has_role?(:super_admin)
+                                    Role.all.pluck(:name)
+                                  elsif current_user.has_role?(:admin)
+                                    Role.where.not(name: 'super_admin').pluck(:name)
+                                  else
+                                    ['account_manager']
+                                  end
+              %>
+              <%= select_tag :role, options_for_select(available_roles),
+                             { prompt: 'Select Role',
+                               class: "text-base sm:text-sm border border-gray-300 rounded-lg focus:ring focus:ring-[#2FACA6]/20 focus:border-[#2FACA6] block w-full p-2.5 text-[#1C2B39]",
+                               required: true } %>
+            </div>
+
+            <!-- Client -->
+            <div>
+              <%= f.label 'Client*', class: "block mb-2 text-sm font-medium text-[#1C2B39]" %>
+              <%
+                available_clients = if current_user.has_role?(:super_admin)
+                                      Client.where(kyc_status: 'approved')
+                                    elsif current_user.has_role?(:admin)
+                                      Client.where(id: current_user.client_id, kyc_status: 'approved')
+                                    else
+                                      Client.where(id: current_user.client_id, kyc_status: 'approved')
+                                    end
+
+                is_admin = current_user.has_role?(:admin)
+                is_super_admin = current_user.has_role?(:super_admin)
+                admin_client = current_user.client if is_admin
+              %>
+
+              <% if is_admin && admin_client %>
+                <%= f.hidden_field :client_id, value: admin_client.id %>
+                <div class="border border-gray-200 rounded-lg bg-gray-50 block w-full p-2.5 text-sm truncate text-[#1C2B39]">
+                  <%= admin_client.name %>
+                </div>
+              <% else %>
+                <%= f.select :client_id, options_from_collection_for_select(available_clients, :id, :name),
+                             { prompt: 'Select Client' },
+                             class: "text-base sm:text-sm border border-gray-300 rounded-lg focus:ring focus:ring-[#2FACA6]/20 focus:border-[#2FACA6] block w-full p-2.5 text-[#1C2B39]",
+                             required: true %>
+              <% end %>
+            </div>
+          </div>
+
+          <% if is_admin && admin_client %>
+            <p class="text-xs text-gray-400 -mt-1">Admins can only invite users to their own client</p>
+          <% end %>
+
+          <%= f.submit t("devise.invitations.new.submit_button"),
+                       class: "w-full bg-[#2FACA6] hover:bg-[#228B7A] focus:ring-4 focus:outline-none focus:ring-[#2FACA6]/30 font-semibold rounded-lg text-sm px-5 py-3 text-center text-white transition-colors" %>
         </div>
       </div>
+
     </div>
   </section>
 <% end %>

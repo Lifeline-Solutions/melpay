@@ -1,57 +1,57 @@
 <div class="p-4 sm:p-6">
-  <h1 class="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">Uploaded Spreadsheets</h1>
+  <h1 class="text-xl sm:text-2xl font-semibold text-[#122029] mb-4">Uploaded Spreadsheets</h1>
 
   <%= render "home/home_index_topbar" %>
 
   <% if can?(:read, Home) %>
-    <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+    <div class="bg-white border border-gray-100 shadow-sm rounded-2xl overflow-hidden">
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead class="bg-gray-50 dark:bg-gray-700">
+        <table class="min-w-full divide-y divide-gray-100">
+          <thead>
           <tr>
-            <th class="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-200 whitespace-nowrap">Date Of Upload</th>
-            <th class="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-200 whitespace-nowrap">Global ID</th>
-            <th class="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-200 whitespace-nowrap">Document Name</th>
-            <th class="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-200 whitespace-nowrap">Total Deposits</th>
-            <th class="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-200 whitespace-nowrap">Successful Transactions</th>
-            <th class="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-200 whitespace-nowrap">Cost Of Transaction</th>
-            <th class="px-4 sm:px-6 py-3 text-xs sm:text-sm whitespace-nowrap">VIEW</th>
+            <th class="px-4 sm:px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-400 whitespace-nowrap">Date Of Upload</th>
+            <th class="px-4 sm:px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-400 whitespace-nowrap">Global ID</th>
+            <th class="px-4 sm:px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-400 whitespace-nowrap">Document Name</th>
+            <th class="px-4 sm:px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-400 whitespace-nowrap">Total Deposits</th>
+            <th class="px-4 sm:px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-400 whitespace-nowrap">Successful Transactions</th>
+            <th class="px-4 sm:px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-400 whitespace-nowrap">Cost Of Transaction</th>
+            <th class="px-4 sm:px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-400 whitespace-nowrap">View</th>
           </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody class="divide-y divide-gray-100">
           <% @homes.each do |home| %>
-            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-              <td class="px-4 sm:px-6 py-4 text-sm font-medium whitespace-nowrap">
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="px-4 sm:px-6 py-4 text-sm font-medium text-[#122029] whitespace-nowrap">
                 <%= home.created_at.strftime("%I:%M %p - %B %d, %Y") %>
               </td>
-              <td class="px-4 sm:px-6 py-4 text-sm whitespace-nowrap">
+              <td class="px-4 sm:px-6 py-4 text-sm text-[#5B6B76] whitespace-nowrap">
                 <%= home.unique_id %>
               </td>
-              <td class="px-4 sm:px-6 py-4 text-sm">
+              <td class="px-4 sm:px-6 py-4 text-sm text-[#5B6B76]">
                 <%= home.name.presence || home.document.filename.to_s %>
               </td>
-              <td class="px-4 sm:px-6 py-4 text-sm text-center whitespace-nowrap">
+              <td class="px-4 sm:px-6 py-4 text-sm text-[#122029] text-center whitespace-nowrap">
                 <%= number_to_currency(@totals_deposits[home.id] || 0) %>
               </td>
               <td class="px-4 sm:px-6 py-4 text-center">
                 <div class="flex items-center justify-center gap-2">
-                    <span class="inline-flex items-center px-3 py-1 rounded-lg text-sm font-semibold bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                    <span class="inline-flex items-center px-3 py-1 rounded-lg text-sm font-semibold bg-[#1FC8C4]/12 text-[#0E9A96]">
                       <%= @successful_transactions_count[home.id] || 0 %>
                     </span>
-                  <span class="text-gray-500 dark:text-gray-400 font-medium">/</span>
-                  <span class="inline-flex items-center px-3 py-1 rounded-lg text-sm font-semibold bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                  <span class="text-gray-300 font-medium">/</span>
+                  <span class="inline-flex items-center px-3 py-1 rounded-lg text-sm font-semibold bg-gray-100 text-[#5B6B76]">
                     <%= @total_deposit_count[home.id] || 0 %>
                   </span>
                 </div>
               </td>
-              <td class="px-4 sm:px-6 py-4 text-sm text-center whitespace-nowrap">
+              <td class="px-4 sm:px-6 py-4 text-sm text-[#122029] text-center whitespace-nowrap">
                 <%= number_to_currency(@deposit_interest[home.id] || 0) %>
               </td>
               <td class="px-4 sm:px-6 py-4 text-sm text-center whitespace-nowrap">
                 <% if can?(:read, home) %>
-                  <%= link_to "View", home_path(home), class: "text-blue-600 dark:text-blue-400 hover:underline" %>
+                  <%= link_to "View", home_path(home), class: "text-[#0E9A96] font-medium hover:underline" %>
                 <% else %>
-                  <span class="text-gray-400 dark:text-gray-500 cursor-not-allowed">View</span>
+                  <span class="text-gray-300 cursor-not-allowed">View</span>
                 <% end %>
               </td>
             </tr>
@@ -59,26 +59,26 @@
           </tbody>
 
           <!-- Totals row -->
-          <tfoot class="bg-gray-100 dark:bg-gray-700">
+          <tfoot class="bg-gray-50">
           <tr>
-            <td class="px-4 sm:px-6 py-3 font-semibold text-gray-800 dark:text-gray-200"></td>
-            <td class="px-4 sm:px-6 py-3 font-semibold text-gray-800 dark:text-gray-200"></td>
-            <td class="px-4 sm:px-6 py-3 font-semibold text-sm text-gray-800 dark:text-gray-200 whitespace-nowrap">Grand Totals</td>
-            <td class="px-4 sm:px-6 py-3 font-semibold text-sm text-center whitespace-nowrap">
+            <td class="px-4 sm:px-6 py-3 font-semibold text-[#122029]"></td>
+            <td class="px-4 sm:px-6 py-3 font-semibold text-[#122029]"></td>
+            <td class="px-4 sm:px-6 py-3 font-semibold text-sm text-[#122029] whitespace-nowrap">Grand Totals</td>
+            <td class="px-4 sm:px-6 py-3 font-semibold text-sm text-[#122029] text-center whitespace-nowrap">
               <%= number_to_currency(@total_deposits_sum || 0) %>
             </td>
             <td class="px-4 sm:px-6 py-3 font-semibold text-center">
               <div class="flex items-center justify-center gap-2">
-                  <span class="inline-flex items-center px-3 py-1 rounded-lg text-sm font-bold bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                  <span class="inline-flex items-center px-3 py-1 rounded-lg text-sm font-bold bg-[#1FC8C4]/15 text-[#0E9A96]">
                     <%= @successful_transactions_count.values.sum || 0 %>
                   </span>
-                <span class="text-gray-600 dark:text-gray-400 font-bold">/</span>
-                <span class="inline-flex items-center px-3 py-1 rounded-lg text-sm font-bold bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200">
+                <span class="text-gray-300 font-bold">/</span>
+                <span class="inline-flex items-center px-3 py-1 rounded-lg text-sm font-bold bg-gray-200 text-[#122029]">
                   <%= @total_deposit_count.values.sum || 0 %>
                 </span>
               </div>
             </td>
-            <td class="px-4 sm:px-6 py-3 font-semibold text-sm text-center whitespace-nowrap">
+            <td class="px-4 sm:px-6 py-3 font-semibold text-sm text-[#122029] text-center whitespace-nowrap">
               <%= number_to_currency(@deposit_interest.values.sum || 0) %>
             </td>
             <td class="px-4 sm:px-6 py-3"></td>
@@ -89,7 +89,7 @@
     </div>
 
     <% if @homes.empty? %>
-      <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+      <div class="text-center py-8 text-[#5B6B76]">
         No spreadsheets found
       </div>
     <% end %>
@@ -100,21 +100,21 @@
         <% if @page > 1 %>
           <%= link_to 'Previous',
                       home_index_path(page: @page - 1, query: params[:query], status: params[:status]),
-                      class: 'h-12 bg-[#3F8CFF] hover:bg-[#3A81EB] px-4 py-3 rounded font-bold text-slate-100 text-sm sm:text-base' %>
+                      class: 'h-11 flex items-center bg-[#122029] hover:bg-[#1FC8C4] px-4 rounded-lg font-semibold text-white text-sm transition-colors' %>
         <% end %>
 
-        <span class="text-sm sm:text-base whitespace-nowrap">Page <%= @page %> of <%= @total_pages %></span>
+        <span class="text-sm text-[#5B6B76] whitespace-nowrap">Page <%= @page %> of <%= @total_pages %></span>
 
         <% if @page < @total_pages %>
           <%= link_to 'Next',
                       home_index_path(page: @page + 1, query: params[:query], status: params[:status]),
-                      class: 'h-12 bg-[#3F8CFF] hover:bg-[#3A81EB] px-4 py-3 rounded font-bold text-slate-100 text-sm sm:text-base' %>
+                      class: 'h-11 flex items-center bg-[#122029] hover:bg-[#1FC8C4] px-4 rounded-lg font-semibold text-white text-sm transition-colors' %>
         <% end %>
       </div>
     </div>
   <% else %>
-    <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-      <div class="text-center py-12 text-gray-500 dark:text-gray-400 px-4">
+    <div class="bg-white border border-gray-100 shadow-sm rounded-2xl overflow-hidden">
+      <div class="text-center py-12 text-[#5B6B76] px-4">
         <p class="text-base sm:text-lg">You don't have permission to view spreadsheets</p>
       </div>
     </div>

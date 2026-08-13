@@ -1,104 +1,192 @@
-<% provide(:title, "Enter Password") %>
+<% provide(:title, "Set Your Password") %>
 
-<div class="min-h-screen w-full flex flex-col md:flex-row bg-gray-50 dark:bg-gray-900">
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
 
-  <!-- Left panel: brand / logo (desktop only) -->
-  <div class="hidden md:flex md:w-1/2 items-center justify-center bg-gradient-to-br from-[#31adaf]/10 to-gray-100 dark:from-[#31adaf]/10 dark:to-gray-800 min-h-screen">
-    <div class="flex flex-col items-center px-10 text-center">
-      <%= image_tag 'icon.png', class: 'w-40 h-40 object-contain hidden dark:block' %>
-      <%= image_tag 'icon.png', class: 'w-40 h-40 object-contain block dark:hidden' %>
-      <h2 class="mt-6 text-2xl font-bold text-gray-900 dark:text-white">
-        <%= t "devise.invitations.edit.header" %>
-      </h2>
-      <p class="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-xs">
-        You've been invited to join. Set a password below to activate your account.
-      </p>
+    .font-display { font-family: 'Space Grotesk', sans-serif; }
+    .font-body { font-family: 'Inter', sans-serif; }
+
+    @keyframes blob-drift-a {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        33%      { transform: translate(30px, -20px) scale(1.08); }
+        66%      { transform: translate(-15px, 15px) scale(0.96); }
+    }
+    @keyframes blob-drift-b {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        33%      { transform: translate(-25px, 20px) scale(1.1); }
+        66%      { transform: translate(20px, -15px) scale(0.94); }
+    }
+    @keyframes blob-drift-c {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50%      { transform: translate(18px, 22px) scale(1.06); }
+    }
+    .blob-a { animation: blob-drift-a 16s ease-in-out infinite; }
+    .blob-b { animation: blob-drift-b 19s ease-in-out infinite; }
+    .blob-c { animation: blob-drift-c 13s ease-in-out infinite; }
+
+    @keyframes float-up {
+        0%   { transform: translateY(0) scale(1); opacity: 0; }
+        12%  { opacity: 0.85; }
+        88%  { opacity: 0.5; }
+        100% { transform: translateY(-150px) scale(1.2); opacity: 0; }
+    }
+    .particle {
+        position: absolute;
+        border-radius: 9999px;
+        animation: float-up 7s ease-in-out infinite;
+    }
+
+    @keyframes flow-travel {
+        0%   { offset-distance: 0%;   opacity: 0; }
+        10%  { opacity: 1; }
+        90%  { opacity: 1; }
+        100% { offset-distance: 100%; opacity: 0; }
+    }
+    .flow-dot {
+        offset-path: path('M10,30 L290,30');
+        animation: flow-travel 2.2s ease-in-out infinite;
+    }
+    .flow-dot.d1 { animation-delay: 0s;   filter: drop-shadow(0 0 6px rgba(31,200,196,0.7)); }
+    .flow-dot.d2 { animation-delay: 0.7s; filter: drop-shadow(0 0 6px rgba(255,122,89,0.7)); }
+    .flow-dot.d3 { animation-delay: 1.4s; filter: drop-shadow(0 0 6px rgba(124,111,240,0.7)); }
+
+    @keyframes pulse-ring {
+        0%, 100% { r: 4; opacity: 0.9; }
+        50%      { r: 6.5; opacity: 0.4; }
+    }
+    .pulse-node { animation: pulse-ring 2.2s ease-in-out infinite; }
+
+    @media (prefers-reduced-motion: reduce) {
+        .blob-a, .blob-b, .blob-c { animation: none; }
+        .particle { animation: none; opacity: 0.4; }
+        .flow-dot { animation: none; opacity: 1; }
+        .pulse-node { animation: none; }
+    }
+</style>
+
+<div class="min-h-screen w-full flex flex-col md:flex-row font-body bg-white dark:bg-[#0F1A22] overflow-x-hidden">
+
+  <!-- Left: brand panel (60%) -->
+  <div class="hidden md:flex relative w-full md:w-[60%] flex-col justify-center md:justify-between overflow-hidden bg-white px-6 sm:px-10 md:px-14 py-10 md:py-14 gap-10 md:gap-0">
+
+    <div class="blob-a pointer-events-none absolute -top-20 -left-16 w-72 h-72 rounded-full bg-[#1FC8C4]/25 blur-3xl"></div>
+    <div class="blob-b pointer-events-none absolute top-1/3 -right-24 w-80 h-80 rounded-full bg-[#FF7A59]/20 blur-3xl"></div>
+    <div class="blob-c pointer-events-none absolute -bottom-24 left-1/4 w-72 h-72 rounded-full bg-[#7C6FF0]/20 blur-3xl"></div>
+
+    <div class="particle" style="width:9px;  height:9px;  left:14%; bottom:12%; background:#1FC8C4; animation-delay:0s;"></div>
+    <div class="particle" style="width:6px;  height:6px;  left:30%; bottom:20%; background:#FF7A59; animation-delay:1.2s;"></div>
+    <div class="particle" style="width:12px; height:12px; left:47%; bottom:8%;  background:#7C6FF0; animation-delay:2.4s;"></div>
+    <div class="particle" style="width:7px;  height:7px;  left:64%; bottom:16%; background:#1FC8C4; animation-delay:0.6s;"></div>
+    <div class="particle" style="width:10px; height:10px; left:79%; bottom:24%; background:#FF7A59; animation-delay:3.1s;"></div>
+    <div class="particle" style="width:6px;  height:6px;  left:90%; bottom:10%; background:#7C6FF0; animation-delay:1.8s;"></div>
+
+    <div class="relative flex items-center gap-3">
+      <%= image_tag 'icon.png', class: 'h-12 sm:h-14 md:h-16 w-auto object-contain' %>
     </div>
+
+    <div class="relative">
+      <p class="uppercase tracking-[0.2em] text-xs font-semibold text-white bg-[#122029] inline-block px-2.5 py-1 rounded-full mb-4">Mal Payments</p>
+      <h1 class="font-display text-2xl sm:text-3xl md:text-[2.75rem] leading-[1.15] md:leading-[1.1] font-semibold text-[#122029] max-w-md">
+        One last step<br />before you're in.
+      </h1>
+      <p class="mt-4 md:mt-5 text-[#5B6B76] text-sm md:text-base max-w-sm">
+        Set a password to activate your account and start managing transactions securely.
+      </p>
+
+      <div class="mt-10 md:mt-12 hidden md:block" aria-hidden="true">
+        <svg viewBox="0 0 320 60" class="w-full max-w-sm" fill="none">
+          <line x1="10" y1="30" x2="290" y2="30" stroke="#D8E4E6" stroke-width="2" stroke-dasharray="4 6" />
+          <circle cx="10" cy="30" r="4" fill="#1FC8C4" class="pulse-node" />
+          <circle cx="290" cy="30" r="4" fill="#7C6FF0" class="pulse-node" style="animation-delay:1.1s;" />
+          <circle r="4.5" fill="#1FC8C4" class="flow-dot d1" />
+          <circle r="4.5" fill="#FF7A59" class="flow-dot d2" />
+          <circle r="4.5" fill="#7C6FF0" class="flow-dot d3" />
+          <text x="10" y="52" fill="#8B98A1" font-size="11" font-family="Inter, sans-serif">Invited</text>
+          <text x="255" y="52" fill="#8B98A1" font-size="11" font-family="Inter, sans-serif">Activated</text>
+        </svg>
+      </div>
+    </div>
+
+    <p class="relative text-xs text-[#9AA7AE] hidden md:block">© <%= Date.current.year %> Mal Payments. All rights reserved.</p>
   </div>
 
-  <!-- Right panel: form -->
-  <div class="w-full md:w-1/2 flex items-center justify-center px-4 py-10 md:py-0 min-h-screen">
-    <div class="w-full max-w-md">
+  <!-- Right: form (40%) -->
+  <div class="w-full md:w-[40%] flex items-center justify-center bg-white dark:bg-[#0F1A22] px-6 py-10 border-t md:border-t-0 md:border-l border-gray-100 dark:border-gray-800">
+    <div class="w-full max-w-sm mx-auto">
 
-      <!-- Mobile-only compact branding -->
-      <div class="flex md:hidden flex-col items-center mb-6">
-        <%= image_tag 'icon.png', class: 'w-16 h-16 object-contain hidden dark:block' %>
-        <%= image_tag 'icon.png', class: 'w-16 h-16 object-contain block dark:hidden' %>
+      <!-- Mobile-only logo -->
+      <div class="flex md:hidden justify-center mb-6">
+        <%= image_tag 'icon.png', class: 'h-10 w-auto object-contain' %>
       </div>
 
-      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg ring-1 ring-gray-100 dark:ring-gray-700 p-6 sm:p-8">
-        <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-1 text-center">
-          <%= t "devise.invitations.edit.header" %>
-        </h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">
-          Choose a password to finish setting up your account.
-        </p>
+      <h2 class="font-display text-xl sm:text-2xl font-semibold text-[#122029] dark:text-white mb-1">
+        <%= t "devise.invitations.edit.header" %>
+      </h2>
+      <p class="text-sm text-[#647079] dark:text-[#8FA2AC] mb-8">Choose a password to finish setting up your account.</p>
 
-        <%= render "devise/shared/error_messages", resource: resource %>
+      <%= render "devise/shared/error_messages", resource: resource %>
 
-        <%= form_for(resource, as: resource_name, url: invitation_path(resource_name), html: { method: :put }) do |f| %>
-          <%= f.hidden_field :invitation_token, readonly: true %>
+      <%= form_for(resource, as: resource_name, url: invitation_path(resource_name), html: { method: :put, class: 'w-full' }) do |f| %>
+        <%= f.hidden_field :invitation_token, readonly: true %>
 
-          <% if f.object.class.require_password_on_accepting %>
+        <% if f.object.class.require_password_on_accepting %>
 
-            <div class="mb-4">
-              <%= f.label :password, "Password",
-                          class: "block mb-2 text-sm font-medium text-gray-700 dark:text-gray-200" %>
-              <div class="relative">
-                <%= f.password_field :password,
-                                     autocomplete: "new-password",
-                                     placeholder: "••••••••",
-                                     required: true,
-                                     class: "h-12 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:border-[#31adaf] focus:ring-1 focus:ring-[#31adaf] outline-none rounded-lg w-full px-3 pr-11 transition-colors" %>
-                <button type="button"
-                        data-toggle-password
-                        aria-label="Show password"
-                        class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                  <!-- eye icon -->
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
-                    <circle cx="12" cy="12" r="3"/>
-                  </svg>
-                </button>
-              </div>
-              <% if f.object.class.password_length %>
-                <p class="mt-1.5 text-xs text-gray-400 dark:text-gray-500">
-                  <%= @minimum_password_length ? "Minimum #{@minimum_password_length} characters." : nil %>
-                </p>
-              <% end %>
+          <div class="mb-5">
+            <%= f.label :password, "Password", class: "block mb-2 text-sm font-medium text-[#122029] dark:text-gray-200" %>
+            <div class="relative">
+              <%= f.password_field :password,
+                                   autocomplete: "new-password",
+                                   placeholder: "••••••••",
+                                   required: true,
+                                   class: "h-12 w-full px-4 pr-11 rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-[#182631] dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1FC8C4] focus:border-[#1FC8C4] transition" %>
+              <button type="button"
+                      data-toggle-password
+                      aria-label="Show password"
+                      class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-[#1FC8C4] transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
             </div>
+            <% if f.object.class.password_length %>
+              <p class="mt-1.5 text-xs text-[#9AA7AE]">
+                <%= @minimum_password_length ? "Minimum #{@minimum_password_length} characters." : nil %>
+              </p>
+            <% end %>
+          </div>
 
-            <div class="mb-6">
-              <%= f.label :password_confirmation, "Confirm Password",
-                          class: "block mb-2 text-sm font-medium text-gray-700 dark:text-gray-200" %>
-              <div class="relative">
-                <%= f.password_field :password_confirmation,
-                                     autocomplete: "new-password",
-                                     placeholder: "••••••••",
-                                     required: true,
-                                     class: "h-12 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:border-[#31adaf] focus:ring-1 focus:ring-[#31adaf] outline-none rounded-lg w-full px-3 pr-11 transition-colors" %>
-                <button type="button"
-                        data-toggle-password
-                        aria-label="Show password"
-                        class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
-                    <circle cx="12" cy="12" r="3"/>
-                  </svg>
-                </button>
-              </div>
+          <div class="mb-6">
+            <%= f.label :password_confirmation, "Confirm Password", class: "block mb-2 text-sm font-medium text-[#122029] dark:text-gray-200" %>
+            <div class="relative">
+              <%= f.password_field :password_confirmation,
+                                   autocomplete: "new-password",
+                                   placeholder: "••••••••",
+                                   required: true,
+                                   class: "h-12 w-full px-4 pr-11 rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-[#182631] dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1FC8C4] focus:border-[#1FC8C4] transition" %>
+              <button type="button"
+                      data-toggle-password
+                      aria-label="Show password"
+                      class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-[#1FC8C4] transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
             </div>
+          </div>
 
-          <% end %>
-
-          <%= f.submit t("devise.invitations.edit.submit_button"),
-                       class: "h-12 w-full rounded-lg font-bold bg-[#31adaf] text-white hover:bg-[#2a9799] transition-colors cursor-pointer" %>
         <% end %>
 
-        <div class="mt-6 text-center text-sm text-gray-500 dark:text-gray-400 space-y-1">
-          <%= render "devise/shared/restricted_links" %>
-        </div>
+        <%= f.submit t("devise.invitations.edit.submit_button"),
+                     class: 'h-12 w-full rounded-lg font-semibold text-white bg-[#122029] hover:bg-[#1FC8C4] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1FC8C4] transition-colors duration-200 cursor-pointer' %>
+      <% end %>
+
+      <div class="mt-6 text-center text-sm text-[#647079] dark:text-[#8FA2AC] space-y-1">
+        <%= render "devise/shared/restricted_links" %>
       </div>
+
+      <p class="text-xs text-[#9AA7AE] text-center mt-8 md:hidden">© <%= Date.current.year %> Mal Payments. All rights reserved.</p>
     </div>
   </div>
 </div>
