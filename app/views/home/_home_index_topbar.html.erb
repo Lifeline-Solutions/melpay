@@ -1,16 +1,19 @@
-<div class="flex justify-end pr-8 p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-  <!-- Right side - Add New Spreadsheet button -->
-  <div>
-    <% if can?(:create, Home) %>
-      <%= link_to new_home_path, class: 'no-underline' do %>
-        <button class="flex items-center space-x-1 bg-[#3F8CFF] hover:bg-[#3A81EB] px-4 py-2 rounded-lg font-bold text-slate-100">
-          十 Upload Spreadsheet
-        </button>
-      <% end %>
-    <% else %>
-      <button class="flex items-center space-x-1 bg-gray-400 cursor-not-allowed px-4 py-2 rounded-lg font-bold text-slate-100" disabled>
-        十 Upload Spreadsheet
+<div class="flex justify-end pr-2 sm:pr-0 pb-4">
+  <% if can?(:create, Home) %>
+    <%= link_to new_home_path, class: 'no-underline' do %>
+      <button class="flex items-center gap-2 bg-[#122029] hover:bg-[#1FC8C4] px-4 py-2.5 rounded-lg font-semibold text-white text-sm transition-colors duration-200">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+          <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+        </svg>
+        Upload Spreadsheet
       </button>
     <% end %>
-  </div>
+  <% else %>
+    <button class="flex items-center gap-2 bg-gray-200 cursor-not-allowed px-4 py-2.5 rounded-lg font-semibold text-gray-400 text-sm" disabled>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+        <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+      </svg>
+      Upload Spreadsheet
+    </button>
+  <% end %>
 </div>

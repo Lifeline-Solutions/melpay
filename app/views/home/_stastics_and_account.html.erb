@@ -1,23 +1,22 @@
 <div class="grid grid-cols-1 lg:grid-cols-7 gap-4 mb-4">
   <!-- Left side -->
   <div class="lg:col-span-3 flex flex-col h-full">
-    <!-- Wrap both cards inside a flex column that fills height -->
     <div class="flex flex-col flex-1 space-y-4">
+
       <!-- Quicklinks -->
-      <div class="flex flex-col items-center justify-center rounded-sm bg-gray-50 dark:bg-gray-800 p-4 flex-1">
-        <p class="text-xl sm:text-2xl text-gray-400 dark:text-gray-500 mb-2">
+      <div class="flex flex-col items-center justify-center rounded-2xl bg-white border border-gray-100 shadow-sm p-4 sm:p-5 flex-1">
+        <p class="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-3">
           Quicklinks
         </p>
-        <div class="flex flex-wrap justify-center gap-3 sm:gap-4">
+        <div class="flex flex-wrap justify-center gap-3">
           <!-- Transfer -->
           <% if can?(:manage, Home) %>
-            <%= link_to "#", class: "flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition relative group" do %>
-              <!-- Transfer Icon -->
+            <%= link_to "#", class: "flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl bg-[#1FC8C4]/12 text-[#0E9A96] hover:bg-[#1FC8C4]/20 transition-colors relative group" do %>
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M17 10a1 1 0 01-1 1H7.41l3.3 3.29a1 1 0 01-1.42 1.42l-5-5a1 1 0 010-1.42l5-5a1 1 0 011.42 1.42L7.41 9H16a1 1 0 011 1z"/>
               </svg>
-              <span class="hidden sm:inline">Transfer</span>
-              <span class="absolute bottom-full mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
+              <span class="hidden sm:inline text-sm font-medium">Transfer</span>
+              <span class="absolute bottom-full mb-2 hidden group-hover:block bg-[#122029] text-white text-xs rounded-lg py-1.5 px-2.5 whitespace-nowrap z-10">
                 Move funds between accounts
               </span>
             <% end %>
@@ -25,13 +24,12 @@
 
           <!-- TopUp -->
           <% if can?(:manage, User) %>
-            <%= link_to "#", class: "flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-md bg-green-500 text-white hover:bg-green-600 transition relative group" do %>
-              <!-- TopUp Icon -->
+            <%= link_to "#", class: "flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl bg-[#FF7A59]/12 text-[#E15A3C] hover:bg-[#FF7A59]/20 transition-colors relative group" do %>
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 9h3a1 1 0 010 2h-3v3a1 1 0 01-2 0v-3H6a1 1 0 010-2h3V6a1 1 0 012 0v3z"/>
               </svg>
-              <span class="hidden sm:inline">Top Up</span>
-              <span class="absolute bottom-full mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
+              <span class="hidden sm:inline text-sm font-medium">Top Up</span>
+              <span class="absolute bottom-full mb-2 hidden group-hover:block bg-[#122029] text-white text-xs rounded-lg py-1.5 px-2.5 whitespace-nowrap z-10">
                 Add money to your account
               </span>
             <% end %>
@@ -39,13 +37,12 @@
 
           <!-- Bulk -->
           <% if can?(:manage, Home) %>
-            <%= link_to "#", class: "flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-md bg-purple-500 text-white hover:bg-purple-600 transition relative group" do %>
-              <!-- Bulk Icon -->
+            <%= link_to "#", class: "flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl bg-[#7C6FF0]/12 text-[#5B4FD1] hover:bg-[#7C6FF0]/20 transition-colors relative group" do %>
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M4 3h12a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1zm0 6h12a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3a1 1 0 011-1zm0 6h12a1 1 0 011 1v1a1 1 0 01-1 1H4a1 1 0 01-1-1v-1a1 1 0 011-1z"/>
               </svg>
-              <span class="hidden sm:inline">Bulk</span>
-              <span class="absolute bottom-full mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
+              <span class="hidden sm:inline text-sm font-medium">Bulk</span>
+              <span class="absolute bottom-full mb-2 hidden group-hover:block bg-[#122029] text-white text-xs rounded-lg py-1.5 px-2.5 whitespace-nowrap z-10">
                 Perform multiple transactions at once
               </span>
             <% end %>
@@ -54,11 +51,11 @@
       </div>
 
       <!-- Accounts -->
-      <div class="flex flex-col items-center justify-center rounded-sm bg-gray-50 dark:bg-gray-800 p-4 flex-1">
-        <p class="text-xl sm:text-2xl text-gray-400 dark:text-gray-500">
+      <div class="flex flex-col items-center justify-center rounded-2xl bg-white border border-gray-100 shadow-sm p-4 sm:p-5 flex-1">
+        <p class="text-xl sm:text-2xl font-semibold text-[#122029]">
           Accounts: 0
         </p>
-        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+        <p class="mt-1 text-sm text-[#5B6B76]">
           Types: eg CHECKING
         </p>
       </div>
@@ -67,32 +64,33 @@
 
   <!-- Right side -->
   <div class="lg:col-span-4">
-    <div class="p-4 sm:p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md h-full">
-      <h2 class="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-gray-800 dark:text-gray-100">Statistics Overview</h2>
-      <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-4 sm:mb-6">
+    <div class="p-4 sm:p-6 bg-white border border-gray-100 rounded-2xl shadow-sm h-full">
+      <h2 class="text-lg sm:text-xl font-semibold mb-1 text-[#122029]">Statistics Overview</h2>
+      <p class="text-xs sm:text-sm text-[#5B6B76] mb-4 sm:mb-6">
         This chart shows Deposits, Money In (Credits), and Money Out (Transaction Costs) over time (per upload date).
       </p>
 
       <div class="w-full h-64 sm:h-80 lg:h-full">
         <% if can?(:read, Home) %>
           <%= line_chart @chart_series,
+                         colors: ["#1FC8C4", "#FF7A59", "#7C6FF0"],
                          library: {
                            title: {
                              text: "Financial Overview Over Time",
-                             style: { fontSize: "16px", fontWeight: "bold" }
+                             style: { fontSize: "16px", fontWeight: "bold", color: "#122029" }
                            },
                            xAxis: {
                              type: "datetime",
                              title: {
                                text: "Upload Date",
-                               style: { fontSize: "14px", fontWeight: "bold", color: "#333" }
+                               style: { fontSize: "14px", fontWeight: "bold", color: "#5B6B76" }
                              },
                              labels: { format: "{value:%Y-%m-%d}" }
                            },
                            yAxis: {
                              title: {
                                text: "Amount (USD)",
-                               style: { fontSize: "14px", fontWeight: "bold", color: "#333" }
+                               style: { fontSize: "14px", fontWeight: "bold", color: "#5B6B76" }
                              },
                              labels: { format: "${value}" }
                            },
@@ -105,14 +103,14 @@
                                states: { hover: { lineWidth: 3 } }
                              }
                            },
-                           chart: { reflow: true }
+                           chart: { reflow: true, style: { fontFamily: "Inter, sans-serif" } }
                          },
                          points: true,
                          discrete: false
           %>
         <% else %>
-          <div class="flex items-center justify-center h-64 bg-gray-100 dark:bg-gray-700 rounded-lg">
-            <p class="text-gray-500 dark:text-gray-400">No access to view statistics</p>
+          <div class="flex items-center justify-center h-64 bg-gray-50 rounded-xl">
+            <p class="text-[#5B6B76]">No access to view statistics</p>
           </div>
         <% end %>
       </div>
