@@ -13,6 +13,11 @@ Rails.application.routes.draw do
   post 'two_factor/check', to: 'two_factor#check', as: :check_otp
   post 'two_factor/cancel_pending', to: 'two_factor#cancel_pending', as: :cancel_pending_two_factor
 
+  require 'sidekiq/web'
+  authenticate :user, ->(user) { user.has_role?(:super_admin) } do
+    mount Sidekiq::Web => '/sidekiq'
+  end
+
   resources :users, only: [:index, :show, :edit, :update]
   resources :home do
     member do
@@ -27,7 +32,7 @@ Rails.application.routes.draw do
       put :update_custom
     end
   end
-  
+
   resources :clients do
     member do
       patch :approve_kyc
