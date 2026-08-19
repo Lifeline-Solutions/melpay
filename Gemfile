@@ -67,20 +67,19 @@ group :test do
   gem 'selenium-webdriver'
 end
 
+gem 'activestorage-cloudinary-service'
 gem 'acts_as_tenant', '~> 1.0'
 gem 'cancancan'
 gem 'chartkick'
+gem 'cloudinary'
 gem 'csv'
 gem 'devise', '~> 5.0'
 gem 'devise_invitable', '~> 2.0.0'
 gem 'groupdate'
 gem 'omniauth', '>= 1.0.0'
+gem 'paper_trail', '~> 17.0'
 gem 'rolify'
 gem 'roo'
 gem 'sentry-rails'
 gem 'sentry-ruby'
-gem 'activestorage-cloudinary-service'
-gem 'cloudinary'
-gem 'paper_trail', '~> 17.0'
 gem 'sidekiq'
-

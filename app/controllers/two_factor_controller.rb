@@ -1,8 +1,5 @@
 class TwoFactorController < ApplicationController
   before_action :authenticate_user!
-  #queue_as :default
-
-
   def send_otp
     current_user.generate_otp!
     # For Emails
