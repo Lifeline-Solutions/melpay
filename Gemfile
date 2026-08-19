@@ -79,7 +79,8 @@ gem 'rolify'
 gem 'roo'
 gem 'sentry-rails'
 gem 'sentry-ruby'
-
 gem 'activestorage-cloudinary-service'
 gem 'cloudinary'
 gem 'paper_trail', '~> 17.0'
+gem 'sidekiq'
+
