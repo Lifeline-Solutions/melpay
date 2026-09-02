@@ -50,6 +50,8 @@ env:
     - RAILS_MASTER_KEY
     - SECRET_KEY_BASE
     - POSTGRES_PASSWORD
+    - SMTP_USER_NAME
+    - SMTP_PASSWORD
   clear:
     # Database configuration
     # Using the Docker service name because both app and db run on the same Docker network (kamal)
