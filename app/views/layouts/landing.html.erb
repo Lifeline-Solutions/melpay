@@ -1,10 +1,40 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title><%= content_for(:title) || "MAL Payments" %></title>
+    <% page_title = content_for(:title) || "MAL Payments — Collections & Disbursements, Simplified" %>
+    <% page_description = content_for(:description) || "MAL Payments is a payment aggregator platform for African businesses to collect payments, disburse funds, and manage every transaction on one secure, enterprise-grade platform." %>
+    <% canonical_url = content_for(:canonical) || request.original_url.split('?').first %>
+    <title><%= page_title %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="description" content="<%= page_description %>">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <link rel="canonical" href="<%= canonical_url %>">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="MAL Payments">
+    <meta property="og:title" content="<%= page_title %>">
+    <meta property="og:description" content="<%= page_description %>">
+    <meta property="og:url" content="<%= canonical_url %>">
+    <meta property="og:image" content="<%= asset_url('icon.png') %>">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<%= page_title %>">
+    <meta name="twitter:description" content="<%= page_description %>">
+    <meta name="twitter:image" content="<%= asset_url('icon.png') %>">
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "MAL Payments",
+        "url": "https://malpayment.com/",
+        "logo": "<%= asset_url('icon.png') %>",
+        "description": "<%= page_description %>",
+        "foundingLocation": "South Sudan"
+      }
+    </script>
+
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
     <%= favicon_link_tag asset_path('ico.png') %>

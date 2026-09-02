@@ -1,1 +1,14 @@
 # See https://www.robotstxt.org/robotstxt.html for documentation on how to use the robots.txt file
+
+User-agent: *
+Disallow: /users
+Disallow: /home
+Disallow: /clients
+Disallow: /transactions
+Disallow: /interest_rates
+Disallow: /roles
+Disallow: /two_factor
+Disallow: /sidekiq
+Disallow: /invitation
+
+Sitemap: https://malpayment.com/sitemap.xml
