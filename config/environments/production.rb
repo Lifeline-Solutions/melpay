@@ -123,8 +123,8 @@ Rails.application.configure do
     address: 'lim108.truehost.cloud',
     port: 465, # Port 465 uses implicit SSL/TLS (SMTPS)
     domain: 'malpayment.com',
-    user_name: 'noreply@malpayment.com',
-    password: 'Aw1}Pj&sjFxT)uc8',
+    user_name: ENV['SMTP_USER_NAME'],
+    password: ENV['SMTP_PASSWORD'],
     authentication: :plain,
     ssl: true, # Use implicit SSL for port 465 (SMTPS)
     # NOTE: Do NOT set enable_starttls_auto with ssl: true - they are mutually exclusive
