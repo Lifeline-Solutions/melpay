@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_26_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_25_181010) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -109,6 +109,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_26_000001) do
     t.datetime "updated_at", null: false
     t.index ["name", "resource_type", "resource_id"], name: "index_roles_on_name_and_resource_type_and_resource_id"
     t.index ["resource_type", "resource_id"], name: "index_roles_on_resource"
+  end
+
+  create_table "solid_cache_dashboard_events", force: :cascade do |t|
+    t.integer "byte_size"
+    t.datetime "created_at", null: false
+    t.float "duration"
+    t.string "event_type", null: false
+    t.bigint "key_hash", null: false
+    t.string "key_string"
+    t.index ["created_at"], name: "index_solid_cache_dashboard_events_on_created_at"
+    t.index ["event_type"], name: "index_solid_cache_dashboard_events_on_event_type"
+    t.index ["key_hash"], name: "index_solid_cache_dashboard_events_on_key_hash"
   end
 
   create_table "solid_queue_blocked_executions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -268,8 +280,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_26_000001) do
     t.index ["mpesa_conversation_id"], name: "index_transactions_on_mpesa_conversation_id"
     t.index ["mpesa_originator_conversation_id"], name: "index_transactions_on_mpesa_originator_conversation_id"
     t.index ["previous_transaction_id"], name: "index_transactions_on_previous_transaction_id"
-    t.index ["transaction_id", "is_latest"], name: "index_transactions_on_transaction_id_and_is_latest"
     t.index ["transaction_id"], name: "index_transactions_on_transaction_id"
+    t.index ["transaction_id"], name: "index_transactions_on_transaction_id_when_latest", unique: true, where: "(is_latest = true)"
     t.index ["user_id"], name: "index_transactions_on_user_id"
     t.index ["uuid"], name: "index_transactions_on_uuid", unique: true
   end

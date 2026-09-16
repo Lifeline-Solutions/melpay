@@ -31,5 +31,5 @@ M-Pesa B2C (Business to Customer) disbursement was integrated into the `feat/Mpe
 
 - `MPESA_CALLBACK_BASE_URL` in `.env` must be set to a public ngrok URL before testing (app runs locally in WSL containers)
 - `MPESA_CONSUMER_KEY` and `MPESA_CONSUMER_SECRET` are already set in `.env` with sandbox values
-- `rails db:migrate` must be run to apply the mpesa columns migration
+- `rails db:migrate` must be run to apply the mpesa columns migration and the partial unique index on `transaction_id` (`20260825181010_add_partial_unique_index_to_transactions_transaction_id.rb`)
 - Sandbox credentials in use: initiator=testapi, Party A=600984, passkey=bfb279f9...
