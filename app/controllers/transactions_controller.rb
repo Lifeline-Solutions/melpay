@@ -52,7 +52,7 @@ class TransactionsController < ApplicationController
   end
 
   def transactions_params
-    params.require(:transaction).permit(:status, :amount, :transaction_cost, :total_cost, :interest_rate, :transaction_id, :home_id, :user_id, :client_id)
+    params.require(:transaction).permit(:amount, :transaction_cost, :total_cost, :interest_rate, :transaction_id, :home_id, :user_id)
   end
 
   def transactions_list
