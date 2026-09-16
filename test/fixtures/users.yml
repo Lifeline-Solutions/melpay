@@ -1,11 +1,25 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+#
+# encrypted_password is a precomputed bcrypt hash of "password123" (BCrypt isn't loaded
+# in the fixture ERB binding, so this is generated once via `BCrypt::Password.create`
+# rather than inline) — fine since nothing here needs to authenticate as this password.
 
-# This model initially had no columns defined. If you add columns to the
-# model remove the "{}" from the fixture names and add the columns immediately
-# below each fixture, per the syntax in the comments below
-#
-one: {}
-# column: value
-#
-two: {}
-# column: value
+one:
+  client: one
+  email: manager_one@acme.example
+  encrypted_password: "$2a$12$s64UsG8Nri2AHA1st1ztcOo1Ljx6PqnmFMV3fzhwWFeO6RtSjJWA2"
+  first_name: Amara
+  last_name: Otieno
+  phone_number: "+254711000001"
+  user_pass: planet
+  confirmed_at: 2025-08-10 17:01:28
+
+two:
+  client: two
+  email: manager_two@beta.example
+  encrypted_password: "$2a$12$s64UsG8Nri2AHA1st1ztcOo1Ljx6PqnmFMV3fzhwWFeO6RtSjJWA2"
+  first_name: Brian
+  last_name: Mwangi
+  phone_number: "+254711000002"
+  user_pass: orange
+  confirmed_at: 2025-08-10 17:01:28

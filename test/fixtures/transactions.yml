@@ -1,7 +1,31 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  status: MyString
+  client: one
+  home: one
+  user: one
+  transaction_id: ACME-0001
+  status: success
+  amount: 1000.00
+  transaction_cost: 20.00
+  total_cost: 1020.00
+  interest_rate: 2.0
+  applied_commission_type: percentage
+  applied_commission_value: 2.0
+  deposit_data: {}
+  is_latest: true
 
 two:
-  status: MyString
+  client: two
+  home: two
+  user: two
+  transaction_id: BETA-0001
+  status: pending
+  amount: 500.00
+  transaction_cost: 25.00
+  total_cost: 525.00
+  interest_rate: 0.0
+  applied_commission_type: fixed
+  applied_commission_value: 25.00
+  deposit_data: {}
+  is_latest: true
