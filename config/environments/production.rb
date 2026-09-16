@@ -52,9 +52,7 @@ Rails.application.configure do
   # Replace the default in-process memory cache store with a durable alternative.
   config.cache_store = :solid_cache_store
 
-  # Replace the default in-process and non-durable queuing backend for Active Job.
-  config.active_job.queue_adapter = :solid_queue
-  config.solid_queue.connects_to = { database: { writing: :queue } }
+  # Active Job uses Sidekiq (see config/application.rb); no per-environment override needed here.
 
   # Fallback: if the 'cache' database isn't configured (which would raise during Solid Cache initialization),
   # remap Solid Cache to use the primary database to allow the app to boot. This prevents health check failures.
