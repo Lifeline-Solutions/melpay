@@ -1,11 +1,16 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+#
+# Global (non-resource-scoped) rolify roles — resource_type/resource_id left nil,
+# matching how Ability (app/models/ability.rb) checks user.has_role?(:role_name).
 
-# This model initially had no columns defined. If you add columns to the
-# model remove the "{}" from the fixture names and add the columns immediately
-# below each fixture, per the syntax in the comments below
-#
-one: {}
-# column: value
-#
-two: {}
-# column: value
+super_admin:
+  name: super_admin
+
+admin:
+  name: admin
+
+account_manager:
+  name: account_manager
+
+auditor:
+  name: auditor

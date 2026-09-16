@@ -1,7 +1,15 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  name: MyString
+  client: one
+  user: one
+  name: August 2026 Payroll Batch
+  unique_id: HOME-ACME-0001
+  processed_deposits: []
 
 two:
-  name: MyString
+  client: two
+  user: two
+  name: August 2026 Supplier Batch
+  unique_id: HOME-BETA-0001
+  processed_deposits: []

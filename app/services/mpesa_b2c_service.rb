@@ -13,6 +13,7 @@ class MpesaB2cService
     @passkey = ENV.fetch('MPESA_PASSKEY')
     @party_a = ENV.fetch('MPESA_PARTY_A', '600984') # B2C shortcode
     @callback_base = ENV.fetch('MPESA_CALLBACK_BASE_URL') # e.g. https://abc123.ngrok.io
+    @callback_token = ENV.fetch('MPESA_CALLBACK_TOKEN') # shared secret checked by MpesaCallbacksController
     @environment = ENV.fetch('MPESA_ENVIRONMENT', 'sandbox')
   end
 
@@ -44,8 +45,8 @@ class MpesaB2cService
       PartyB: phone,
       Remarks: remarks.to_s.truncate(100),
       Timestamp: timestamp,
-      QueueTimeOutURL: "#{@callback_base}/mpesa/b2c/timeout",
-      ResultURL: "#{@callback_base}/mpesa/b2c/result",
+      QueueTimeOutURL: "#{@callback_base}/mpesa/b2c/timeout/#{@callback_token}",
+      ResultURL: "#{@callback_base}/mpesa/b2c/result/#{@callback_token}",
       Occasion: occasion.to_s.truncate(100)
     }
 

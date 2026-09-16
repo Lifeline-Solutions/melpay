@@ -7,7 +7,7 @@ default: &default
   pool: <%= ENV.fetch("RAILS_MAX_THREADS", 5) %>
   url: <%= ENV['DATABASE_URL'] if ENV['DATABASE_URL'].present? %>
   username: <%= ENV['PGUSER'] || '' %>
-  password: <%= ENV['POSTGRES_PASSWORD'] || ENV['PGPASSWORD'] || 'abol_ger' %>
+  password: <%= ENV['POSTGRES_PASSWORD'] || ENV['PGPASSWORD'] || 'postgres' %>
   host: <%= ENV['PGHOST'] || 'localhost' %>
   port: <%= ENV['PGPORT'] || 5432 %>
 

@@ -1,10 +1,16 @@
+require 'ipaddr'
+
 class MpesaCallbacksController < ApplicationController
-  # Safaricom POSTs directly — no session/CSRF.
+  # Safaricom POSTs directly — no session/CSRF, and Daraja does not sign callbacks,
+  # so the :token path segment and (optional) IP allowlist below are the only auth we get.
   skip_before_action :verify_authenticity_token, raise: false
   skip_before_action :authenticate_user!, raise: false
   skip_before_action :require_2fa, raise: false
 
-  # POST /mpesa/b2c/result
+  before_action :verify_callback_token
+  before_action :verify_callback_ip
+
+  # POST /mpesa/b2c/result/:token
   # Safaricom fires this once the B2C payment settles (success or failure).
   def b2c_result
     result = parsed_result
@@ -38,7 +44,7 @@ class MpesaCallbacksController < ApplicationController
     render json: { ResultCode: 0, ResultDesc: 'Accepted' }
   end
 
-  # POST /mpesa/b2c/timeout
+  # POST /mpesa/b2c/timeout/:token
   def b2c_timeout
     result = parsed_result
     return head :bad_request if result.nil?
@@ -60,6 +66,32 @@ class MpesaCallbacksController < ApplicationController
   end
 
   private
+
+  # MPESA_CALLBACK_TOKEN must match the :token segment configured on the ResultURL/
+  # QueueTimeOutURL sent to Safaricom (see MpesaB2cService). Required — refuses to boot
+  # requests to this controller if unset, rather than silently accepting any token.
+  def verify_callback_token
+    expected = ENV.fetch('MPESA_CALLBACK_TOKEN')
+    return if ActiveSupport::SecurityUtils.secure_compare(params[:token].to_s, expected)
+
+    Rails.logger.warn "[MpesaCallback] Rejected — bad callback token from #{request.remote_ip}"
+    head :unauthorized
+  end
+
+  # Optional hardening layer: only enforced if MPESA_CALLBACK_IP_ALLOWLIST is set.
+  # Comma-separated list of IPs/CIDR ranges, e.g. Safaricom's published Daraja egress ranges.
+  # Left opt-in because we don't want to hardcode IPs we haven't verified against the
+  # current Daraja documentation for this account's environment.
+  def verify_callback_ip
+    allowlist = ENV['MPESA_CALLBACK_IP_ALLOWLIST'].to_s.split(',').map(&:strip).reject(&:blank?)
+    return if allowlist.empty?
+
+    remote_ip = IPAddr.new(request.remote_ip)
+    return if allowlist.any? { |range| IPAddr.new(range).include?(remote_ip) }
+
+    Rails.logger.warn "[MpesaCallback] Rejected — IP #{request.remote_ip} not in allowlist"
+    head :forbidden
+  end
 
   def parsed_result
     body = request.body.read

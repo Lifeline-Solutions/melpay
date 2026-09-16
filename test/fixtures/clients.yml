@@ -1,17 +1,22 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  name: MyString
-  email: MyString
-  phone: MyString
-  kyc_status: MyString
+  name: Acme Payroll Ltd
+  email: finance@acme.example
+  phone: "+254700000001"
+  kyc_status: approved
   kyc_verified_at: 2025-08-10 17:01:28
-  kyc_reference_id: MyString
+  kyc_reference_id: KYC-ACME-0001
+  credit: 100000.0
+  commission_type: percentage
 
 two:
-  name: MyString
-  email: MyString
-  phone: MyString
-  kyc_status: MyString
+  name: Beta Logistics Ltd
+  email: finance@beta.example
+  phone: "+254700000002"
+  kyc_status: approved
   kyc_verified_at: 2025-08-10 17:01:28
-  kyc_reference_id: MyString
+  kyc_reference_id: KYC-BETA-0002
+  credit: 50000.0
+  commission_type: fixed
+  fixed_commission_amount: 25.00

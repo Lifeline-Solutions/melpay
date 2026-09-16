@@ -31,6 +31,12 @@ Rails.application.configure do
   # Store uploaded files on the local file system in a temporary directory.
   config.active_storage.service = :test
 
+  # Rails' framework default is :vips, which needs the ruby-vips gem explicitly in the
+  # Gemfile (it isn't — only image_processing is). Without this, any test run fails to
+  # boot with a LoadError from active_storage/transformers/vips.rb before a single test
+  # executes. Match development.rb, which already works around this the same way.
+  config.active_storage.variant_processor = :mini_magick
+
   # Tell Action Mailer not to deliver emails to the real world.
   # The :test delivery method accumulates sent emails in the
   # ActionMailer::Base.deliveries array.

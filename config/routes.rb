@@ -46,7 +46,9 @@ Rails.application.routes.draw do
     end
   end
 
-  # M-Pesa B2C async callbacks
-  post 'mpesa/b2c/result',  to: 'mpesa_callbacks#b2c_result',  as: :mpesa_b2c_result
-  post 'mpesa/b2c/timeout', to: 'mpesa_callbacks#b2c_timeout', as: :mpesa_b2c_timeout
+  # M-Pesa B2C async callbacks. Safaricom's Daraja API does not sign these callbacks,
+  # so the :token path segment (checked in MpesaCallbacksController) is the only thing
+  # standing between this being a fully public, unauthenticated write endpoint.
+  post 'mpesa/b2c/result/:token',  to: 'mpesa_callbacks#b2c_result',  as: :mpesa_b2c_result
+  post 'mpesa/b2c/timeout/:token', to: 'mpesa_callbacks#b2c_timeout', as: :mpesa_b2c_timeout
 end

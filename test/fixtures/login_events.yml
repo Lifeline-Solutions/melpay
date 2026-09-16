@@ -2,12 +2,12 @@
 
 one:
   user: one
-  ip: MyString
-  user_agent: MyString
-  session_id: MyString
+  ip: 41.90.64.10
+  user_agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)
+  session_id: session-one-abc123
 
 two:
   user: two
-  ip: MyString
-  user_agent: MyString
-  session_id: MyString
+  ip: 41.90.64.20
+  user_agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)
+  session_id: session-two-def456
