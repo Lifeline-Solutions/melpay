@@ -68,7 +68,7 @@ group :test do
 end
 
 gem 'activestorage-cloudinary-service'
-gem 'acts_as_tenant', '~> 1.0'
+gem 'acts_as_tenant', '~> 2.0'
 gem 'cancancan'
 gem 'chartkick'
 gem 'cloudinary'
