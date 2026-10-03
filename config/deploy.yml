@@ -1,134 +1,244 @@
-# Name of your application. Used to uniquely configure containers.
-# Renamed from `malpay` to `melpay` for consistency with project directory name.
-# Rollback: If issues arise after deploy, revert this change to `malpay` and run `bin/kamal deploy --no-prune`.
-service: melpay
+# config/deploy.yml
+#
+# Salato Events
+# Rails 8 + PostgreSQL 16 + Redis 7 + Sidekiq + Kamal 2
+# Production server: Contabo VPS (207.180.216.54)
 
-# Name of the container image.
-# Currently still using existing Docker Hub repository `ger619/malpay`.
-# To migrate to `ger619/melpay` later:
-#   docker tag ger619/malpay:latest ger619/melpay:latest && docker push ger619/melpay:latest
-#   Update `image:` below and deploy with --no-prune, then prune after validation.
-image: ger619/malpay
+service: malpayment
 
-# Deploy to these servers.
+image: ger619/malpayment
+
+# --------------------------------------------------
+# Production servers
+#
+#   web    -> Puma, behind kamal-proxy
+#   worker -> Sidekiq, same image, different command
+# --------------------------------------------------
+
 servers:
   web:
-    - 139.59.44.224
-  # job:
-  #   hosts:
-  #     - 192.168.0.1
-  #   cmd: bin/jobs
+    - 84.247.137.120
 
-# Enable SSL auto certification via Let's Encrypt and allow for multiple apps on a single web server.
-# Remove this section when using multiple web servers and ensure you terminate SSL at your load balancer.
-#
-# Note: If using Cloudflare, set encryption mode in SSL/TLS setting to "Full" to enable CF-to-app encryption.
-# Note: SSL requires a domain name. Uncomment and set host when you have a domain configured.
+  worker:
+    hosts:
+      - 84.247.137.120
+    cmd: bundle exec sidekiq -C config/sidekiq.yml
+    # Sidekiq serves no HTTP, so it must not be registered
+    # with kamal-proxy or healthchecked as a web app.
+    proxy: false
+
+# Give Rails/Kamal enough time for the first boot,
+# PostgreSQL startup and database preparation.
+deploy_timeout: 120
+
+# --------------------------------------------------
+# Proxy / Domain
+# --------------------------------------------------
+
 proxy:
-  ssl: false
-  # host: app.example.com
-  # To enable SSL, set ssl: true and uncomment host with your actual domain
+  ssl: true
+  host: malpayment.com
 
-# Credentials for your image host.
+  healthcheck:
+    path: /up
+    interval: 3
+    timeout: 10
+
+# --------------------------------------------------
+# Container Registry
+# --------------------------------------------------
+
 registry:
-  # Specify the registry server, if you're not using Docker Hub
-  # server: registry.digitalocean.com / ghcr.io / ...
+  server: ghcr.io
   username: ger619
-
-  # Always use an access token rather than real password when possible.
   password:
     - KAMAL_REGISTRY_PASSWORD
-# Troubleshooting auth:
-#   1. Ensure env var exported: echo "$KAMAL_REGISTRY_PASSWORD" | grep .
-#   2. Login manually: echo "$KAMAL_REGISTRY_PASSWORD" | docker login -u ger619 --password-stdin
-#   3. If unauthorized, rotate PAT in Docker Hub (Read/Write scopes) and re-export.
-#   4. Hidden newline? printf '%s' "$KAMAL_REGISTRY_PASSWORD" | od -An -t x1 | tail -n1 (should not end with 0a)
 
-# Inject ENV variables into containers (secrets come from .kamal/secrets).
+# --------------------------------------------------
+# Docker Build
+# --------------------------------------------------
+
+builder:
+  arch: amd64
+
+# --------------------------------------------------
+# Application Environment
+# --------------------------------------------------
+
 env:
+  clear:
+    RAILS_ENV: production
+    RAILS_LOG_TO_STDOUT: "true"
+
+    # ------------------------------------------------
+    # PostgreSQL
+    #
+    # The accessory is named "db", so on the Kamal
+    # network the container is: malpayment-db
+    # ------------------------------------------------
+    PGHOST: malpayment-user-db
+    PGPORT: "5432"
+    PGUSER: malpayment
+    PG_DATABASE: malpayment_production
+
+    # ------------------------------------------------
+    # Redis / Sidekiq
+    #
+    # The accessory is named "redis", so on the Kamal
+    # network the container is: malpayment-redis
+    # ------------------------------------------------
+    REDIS_URL: redis://malpayment-redis:6379/0
+    SIDEKIQ_CONCURRENCY: "5"
+
+    # ------------------------------------------------
+    # Email (Resend over SMTP)
+    #
+    # salato.app is verified in Resend, so the From
+    # address must stay on that domain or Resend
+    # rejects the message.
+    # ------------------------------------------------
+    # ------------------------------------------------
+    # WhatsApp ticket delivery
+    #
+    # WhatsappTicketDeliveryJob sends the ticket PDF
+    # (the same file the email attaches) to the buyer
+    # through the OpenWA accessory once the order is
+    # paid.
+    #
+    # Rails talks to OpenWA on the internal Docker
+    # network (salato-events-openwa:2785), so the PDF
+    # never crosses the public proxy.
+    #
+    # wa.salato.app is for humans only: QR pairing and
+    # session health. Do NOT point Rails at it.
+    # ------------------------------------------------
+    #OPENWA_BASE_URL: http://malpayment-openwa:2785
+
+    # The session UUID from the OpenWA dashboard, NOT
+    # the session name. The name gets a 400 "session is
+    # not active". If the phone is ever re-paired as a
+    # NEW session, paste its UUID here and redeploy.
+    #OPENWA_SESSION_ID: "7c809ee6-e04b-4d20-8b9f-5a2f987bd7d1"
+
   secret:
     - RAILS_MASTER_KEY
-    - SECRET_KEY_BASE
     - POSTGRES_PASSWORD
-    - SMTP_USER_NAME
-    - SMTP_PASSWORD
-  clear:
-    # Database configuration
-    # Using the Docker service name because both app and db run on the same Docker network (kamal)
-    # The database accessory is named 'melpay-db' and is accessible via that hostname
-    PGHOST: melpay-db
-    PGPORT: 5432
-    PGUSER: melpay
-    PG_DATABASE: melpay_production
 
-    # Run the Solid Queue Supervisor inside the web server's Puma process to do jobs.
-    # When you start using multiple servers, you should split out job processing to a dedicated machine.
-    SOLID_QUEUE_IN_PUMA: true
 
-    # Set number of processes dedicated to Solid Queue (default: 1)
-    # JOB_CONCURRENCY: 3
+    # Resend API key, used as the SMTP password in
+    # config/environments/production.rb.
 
-    # Set number of cores available to the application on each server (default: 1).
-    # WEB_CONCURRENCY: 2
+    # OpenWA key, sent by Rails as the X-API-Key header.
+    # .kamal/secrets derives this and API_MASTER_KEY from
+    # one .env value so the two can never drift.
 
-    # Match this to any external database server to configure Active Record correctly
-    # Use melpay-db for a db accessory server on same machine via local kamal docker network.
-    # DB_HOST: 192.168.0.2
+# --------------------------------------------------
+# Persistent Rails Storage
+# --------------------------------------------------
 
-    # Log everything from Rails
-    # RAILS_LOG_LEVEL: debug
+volumes:
+  - "malpayment_storage:/rails/storage"
 
-# Aliases are triggered with "bin/kamal <alias>". You can overwrite arguments on invocation:
-# "bin/kamal logs -r job" will tail logs from the first server in the job section.
+# --------------------------------------------------
+# Rails Assets
+# --------------------------------------------------
+
+asset_path: /rails/public/assets
+
+# --------------------------------------------------
+# Handy shortcuts
+#
+#   kamal console   Rails console
+#   kamal shell     bash in the app container
+#   kamal logs      follow web logs
+#   kamal dbc       database console
+#   kamal sidekiq   follow Sidekiq (worker) logs
+# --------------------------------------------------
+
 aliases:
   console: app exec --interactive --reuse "bin/rails console"
   shell: app exec --interactive --reuse "bash"
   logs: app logs -f
   dbc: app exec --interactive --reuse "bin/rails dbconsole"
+  sidekiq: app logs -r worker -f
 
+# --------------------------------------------------
+# Accessories
+# --------------------------------------------------
 
-# Use a persistent storage volume for sqlite database files and local Active Storage files.
-# Recommended to change this to a mounted volume path that is backed up off server.
-volumes:
-  - "melpay_storage:/rails/storage"
-
-
-# Bridge fingerprinted assets, like JS and CSS, between versions to avoid
-# hitting 404 on in-flight requests. Combines all files from new and old
-# version inside the asset_path.
-asset_path: /rails/public/assets
-
-# Configure the image builder.
-builder:
-  arch: amd64
-  # Registry cache disabled due to Docker Hub upload issues
-  # The build cache was causing 400 errors when pushing large layers
-
-  # # Build image via remote server (useful for faster amd64 builds on arm64 computers)
-  # remote: ssh://docker@docker-builder-server
-  #
-  # # Pass arguments and secrets to the Docker build process
-  # args:
-  #   RUBY_VERSION: 3.4.7
-  # secrets:
-  #   - GITHUB_TOKEN
-  #   - RAILS_MASTER_KEY
-
-# Use a different ssh user than root
-# ssh:
-#   user: app
-
-# Use accessory services (secrets come from .kamal/secrets).
 accessories:
+
+  # ------------------------------------------------
+  # PostgreSQL
+  #
+  # Bound to localhost on the VPS only. Do NOT expose
+  # it publicly: Rails reaches it over the Kamal
+  # network at salato-events-db:5432.
+  # ------------------------------------------------
   db:
     image: postgres:16
-    host: 139.59.44.224
+    host: 84.247.216.54
     port: "127.0.0.1:5432:5432"
+
     env:
       clear:
         POSTGRES_USER: melpay
         POSTGRES_DB: melpay_production
       secret:
         - POSTGRES_PASSWORD
+
     directories:
       - data:/var/lib/postgresql/data
+
+  # ------------------------------------------------
+  # Redis (Sidekiq queue backend)
+  #
+  # Bound to localhost on the VPS only. Do NOT expose
+  # it publicly: it has no auth and relies on being
+  # unreachable. Rails and Sidekiq reach it at
+  # salato-events-redis:6379.
+  #
+  # noeviction is required for Sidekiq: the default
+  # policy would silently drop queued jobs under
+  # memory pressure. appendonly keeps the queue across
+  # restarts.
+  # ------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    host: 84.247.137.120
+    port: "127.0.0.1:6379:6379"
+    cmd: "redis-server --appendonly yes --maxmemory-policy noeviction"
+
+    directories:
+      - data:/data
+
+  # ------------------------------------------------
+  # OpenWA (WhatsApp gateway)
+  #
+  # Sends ticket PDFs to order.customer_phone once
+  # payment clears.
+  #
+  # IMAGE — why :main and not :latest
+  #   :latest is release v0.23.5, where every PDF/image
+  #   send fails with a 500 since WhatsApp Web's
+  #   17 Sep 2026 update ("Data passed to getter must
+  #   include an id property"). The fix is on OpenWA's
+  #   main branch (PR #1670) but not in a release yet.
+  #   Once a release newer than 0.23.5 is out, pin it
+  #   here (e.g. ghcr.io/rmyndharis/openwa:0.23.6).
+  #
+  #   :main is not re-pulled automatically. To update:
+  #     ssh root@207.180.216.54 docker pull ghcr.io/rmyndharis/openwa:main
+  #     kamal accessory reboot openwa
+  #
+  # PUBLISHED on wa.salato.app because pairing a number
+  # means scanning a QR code in a browser. Protected by:
+  #   - TLS, issued by kamal-proxy
+  #   - the X-API-Key header on every API route
+  #   - Swagger switched off
+  #
+  # DNS: an A record for wa -> 207.180.216.54 at
+  # Cloudflare, DNS-only (grey cloud), or Cloudflare
+  # answers the Let's Encrypt challenge instead of
+  # kamal-proxy and the certificate never issues.
+  # ------------------------------------------------
