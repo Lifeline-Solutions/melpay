@@ -37,8 +37,10 @@ deploy_timeout: 120
 
 proxy:
   ssl: true
-  host: malpayment.com
-
+  hosts:
+    - malpayment.com
+    - www.malpayment.com
+  app_port: 3000
   healthcheck:
     path: /up
     interval: 3
