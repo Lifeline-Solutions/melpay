@@ -76,7 +76,7 @@ env:
     # The accessory is named "db", so on the Kamal
     # network the container is: malpayment-db
     # ------------------------------------------------
-    PGHOST: malpayment-user-db
+    PGHOST: malpayment-db
     PGPORT: "5432"
     PGUSER: malpayment
     PG_DATABASE: malpayment_production
