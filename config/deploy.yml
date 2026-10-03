@@ -36,8 +36,8 @@ deploy_timeout: 120
 # --------------------------------------------------
 
 proxy:
-  #ssl: true
-  #host: malpayment.com
+  ssl: true
+  host: malpayment.com
 
   healthcheck:
     path: /up
