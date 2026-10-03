@@ -6,12 +6,27 @@
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://www.malpayment.com/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
     <loc>https://malpayment.com/users/sign_in</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
+    <loc>https://www.malpayment.com/users/sign_in</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
     <loc>https://malpayment.com/users/sign_up</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.malpayment.com/users/sign_up</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
