@@ -182,8 +182,8 @@ accessories:
 
     env:
       clear:
-        POSTGRES_USER: melpay
-        POSTGRES_DB: melpay_production
+        POSTGRES_USER: malpayment
+        POSTGRES_DB: malpayment_production
       secret:
         - POSTGRES_PASSWORD
 
