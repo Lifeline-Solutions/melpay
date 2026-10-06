@@ -12,3 +12,4 @@ Disallow: /sidekiq
 Disallow: /invitation
 
 Sitemap: https://malpayment.com/sitemap.xml
+Sitemap: https://www.malpayment.com/sitemap.xml
