@@ -1,66 +1,43 @@
-<footer class="footer">
-  <div class="footer-top">
-    <div class="footer-brand">
-      <%= link_to root_path, class: "footer-logo" do %>
-        <%= image_tag 'icon.png', style: 'height:52px;width:auto;object-fit:contain;', alt: 'MAL Payments' %>
-      <% end %>
-      <p class="footer-tagline">Simplified collections and disbursements for modern African businesses.</p>
+<footer class="bg-ink text-white">
+  <div class="mx-auto grid max-w-6xl gap-12 px-5 py-16 lg:grid-cols-[1.2fr_2fr] lg:px-8">
+    <div>
+      <a href="<%= root_path %>" class="inline-block rounded-lg bg-white px-3 py-2"><img src="<%= asset_path('icon.png') %>" alt="MAL Payments" class="h-9 w-auto"></a>
+      <p class="mt-5 max-w-xs text-white/70">Simplified collections and disbursements for modern African businesses.</p>
     </div>
-    <div class="footer-cols">
-      <div class="footer-col">
-        <h4>Product</h4>
-        <ul>
-          <li><a href="#features">Features</a></li>
-          <li><a href="#pricing">Pricing</a></li>
-          <li><a href="#">API Docs</a></li>
-          <li><a href="#">Changelog</a></li>
+    <div class="grid grid-cols-2 gap-8 sm:grid-cols-3">
+      <div>
+        <h4 class="font-display font-bold">Product</h4>
+        <ul class="mt-4 space-y-2.5 text-white/70">
+          <li><a href="#features" class="hover:text-white">Features</a></li>
+          <li><a href="#pricing" class="hover:text-white">Pricing</a></li>
+          <li><a href="#" class="hover:text-white">API Docs</a></li>
+          <li><a href="#" class="hover:text-white">Changelog</a></li>
         </ul>
       </div>
-      <div class="footer-col">
-        <h4>Company</h4>
-        <ul>
-          <li><a href="#about">About Us</a></li>
-          <li><a href="#contact">Contact</a></li>
-          <li><a href="#">Careers</a></li>
-          <li><a href="#">Blog</a></li>
+      <div>
+        <h4 class="font-display font-bold">Company</h4>
+        <ul class="mt-4 space-y-2.5 text-white/70">
+          <li><a href="#about" class="hover:text-white">About Us</a></li>
+          <li><a href="#contact" class="hover:text-white">Contact</a></li>
+          <li><a href="#" class="hover:text-white">Careers</a></li>
+          <li><a href="#" class="hover:text-white">Blog</a></li>
         </ul>
       </div>
-      <div class="footer-col">
-        <h4>Legal</h4>
-        <ul>
-          <li><a href="#">Privacy Policy</a></li>
-          <li><a href="#">Terms of Service</a></li>
-          <li><a href="#">Cookie Policy</a></li>
-          <li><a href="#">Compliance</a></li>
+      <div>
+        <h4 class="font-display font-bold">Legal</h4>
+        <ul class="mt-4 space-y-2.5 text-white/70">
+          <li><a href="#" class="hover:text-white">Privacy Policy</a></li>
+          <li><a href="#" class="hover:text-white">Terms of Service</a></li>
+          <li><a href="#" class="hover:text-white">Cookie Policy</a></li>
+          <li><a href="#" class="hover:text-white">Compliance</a></li>
         </ul>
       </div>
     </div>
   </div>
-  <div class="footer-bottom">
-    <span>&copy; <%= Time.current.year %> MAL Payments. All rights reserved.</span>
-    <span>Built in the Republic of South Sudan </span>
+  <div class="border-t border-white/15">
+    <div class="mx-auto flex max-w-6xl flex-col gap-2 px-5 py-6 text-sm text-white/60 sm:flex-row sm:justify-between lg:px-8">
+      <span>&copy; <%= Time.current.year %> MAL Payments. All rights reserved.</span>
+      <span>Built in the Republic of South Sudan</span>
+    </div>
   </div>
 </footer>
-
-<script>
-  const nav = document.getElementById('mainNav');
-  window.addEventListener('scroll', () => {
-    nav.classList.toggle('scrolled', window.scrollY > 20);
-  });
-
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.style.opacity = '1';
-        e.target.style.transform = 'translateY(0)';
-      }
-    });
-  }, { threshold: 0.12 });
-
-  document.querySelectorAll('.feature-card, .step, .security-badge, .pricing-card').forEach(el => {
-    el.style.opacity = '0';
-    el.style.transform = 'translateY(28px)';
-    el.style.transition = 'opacity .55s ease, transform .55s ease';
-    observer.observe(el);
-  });
-</script>
