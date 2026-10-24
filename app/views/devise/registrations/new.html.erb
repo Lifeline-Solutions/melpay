@@ -1,43 +1,41 @@
-<%= form_for(resource, as: resource_name, url: registration_path(resource_name)) do |f| %>
-  <%= render "devise/shared/error_messages", resource: resource %>
+<% provide(:title, "Create Account") %>
 
-  <section class="bg-gray-50 dark:bg-gray-900 mx-auto md:min-w-md">
-    <div class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
-      <div class="flex items-center mb-6 text-2xl font-semibold text-gray-900 dark:text-white">
-        <p>Melpay</p>
-      </div>
-      <div class="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
-        <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
-          <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
-            Sign Up to your account
-          </h1>
-          <form class="space-y-4 md:space-y-6" action="#">
-            <div>
-              <label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Your email</label>
-              <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500", placeholder: "jay@alliswell.com", required: true  %>
-            </div>
-            <div class="field">
-              <%= f.label :password %>
-              <% if @minimum_password_length %>
-                <em>(<%= @minimum_password_length %> characters minimum)</em>
-              <% end %><br />
-              <%= f.password_field :password, autocomplete: "new-password", class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500", placeholder: "••••••••", required: true %>
-            </div>
-            <div>
-              <label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Password</label>
-              <%= f.password_field :password_confirmation, autocomplete: "current-password", class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500", placeholder: "••••••••", required: true %>
-            </div>
-            <%= f.submit 'SUBMIT', class: "w-full border border-gray-900 bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800" %>
+<%= render layout: "devise/shared/auth_shell",
+           locals: { heading: "Collections and disbursements, on one platform.",
+                     subheading: "Create your MAL Payments account. We'll verify your business before live payments are switched on." } do %>
 
-            <p class="text-sm font-light gap-4">
-              Already have an account yet?
-              <span>
-                <%= render "devise/shared/links", class: "font-medium text-primary-600 hover:underline dark:text-primary-500" %>
-              </span>
-            </p>
-          </form>
-        </div>
-      </div>
+  <h2 class="font-display text-2xl font-bold text-ink">Create your account</h2>
+  <p class="mt-1 text-sm text-ink-2 mb-8">It takes less than a minute.</p>
+
+  <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { class: "space-y-5" }) do |f| %>
+    <%= render "devise/shared/error_messages", resource: resource %>
+
+    <div>
+      <%= f.label :email, "Email", class: "mb-2 block text-sm font-semibold text-ink" %>
+      <%= f.email_field :email, autofocus: true, autocomplete: "email", required: true,
+                        placeholder: "you@company.com", class: "block h-12 w-full rounded-lg border border-line bg-white px-4 text-ink placeholder:text-ink-2/50 focus:border-teal-deep focus:outline-none focus:ring-2 focus:ring-teal/30" %>
     </div>
-  </section>
+
+    <div>
+      <%= f.label :password, "Password", class: "mb-2 block text-sm font-semibold text-ink" %>
+      <%= f.password_field :password, autocomplete: "new-password", required: true,
+                           class: "block h-12 w-full rounded-lg border border-line bg-white px-4 text-ink placeholder:text-ink-2/50 focus:border-teal-deep focus:outline-none focus:ring-2 focus:ring-teal/30" %>
+      <% if @minimum_password_length %>
+        <p class="mt-1.5 text-xs text-ink-2"><%= @minimum_password_length %> characters minimum</p>
+      <% end %>
+    </div>
+
+    <div>
+      <%= f.label :password_confirmation, "Confirm password", class: "mb-2 block text-sm font-semibold text-ink" %>
+      <%= f.password_field :password_confirmation, autocomplete: "new-password", required: true,
+                           class: "block h-12 w-full rounded-lg border border-line bg-white px-4 text-ink placeholder:text-ink-2/50 focus:border-teal-deep focus:outline-none focus:ring-2 focus:ring-teal/30" %>
+    </div>
+
+    <%= f.submit "Create account", class: "h-12 w-full cursor-pointer rounded-lg bg-ink font-semibold text-white hover:bg-teal-deep focus:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2" %>
+  <% end %>
+
+  <div class="mt-8 space-y-2 border-t border-line pt-6 text-sm">
+    <p class="text-ink-2">Already have an account?</p>
+    <%= render "devise/shared/links" %>
+  </div>
 <% end %>

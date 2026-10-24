@@ -1,16 +1,26 @@
-<h2>Resend confirmation instructions</h2>
+<% provide(:title, "Confirm Email") %>
 
-<%= form_for(resource, as: resource_name, url: confirmation_path(resource_name), html: { method: :post }) do |f| %>
-  <%= render "devise/shared/error_messages", resource: resource %>
+<%= render layout: "devise/shared/auth_shell",
+           locals: { heading: "Confirm your email to get started.",
+                     subheading: "We need to confirm your email address before you can sign in. We'll send you a new link." } do %>
 
-  <div class="field">
-    <%= f.label :email %><br />
-    <%= f.email_field :email, autofocus: true, autocomplete: "email", value: (resource.pending_reconfirmation? ? resource.unconfirmed_email : resource.email) %>
-  </div>
+  <h2 class="font-display text-2xl font-bold text-ink">Resend confirmation instructions</h2>
+  <p class="mt-1 text-sm text-ink-2 mb-8">Enter the email you signed up with.</p>
 
-  <div class="actions">
-    <%= f.submit "Resend confirmation instructions" %>
+  <%= form_for(resource, as: resource_name, url: confirmation_path(resource_name), html: { method: :post, class: "space-y-5" }) do |f| %>
+    <%= render "devise/shared/error_messages", resource: resource %>
+
+    <div>
+      <%= f.label :email, "Email", class: "mb-2 block text-sm font-semibold text-ink" %>
+      <%= f.email_field :email, autofocus: true, autocomplete: "email", required: true,
+                        placeholder: "you@company.com", class: "block h-12 w-full rounded-lg border border-line bg-white px-4 text-ink placeholder:text-ink-2/50 focus:border-teal-deep focus:outline-none focus:ring-2 focus:ring-teal/30",
+                        value: (resource.pending_reconfirmation? ? resource.unconfirmed_email : resource.email) %>
+    </div>
+
+    <%= f.submit "Resend confirmation instructions", class: "h-12 w-full cursor-pointer rounded-lg bg-ink font-semibold text-white hover:bg-teal-deep focus:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2" %>
+  <% end %>
+
+  <div class="mt-8 space-y-2 border-t border-line pt-6 text-sm">
+    <%= render "devise/shared/restricted_links" %>
   </div>
 <% end %>
-
-<%= render "devise/shared/links" %>

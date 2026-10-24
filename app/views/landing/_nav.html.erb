@@ -1,14 +1,32 @@
-<nav class="nav" id="mainNav">
-  <a href="<%= root_path %>" class="nav-logo">
-    <%= image_tag 'icon.png', class: 'nav-logo-img', alt: 'MAL Payments' %>
-  </a>
-  <ul class="nav-links">
-    <li><a href="#about">About Us</a></li>
-    <li><a href="#features">Features</a></li>
-    <li><a href="#how-it-works">How it Works</a></li>
-    <li><a href="#security">Security</a></li>
-    <li><a href="#pricing">Pricing</a></li>
-    <li><a href="#contact">Contact</a></li>
-    <li><%= link_to "Sign In", new_user_session_path, class: "btn-nav" %></li>
-  </ul>
-</nav>
+<a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:text-ink">Skip to content</a>
+
+<!-- NAV -->
+<header class="sticky top-0 z-40 border-b border-line bg-white/95 backdrop-blur">
+  <nav class="mx-auto flex max-w-6xl items-center justify-between px-5 py-3 lg:px-8" aria-label="Main">
+    <a href="<%= root_path %>" class="shrink-0"><img src="<%= asset_path('icon.png') %>" alt="MAL Payments" class="h-11 w-auto"></a>
+
+    <ul class="hidden items-center gap-7 text-[0.95rem] font-medium text-ink-2 lg:flex">
+      <li><a href="#about" class="hover:text-teal-deep">About Us</a></li>
+      <li><a href="#features" class="hover:text-teal-deep">Features</a></li>
+      <li><a href="#how-it-works" class="hover:text-teal-deep">How it Works</a></li>
+      <li><a href="#security" class="hover:text-teal-deep">Security</a></li>
+      <li><a href="#pricing" class="hover:text-teal-deep">Pricing</a></li>
+      <li><a href="#contact" class="hover:text-teal-deep">Contact</a></li>
+      <li><a href="<%= new_user_session_path %>" class="rounded-lg bg-ink px-4 py-2 text-white hover:bg-teal-deep">Sign In</a></li>
+    </ul>
+
+    <!-- Mobile menu: native <details>, no JS, no animation -->
+    <details class="relative lg:hidden">
+      <summary class="rounded-lg border border-line px-3 py-2 text-sm font-semibold text-ink">Menu</summary>
+      <ul class="absolute right-0 mt-2 w-56 rounded-xl border border-line bg-white p-2 text-ink shadow-lg">
+        <li><a href="#about" class="block rounded-md px-3 py-2 hover:bg-mist">About Us</a></li>
+        <li><a href="#features" class="block rounded-md px-3 py-2 hover:bg-mist">Features</a></li>
+        <li><a href="#how-it-works" class="block rounded-md px-3 py-2 hover:bg-mist">How it Works</a></li>
+        <li><a href="#security" class="block rounded-md px-3 py-2 hover:bg-mist">Security</a></li>
+        <li><a href="#pricing" class="block rounded-md px-3 py-2 hover:bg-mist">Pricing</a></li>
+        <li><a href="#contact" class="block rounded-md px-3 py-2 hover:bg-mist">Contact</a></li>
+        <li><a href="<%= new_user_session_path %>" class="mt-1 block rounded-md bg-ink px-3 py-2 font-semibold text-white">Sign In</a></li>
+      </ul>
+    </details>
+  </nav>
+</header>

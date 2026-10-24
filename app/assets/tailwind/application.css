@@ -1,1 +1,25 @@
 @import "tailwindcss";
+
+/* MAL Payments brand tokens (navy + teal from the logo) */
+@theme {
+    --color-ink: #14262F;
+    --color-ink-2: #3B5260;
+    --color-teal: #2FA9A6;
+    --color-teal-deep: #1D7C79;
+    --color-mist: #EAF3F2;
+    --color-line: #D5E3E1;
+    --color-amber: #8A5A06;
+    --color-amber-soft: #FBF0D9;
+
+    --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+    --font-sans: "Public Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+@layer base {
+    html { scroll-behavior: auto; }
+    body { -webkit-font-smoothing: antialiased; }
+    :focus-visible { outline: 2px solid var(--color-teal); outline-offset: 3px; }
+    summary { cursor: pointer; list-style: none; }
+    summary::-webkit-details-marker { display: none; }
+    details[open] .faq-sign { transform: rotate(45deg); }
+}

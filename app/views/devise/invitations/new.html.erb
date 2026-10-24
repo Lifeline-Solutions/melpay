@@ -1,112 +1,79 @@
-<%= form_for(resource, as: resource_name, url: invitation_path(resource_name), html: { method: :post }) do |f| %>
-  <section class="p-4 sm:p-6 sm:ml-64 min-h-screen bg-white flex items-center justify-center">
-    <div class="w-full max-w-xl py-8">
-
-      <!-- Logo -->
-      <div class="flex justify-center mb-6">
-        <%= image_tag "icon.png", alt: "MAL Payments", class: "h-10 sm:h-12 w-auto" %>
-      </div>
-
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-6 sm:px-10 pt-8 pb-6 border-b border-gray-100 text-center">
-          <h2 class="text-xl sm:text-2xl font-bold text-[#1C2B39]">
-            <%= t "devise.invitations.new.header" %>
-          </h2>
-          <p class="text-sm text-gray-500 mt-1">Send an invitation to add a new team member</p>
-        </div>
-
-        <div class="p-6 sm:p-10 space-y-5">
-
-          <%= render "devise/shared/error_messages", resource: resource %>
-
-          <% resource.class.invite_key_fields.each do |field| -%>
-            <div>
-              <%= f.label field, class: "block mb-2 text-sm font-medium text-[#1C2B39]" %>
-              <%= f.text_field field,
-                               class: "text-base sm:text-sm border border-gray-300 rounded-lg focus:ring focus:ring-[#2FACA6]/20 focus:border-[#2FACA6] block w-full p-2.5 text-[#1C2B39]",
-                               required: true %>
-            </div>
-          <% end -%>
-
-          <!-- First Name + Last Name -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <%= f.label 'First Name*', class: "block mb-2 text-sm font-medium text-[#1C2B39]" %>
-              <%= f.text_field :first_name,
-                               class: "text-base sm:text-sm border border-gray-300 rounded-lg focus:ring focus:ring-[#2FACA6]/20 focus:border-[#2FACA6] block w-full p-2.5 text-[#1C2B39] placeholder-gray-400",
-                               placeholder: 'First Name',
-                               required: true %>
-            </div>
-
-            <div>
-              <%= f.label 'Last Name*', class: "block mb-2 text-sm font-medium text-[#1C2B39]" %>
-              <%= f.text_field :last_name,
-                               class: "text-base sm:text-sm border border-gray-300 rounded-lg focus:ring focus:ring-[#2FACA6]/20 focus:border-[#2FACA6] block w-full p-2.5 text-[#1C2B39] placeholder-gray-400",
-                               placeholder: 'Last Name',
-                               required: true %>
-            </div>
-          </div>
-
-          <!-- Role + Client -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <!-- Role -->
-            <div>
-              <%= f.label 'Role*', class: "block mb-2 text-sm font-medium text-[#1C2B39]" %>
-              <%
-                available_roles = if current_user.has_role?(:super_admin)
-                                    Role.all.pluck(:name)
-                                  elsif current_user.has_role?(:admin)
-                                    Role.where.not(name: 'super_admin').pluck(:name)
-                                  else
-                                    ['account_manager']
-                                  end
-              %>
-              <%= select_tag :role, options_for_select(available_roles),
-                             { prompt: 'Select Role',
-                               class: "text-base sm:text-sm border border-gray-300 rounded-lg focus:ring focus:ring-[#2FACA6]/20 focus:border-[#2FACA6] block w-full p-2.5 text-[#1C2B39]",
-                               required: true } %>
-            </div>
-
-            <!-- Client -->
-            <div>
-              <%= f.label 'Client*', class: "block mb-2 text-sm font-medium text-[#1C2B39]" %>
-              <%
-                available_clients = if current_user.has_role?(:super_admin)
-                                      Client.where(kyc_status: 'approved')
-                                    elsif current_user.has_role?(:admin)
-                                      Client.where(id: current_user.client_id, kyc_status: 'approved')
-                                    else
-                                      Client.where(id: current_user.client_id, kyc_status: 'approved')
-                                    end
-
-                is_admin = current_user.has_role?(:admin)
-                is_super_admin = current_user.has_role?(:super_admin)
-                admin_client = current_user.client if is_admin
-              %>
-
-              <% if is_admin && admin_client %>
-                <%= f.hidden_field :client_id, value: admin_client.id %>
-                <div class="border border-gray-200 rounded-lg bg-gray-50 block w-full p-2.5 text-sm truncate text-[#1C2B39]">
-                  <%= admin_client.name %>
-                </div>
-              <% else %>
-                <%= f.select :client_id, options_from_collection_for_select(available_clients, :id, :name),
-                             { prompt: 'Select Client' },
-                             class: "text-base sm:text-sm border border-gray-300 rounded-lg focus:ring focus:ring-[#2FACA6]/20 focus:border-[#2FACA6] block w-full p-2.5 text-[#1C2B39]",
-                             required: true %>
-              <% end %>
-            </div>
-          </div>
-
-          <% if is_admin && admin_client %>
-            <p class="text-xs text-gray-400 -mt-1">Admins can only invite users to their own client</p>
-          <% end %>
-
-          <%= f.submit t("devise.invitations.new.submit_button"),
-                       class: "w-full bg-[#2FACA6] hover:bg-[#228B7A] focus:ring-4 focus:outline-none focus:ring-[#2FACA6]/30 font-semibold rounded-lg text-sm px-5 py-3 text-center text-white transition-colors" %>
-        </div>
-      </div>
-
-    </div>
-  </section>
+<% provide(:title, "Invite User") %>
+<% content_for :head do %>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <% end %>
+<%
+  available_roles = if current_user.has_role?(:super_admin)
+                      Role.all.pluck(:name)
+                    elsif current_user.has_role?(:admin)
+                      Role.where.not(name: "super_admin").pluck(:name)
+                    else
+                      ["account_manager"]
+                    end
+
+  available_clients = if current_user.has_role?(:super_admin)
+                        Client.where(kyc_status: "approved")
+                      else
+                        Client.where(id: current_user.client_id, kyc_status: "approved")
+                      end
+
+  is_admin     = current_user.has_role?(:admin)
+  admin_client = current_user.client if is_admin
+%>
+
+<div class="min-h-screen bg-white p-4 font-sans text-ink antialiased sm:ml-64 sm:p-8">
+  <div class="mx-auto max-w-xl py-6">
+    <h1 class="font-display text-3xl font-bold tracking-tight"><%= t "devise.invitations.new.header" %></h1>
+    <p class="mt-1 text-ink-2">Send an invitation to add a new team member.</p>
+
+    <%= render "devise/shared/flash" %>
+
+    <%= form_for(resource, as: resource_name, url: invitation_path(resource_name), html: { method: :post, class: "mt-8 space-y-5 rounded-2xl border border-line p-6 sm:p-8" }) do |f| %>
+      <%= render "devise/shared/error_messages", resource: resource %>
+
+      <% resource.class.invite_key_fields.each do |field| -%>
+        <div>
+          <%= f.label field, class: "mb-2 block text-sm font-semibold text-ink" %>
+          <%= f.text_field field, required: true, class: "block h-12 w-full rounded-lg border border-line bg-white px-4 text-ink placeholder:text-ink-2/50 focus:border-teal-deep focus:outline-none focus:ring-2 focus:ring-teal/30" %>
+        </div>
+      <% end -%>
+
+      <div class="grid gap-5 sm:grid-cols-2">
+        <div>
+          <%= f.label :first_name, "First name*", class: "mb-2 block text-sm font-semibold text-ink" %>
+          <%= f.text_field :first_name, required: true, autocomplete: "off", class: "block h-12 w-full rounded-lg border border-line bg-white px-4 text-ink placeholder:text-ink-2/50 focus:border-teal-deep focus:outline-none focus:ring-2 focus:ring-teal/30" %>
+        </div>
+        <div>
+          <%= f.label :last_name, "Last name*", class: "mb-2 block text-sm font-semibold text-ink" %>
+          <%= f.text_field :last_name, required: true, autocomplete: "off", class: "block h-12 w-full rounded-lg border border-line bg-white px-4 text-ink placeholder:text-ink-2/50 focus:border-teal-deep focus:outline-none focus:ring-2 focus:ring-teal/30" %>
+        </div>
+      </div>
+
+      <div class="grid gap-5 sm:grid-cols-2">
+        <div>
+          <%= label_tag :role, "Role*", class: "mb-2 block text-sm font-semibold text-ink" %>
+          <%= select_tag :role, options_for_select(available_roles),
+                         prompt: "Select role", required: true, class: "block h-12 w-full rounded-lg border border-line bg-white px-3 text-ink focus:border-teal-deep focus:outline-none focus:ring-2 focus:ring-teal/30" %>
+        </div>
+
+        <div>
+          <%= f.label :client_id, "Client*", class: "mb-2 block text-sm font-semibold text-ink" %>
+          <% if is_admin && admin_client %>
+            <%= f.hidden_field :client_id, value: admin_client.id %>
+            <p class="flex h-12 items-center truncate rounded-lg border border-line bg-mist px-4 text-ink"><%= admin_client.name %></p>
+          <% else %>
+            <%= f.select :client_id, options_from_collection_for_select(available_clients, :id, :name),
+                         { prompt: "Select client" },
+                         required: true, class: "block h-12 w-full rounded-lg border border-line bg-white px-3 text-ink focus:border-teal-deep focus:outline-none focus:ring-2 focus:ring-teal/30" %>
+          <% end %>
+        </div>
+      </div>
+
+      <% if is_admin && admin_client %>
+        <p class="text-xs text-ink-2">Admins can only invite users to their own client.</p>
+      <% end %>
+
+      <%= f.submit t("devise.invitations.new.submit_button"), class: "h-12 w-full cursor-pointer rounded-lg bg-ink font-semibold text-white hover:bg-teal-deep focus:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2" %>
+    <% end %>
+  </div>
+</div>

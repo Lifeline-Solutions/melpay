@@ -1,0 +1,7 @@
+<%# Shows Devise flash messages, e.g. "Invalid Email or password." %>
+<% if alert.present? %>
+  <div class="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert"><%= alert %></div>
+<% end %>
+<% if notice.present? %>
+  <div class="mb-6 rounded-lg border border-teal/40 bg-mist px-4 py-3 text-sm text-teal-deep" role="status"><%= notice %></div>
+<% end %>

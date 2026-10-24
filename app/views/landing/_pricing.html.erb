@@ -1,51 +1,51 @@
-<section class="pricing-section" id="pricing">
-  <div class="section-tag">Transparent Pricing</div>
-  <p class="section-sub" style="margin-inline:auto;text-align:center;margin-top:0.5rem">
-    No hidden fees. No surprises.
-  </p>
+<section id="pricing" class="scroll-mt-20 bg-mist">
+  <div class="mx-auto max-w-6xl px-5 py-20 lg:px-8 lg:py-24">
+    <p class="font-semibold text-teal-deep">Transparent Pricing</p>
+    <h2 class="mt-3 font-display text-4xl font-bold leading-tight tracking-tight text-ink sm:text-5xl">No hidden fees. No surprises.</h2>
 
-  <div class="pricing-cards">
-    <div class="pricing-card">
-      <div class="pricing-plan">Starter</div>
-      <div class="pricing-price"><sup>USD</sup>0<sub>/mo</sub></div>
-      <p class="pricing-desc">Perfect for testing and small-volume businesses getting started.</p>
-      <ul class="pricing-features">
-        <li>Up to 100 transactions/mo</li>
-        <li>3% collection fees</li>
-        <li>2% disbursement fees</li>
-        <li>Basic dashboard</li>
-        <li>Email support</li>
-      </ul>
-      <%= link_to "Get Started", new_user_registration_path, class: "btn-plan" %>
-    </div>
+    <div class="mt-14 grid gap-6 lg:grid-cols-3 lg:items-stretch">
+      <div class="flex flex-col rounded-2xl border border-line bg-white p-8">
+        <h3 class="font-display text-xl font-bold text-ink">Starter</h3>
+        <p class="mt-4 font-display text-ink"><span class="align-top text-sm font-semibold">USD</span> <span class="text-5xl font-extrabold">0</span><span class="text-ink-2">/mo</span></p>
+        <p class="mt-3 text-ink-2">Perfect for testing and small-volume businesses getting started.</p>
+        <ul class="mt-6 flex-1 space-y-2.5 border-t border-line pt-6 text-ink">
+          <li class="flex gap-3"><span class="text-teal-deep" aria-hidden="true">✓</span>Up to 100 transactions/mo</li>
+          <li class="flex gap-3"><span class="text-teal-deep" aria-hidden="true">✓</span>3% collection fees</li>
+          <li class="flex gap-3"><span class="text-teal-deep" aria-hidden="true">✓</span>2% disbursement fees</li>
+          <li class="flex gap-3"><span class="text-teal-deep" aria-hidden="true">✓</span>Basic dashboard</li>
+          <li class="flex gap-3"><span class="text-teal-deep" aria-hidden="true">✓</span>Email support</li>
+        </ul>
+        <a href="<%= new_user_registration_path %>" class="mt-8 rounded-lg border border-ink/20 px-5 py-3 text-center font-semibold text-ink hover:border-ink">Get Started</a>
+      </div>
 
-    <div class="pricing-card featured">
-      <div class="pricing-tag">Most Popular</div>
-      <div class="pricing-plan">Growth</div>
-      <div class="pricing-price"><sup>USD</sup>50<sub>/mo</sub></div>
-      <p class="pricing-desc">For growing businesses that need more volume and advanced features.</p>
-      <ul class="pricing-features">
-        <li>Unlimited transactions</li>
-        <li>All payment channels</li>
-        <li>Bulk disbursements</li>
-        <li>API access + webhooks</li>
-        <li>Priority support</li>
-      </ul>
-      <%= link_to "Start Free Trial", new_user_registration_path, class: "btn-plan" %>
-    </div>
+      <div class="relative flex flex-col rounded-2xl bg-ink p-8 text-white">
+        <span class="absolute right-6 top-7 rounded-full bg-teal px-3 py-1 text-xs font-bold text-ink">Most Popular</span>
+        <h3 class="font-display text-xl font-bold">Growth</h3>
+        <p class="mt-4 font-display"><span class="align-top text-sm font-semibold">USD</span> <span class="text-5xl font-extrabold">50</span><span class="text-white/65">/mo</span></p>
+        <p class="mt-3 text-white/75">For growing businesses that need more volume and advanced features.</p>
+        <ul class="mt-6 flex-1 space-y-2.5 border-t border-white/15 pt-6">
+          <li class="flex gap-3"><span class="text-teal" aria-hidden="true">✓</span>Unlimited transactions</li>
+          <li class="flex gap-3"><span class="text-teal" aria-hidden="true">✓</span>All payment channels</li>
+          <li class="flex gap-3"><span class="text-teal" aria-hidden="true">✓</span>Bulk disbursements</li>
+          <li class="flex gap-3"><span class="text-teal" aria-hidden="true">✓</span>API access + webhooks</li>
+          <li class="flex gap-3"><span class="text-teal" aria-hidden="true">✓</span>Priority support</li>
+        </ul>
+        <a href="<%= new_user_registration_path %>" class="mt-8 rounded-lg bg-teal px-5 py-3 text-center font-semibold text-ink hover:bg-white">Start Free Trial</a>
+      </div>
 
-    <div class="pricing-card">
-      <div class="pricing-plan">Enterprise</div>
-      <div class="pricing-price" style="font-size:1.6rem">Custom</div>
-      <p class="pricing-desc">Tailored solutions for large enterprises with unique requirements.</p>
-      <ul class="pricing-features">
-        <li>Negotiated transaction rates</li>
-        <li>Dedicated account manager</li>
-        <li>Custom integrations</li>
-        <li>SLA guarantees</li>
-        <li>On-site onboarding</li>
-      </ul>
-      <a href="/contact" class="btn-plan">Contact Sales</a>
+      <div class="flex flex-col rounded-2xl border border-line bg-white p-8">
+        <h3 class="font-display text-xl font-bold text-ink">Enterprise</h3>
+        <p class="mt-4 font-display text-5xl font-extrabold text-ink">Custom</p>
+        <p class="mt-3 text-ink-2">Tailored solutions for large enterprises with unique requirements.</p>
+        <ul class="mt-6 flex-1 space-y-2.5 border-t border-line pt-6 text-ink">
+          <li class="flex gap-3"><span class="text-teal-deep" aria-hidden="true">✓</span>Negotiated transaction rates</li>
+          <li class="flex gap-3"><span class="text-teal-deep" aria-hidden="true">✓</span>Dedicated account manager</li>
+          <li class="flex gap-3"><span class="text-teal-deep" aria-hidden="true">✓</span>Custom integrations</li>
+          <li class="flex gap-3"><span class="text-teal-deep" aria-hidden="true">✓</span>SLA guarantees</li>
+          <li class="flex gap-3"><span class="text-teal-deep" aria-hidden="true">✓</span>On-site onboarding</li>
+        </ul>
+        <a href="#contact" class="mt-8 rounded-lg border border-ink/20 px-5 py-3 text-center font-semibold text-ink hover:border-ink">Contact Sales</a>
+      </div>
     </div>
   </div>
 </section>

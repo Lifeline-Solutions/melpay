@@ -1,43 +1,58 @@
-<h2>Edit <%= resource_name.to_s.humanize %></h2>
-
-<%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put }) do |f| %>
-  <%= render "devise/shared/error_messages", resource: resource %>
-
-  <div class="field">
-    <%= f.label :email %><br />
-    <%= f.email_field :email, autofocus: true, autocomplete: "email" %>
-  </div>
-
-  <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
-    <div>Currently waiting confirmation for: <%= resource.unconfirmed_email %></div>
-  <% end %>
-
-  <div class="field">
-    <%= f.label :password %> <i>(leave blank if you don't want to change it)</i><br />
-    <%= f.password_field :password, autocomplete: "new-password" %>
-    <% if @minimum_password_length %>
-      <br />
-      <em><%= @minimum_password_length %> characters minimum</em>
-    <% end %>
-  </div>
-
-  <div class="field">
-    <%= f.label :password_confirmation %><br />
-    <%= f.password_field :password_confirmation, autocomplete: "new-password" %>
-  </div>
-
-  <div class="field">
-    <%= f.label :current_password %> <i>(we need your current password to confirm your changes)</i><br />
-    <%= f.password_field :current_password, autocomplete: "current-password" %>
-  </div>
-
-  <div class="actions">
-    <%= f.submit "Update" %>
-  </div>
+<% provide(:title, "Account Settings") %>
+<% content_for :head do %>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <% end %>
 
-<h3>Cancel my account</h3>
+<div class="min-h-screen bg-white p-4 font-sans text-ink antialiased sm:ml-64 sm:p-8">
+  <div class="mx-auto max-w-xl py-6">
+    <h1 class="font-display text-3xl font-bold tracking-tight">Account settings</h1>
+    <p class="mt-1 text-ink-2">Change your email or password.</p>
 
-<div>Unhappy? <%= button_to "Cancel my account", registration_path(resource_name), data: { confirm: "Are you sure?", turbo_confirm: "Are you sure?" }, method: :delete %></div>
+    <%= render "devise/shared/flash" %>
 
-<%= link_to "Back", :back %>
+    <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put, class: "mt-8 space-y-5 rounded-2xl border border-line p-6 sm:p-8" }) do |f| %>
+      <%= render "devise/shared/error_messages", resource: resource %>
+
+      <div>
+        <%= f.label :email, "Email", class: "mb-2 block text-sm font-semibold text-ink" %>
+        <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "block h-12 w-full rounded-lg border border-line bg-white px-4 text-ink placeholder:text-ink-2/50 focus:border-teal-deep focus:outline-none focus:ring-2 focus:ring-teal/30" %>
+        <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
+          <p class="mt-1.5 text-xs text-ink-2">Waiting for confirmation of <strong><%= resource.unconfirmed_email %></strong></p>
+        <% end %>
+      </div>
+
+      <div>
+        <%= f.label :password, "New password", class: "mb-2 block text-sm font-semibold text-ink" %>
+        <%= f.password_field :password, autocomplete: "new-password", class: "block h-12 w-full rounded-lg border border-line bg-white px-4 text-ink placeholder:text-ink-2/50 focus:border-teal-deep focus:outline-none focus:ring-2 focus:ring-teal/30" %>
+        <p class="mt-1.5 text-xs text-ink-2">
+          Leave blank to keep your current password.
+          <% if @minimum_password_length %><%= @minimum_password_length %> characters minimum.<% end %>
+        </p>
+      </div>
+
+      <div>
+        <%= f.label :password_confirmation, "Confirm new password", class: "mb-2 block text-sm font-semibold text-ink" %>
+        <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "block h-12 w-full rounded-lg border border-line bg-white px-4 text-ink placeholder:text-ink-2/50 focus:border-teal-deep focus:outline-none focus:ring-2 focus:ring-teal/30" %>
+      </div>
+
+      <div class="border-t border-line pt-5">
+        <%= f.label :current_password, "Current password", class: "mb-2 block text-sm font-semibold text-ink" %>
+        <%= f.password_field :current_password, autocomplete: "current-password", required: true, class: "block h-12 w-full rounded-lg border border-line bg-white px-4 text-ink placeholder:text-ink-2/50 focus:border-teal-deep focus:outline-none focus:ring-2 focus:ring-teal/30" %>
+        <p class="mt-1.5 text-xs text-ink-2">We need your current password to confirm your changes.</p>
+      </div>
+
+      <%= f.submit "Save changes", class: "h-12 w-full cursor-pointer rounded-lg bg-ink font-semibold text-white hover:bg-teal-deep focus:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2" %>
+    <% end %>
+
+    <div class="mt-8 rounded-2xl border border-red-200 p-6 sm:p-8">
+      <h2 class="font-display text-xl font-bold">Cancel my account</h2>
+      <p class="mt-1 text-sm text-ink-2">This permanently deletes your account. It can't be undone.</p>
+      <%= button_to "Cancel my account", registration_path(resource_name),
+                    method: :delete,
+                    data: { confirm: "Are you sure?", turbo_confirm: "Are you sure?" },
+                    class: "mt-5 h-11 cursor-pointer rounded-lg border border-red-300 px-5 font-semibold text-red-700 hover:bg-red-50" %>
+    </div>
+
+    <%= link_to "Back", :back, class: "mt-8 inline-block font-medium text-teal-deep hover:underline" %>
+  </div>
+</div>
